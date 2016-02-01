@@ -9,11 +9,13 @@ import (
 	"github.com/elastic/beats/winlogbeat/sys/eventlogging"
 	sys "github.com/elastic/beats/winlogbeat/sys/wineventlog"
 	"golang.org/x/sys/windows"
+	"time"
+	"sync"
 )
 
 const (
 	// defaultMaxNumRead is the maximum number of event Read will return.
-	defaultMaxNumRead = 100
+	defaultMaxNumRead = 1000
 
 	// renderBufferSize is the size in bytes of the buffer used to render events.
 	renderBufferSize = 1 << 14
@@ -73,6 +75,105 @@ func (l *winEventLog) Open(recordNumber uint64) error {
 
 	l.subscription = subscriptionHandle
 	return nil
+}
+
+func (l *winEventLog) ReadPipeline(done <- chan struct{}) (<- chan Record, <- chan error) {
+	handles, errs := l.readHandles(done)
+
+	const numRenderers = 2
+	records := make(chan Record, 2 * numRenderers)
+	var wg sync.WaitGroup
+	wg.Add(numRenderers)
+	for i := 0; i < numRenderers; i++ {
+		go func() {
+			l.renderer(done, handles, records)
+			wg.Done()
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(records)
+	}()
+
+	return records, errs
+}
+
+func (l *winEventLog) readHandles(done <- chan struct{}) (<- chan sys.EvtHandle, <- chan error) {
+	out := make(chan sys.EvtHandle, l.maxRead)
+	errOut := make(chan error)
+	go func() {
+		for {
+			handles, err := sys.EventHandles(l.subscription, l.maxRead)
+			if err == sys.ERROR_NO_MORE_ITEMS {
+				detailf("%s No more events", l.logPrefix)
+				fmt.Println("Done:", time.Now())
+			} else if err == nil {
+				for _, h := range handles {
+					select {
+					case out <- h:
+					case <- done:
+						return
+					}
+				}
+				continue
+			} else {
+				errOut <- err
+				continue
+			}
+
+			select {
+			case <- done:
+				return
+			case <- time.After(time.Second):
+			}
+		}
+	}()
+	return out, errOut
+}
+
+func (l *winEventLog) renderer(done <-chan struct{}, handles <-chan sys.EvtHandle, out chan<- Record) {
+	renderBuf := make([]byte, renderBufferSize)
+	for handle := range handles {
+		e, err := sys.RenderEvent(handle, l.systemCtx, 0, renderBuf, l.cache.get)
+		sys.Close(handle)
+		if err != nil {
+			logp.Err("%s Dropping event with rendering error. %v", l.logPrefix, err)
+			continue
+		}
+
+		r := Record{
+			API:          winEventLogAPIName,
+			EventLogName: e.Channel,
+			SourceName:   e.ProviderName,
+			ComputerName: e.Computer,
+			RecordNumber: e.RecordID,
+			EventID:      uint32(e.EventID),
+			Level:        e.Level,
+			Category:     e.Task,
+			Message:      e.Message,
+			MessageErr:   e.MessageErr,
+		}
+
+		if e.TimeCreated != nil {
+			r.TimeGenerated = *e.TimeCreated
+		}
+
+		if e.UserSID != nil {
+			r.User = &User{
+				Identifier: e.UserSID.Identifier,
+				Name:       e.UserSID.Name,
+				Domain:     e.UserSID.Domain,
+				Type:       e.UserSID.Type.String(),
+			}
+		}
+
+		select {
+		case out <- r:
+		case <-done:
+			return
+		}
+	}
 }
 
 func (l *winEventLog) Read() ([]Record, error) {

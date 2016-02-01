@@ -25,6 +25,7 @@ type EventLog interface {
 
 	// Read records from the event log.
 	Read() ([]Record, error)
+	ReadPipeline(done <- chan struct{}) (<- chan Record, <- chan error)
 
 	// Close the event log. It should not be re-opened after closing.
 	Close() error

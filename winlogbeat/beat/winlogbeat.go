@@ -11,7 +11,6 @@ import (
 
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/cfgfile"
-	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/libbeat/publisher"
 	"github.com/elastic/beats/winlogbeat/checkpoint"
@@ -212,35 +211,16 @@ func (eb *Winlogbeat) processEventLog(
 
 	debugf("EventLog[%s] opened successfully", api.Name())
 
+	records, errs := api.ReadPipeline(eb.done)
 loop:
 	for {
 		select {
 		case <-eb.done:
 			break loop
-		default:
-		}
-
-		// Read from the event.
-		records, err := api.Read()
-		if err != nil {
+		case err = <- errs:
 			logp.Warn("EventLog[%s] Read() error: %v", api.Name(), err)
-			break
-		}
-		debugf("EventLog[%s] Read() returned %d records", api.Name(), len(records))
-		if len(records) == 0 {
-			// TODO: Consider implementing notifications using
-			// NotifyChangeEventLog instead of polling.
-			time.Sleep(time.Second)
-			continue
-		}
-
-		// Filter events.
-		var events []common.MapStr
-		for _, lr := range records {
-			// TODO: Move filters close to source. Short circuit processing
-			// of event if it is going to be filtered.
-			// TODO: Add a severity filter.
-			// TODO: Check the global IgnoreOlder filter.
+			break loop
+		case lr := <- records:
 			if ignoreOlder != 0 && time.Since(lr.TimeGenerated) > ignoreOlder {
 				detailf("EventLog[%s] ignore_older filter dropping event: %s",
 					api.Name(), lr.String())
@@ -249,26 +229,18 @@ loop:
 				continue
 			}
 
-			events = append(events, lr.ToMapStr())
-		}
+			ok := eb.client.PublishEvent(lr.ToMapStr(), publisher.Guaranteed)
+			if ok {
+				publishedEvents.Add("total", 1)
+				publishedEvents.Add(api.Name(), 1)
+			} else {
+				logp.Warn("EventLog[%s] Failed to publish %d events",
+					api.Name(), 1)
+				publishedEvents.Add("failures", 1)
+			}
 
-		// Publish events.
-		numEvents := int64(len(events))
-		ok := eb.client.PublishEvents(events, publisher.Sync, publisher.Guaranteed)
-		if ok {
-			publishedEvents.Add("total", numEvents)
-			publishedEvents.Add(api.Name(), numEvents)
-			logp.Info("EventLog[%s] Successfully published %d events",
-				api.Name(), numEvents)
-		} else {
-			logp.Warn("EventLog[%s] Failed to publish %d events",
-				api.Name(), numEvents)
-			publishedEvents.Add("failures", 1)
+			eb.checkpoint.Persist(api.Name(), lr.RecordNumber, lr.TimeGenerated.UTC())
 		}
-
-		eb.checkpoint.Persist(api.Name(),
-			records[len(records)-1].RecordNumber,
-			records[len(records)-1].TimeGenerated.UTC())
 	}
 }
 
