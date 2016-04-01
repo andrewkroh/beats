@@ -32,7 +32,7 @@ type EventLog interface {
 	// Open the event log. recordNumber is the last successfully read event log
 	// record number. Read will resume from recordNumber + 1. To start reading
 	// from the first event specify a recordNumber of 0.
-	Open(recordNumber uint64) error
+	Open(recordNumber uint64) (<- chan struct{}, error)
 
 	// Read records from the event log.
 	Read() ([]Record, error)

@@ -19,7 +19,7 @@ type event struct {
 }
 
 func newEvent() (*event, error) {
-	h, err := windows.CreateEvent(nil, 0, 0, nil)
+	h, err := windows.CreateEvent(nil, 1, 0, nil)
 	if err != nil {
 		return nil, err
 	}

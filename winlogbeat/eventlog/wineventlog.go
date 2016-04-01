@@ -13,7 +13,6 @@ import (
 	"github.com/elastic/beats/winlogbeat/sys"
 	win "github.com/elastic/beats/winlogbeat/sys/wineventlog"
 	"github.com/joeshaw/multierror"
-	"golang.org/x/sys/windows"
 )
 
 const (
@@ -82,34 +81,39 @@ func (l *winEventLog) Name() string {
 	return l.channelName
 }
 
-func (l *winEventLog) Open(recordNumber uint64) error {
+type signalEvent struct {
+	handle syscall.Handle
+}
+
+func (l *winEventLog) Open(recordNumber uint64) (<-chan struct{}, error) {
 	bookmark, err := win.CreateBookmark(l.channelName, recordNumber)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer win.Close(bookmark)
 
 	// Using a pull subscription to receive events. See:
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa385771(v=vs.85).aspx#pull
-	signalEvent, err := windows.CreateEvent(nil, 0, 0, nil)
+	signaller, err := sys.NewSignaller()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	debugf("%s using subscription query=%s", l.logPrefix, l.query)
 	subscriptionHandle, err := win.Subscribe(
 		0, // Session - nil for localhost
-		signalEvent,
+		signaller.Handle(),
 		"",       // Channel - empty b/c channel is in the query
 		l.query,  // Query - nil means all events
 		bookmark, // Bookmark - for resuming from a specific event
 		win.EvtSubscribeStartAfterBookmark)
 	if err != nil {
-		return err
+		signaller.Close()
+		return nil, err
 	}
 
 	l.subscription = subscriptionHandle
-	return nil
+	return signaller.Channel(), nil
 }
 
 func (l *winEventLog) Read() ([]Record, error) {

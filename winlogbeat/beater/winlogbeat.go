@@ -186,7 +186,7 @@ func (eb *Winlogbeat) processEventLog(
 ) {
 	defer wg.Done()
 
-	err := api.Open(state.RecordNumber)
+	sig, err := api.Open(state.RecordNumber)
 	if err != nil {
 		logp.Warn("EventLog[%s] Open() error. No events will be read from "+
 			"this source. %v", api.Name(), err)
@@ -202,26 +202,31 @@ func (eb *Winlogbeat) processEventLog(
 
 	debugf("EventLog[%s] opened successfully", api.Name())
 
-loop:
 	for {
 		select {
 		case <-eb.done:
-			break loop
-		default:
+			return
+		case <-sig:
+			err = eb.read(api)
+			if err != nil {
+				logp.Err("failed reading from %s: %v", api.Name(), err)
+				return
+			}
 		}
+	}
+}
 
+func (eb *Winlogbeat) read(api eventlog.EventLog) error {
+	for {
 		// Read from the event.
 		records, err := api.Read()
 		if err != nil {
 			logp.Warn("EventLog[%s] Read() error: %v", api.Name(), err)
-			break
+			return err
 		}
 		debugf("EventLog[%s] Read() returned %d records", api.Name(), len(records))
 		if len(records) == 0 {
-			// TODO: Consider implementing notifications using
-			// NotifyChangeEventLog instead of polling.
-			time.Sleep(time.Second)
-			continue
+			return nil
 		}
 
 		events := make([]common.MapStr, 0, len(records))
@@ -237,16 +242,16 @@ loop:
 			publishedEvents.Add(api.Name(), numEvents)
 			logp.Info("EventLog[%s] Successfully published %d events",
 				api.Name(), numEvents)
-		} else {
-			logp.Warn("EventLog[%s] Failed to publish %d events",
-				api.Name(), numEvents)
-			publishedEvents.Add("failures", 1)
-		}
 
-		eb.checkpoint.Persist(api.Name(),
-			records[len(records)-1].RecordID,
-			records[len(records)-1].TimeCreated.SystemTime.UTC())
+			eb.checkpoint.Persist(api.Name(),
+				records[len(records)-1].RecordID,
+				records[len(records)-1].TimeCreated.SystemTime.UTC())
+		} else {
+			publishedEvents.Add("failures", numEvents)
+			return fmt.Errorf("failed to publish %d events", numEvents)
+		}
 	}
+	return nil
 }
 
 // uptime returns a map of uptime related metrics.
