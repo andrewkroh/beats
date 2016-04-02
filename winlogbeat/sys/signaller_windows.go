@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/sys/windows"
 "fmt"
+	"time"
 )
 
 // Add -trace to enable debug prints around syscalls.
@@ -41,20 +42,31 @@ func NewSignaller() (*Signaller, error) {
 
 	go func() {
 		defer close(s.signal)
-		for {
-			fmt.Println("waiting")
-			err := s.wait()
-			if err != nil {
-				fmt.Println("wait err", err)
-				return
-			}
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
 
-			fmt.Println("Wait signalled")
+		for {
 			select {
 			case <-s.done:
 				return
-			case s.signal <- struct{}{}:
-				_ResetEvent(syscall.Handle(s.event))
+			case <-ticker.C:
+				status, err := windows.WaitForSingleObject(s.event, 0)
+				switch status {
+				case windows.WAIT_TIMEOUT:
+				case windows.WAIT_OBJECT_0:
+					fmt.Println("wait signalled")
+					select {
+					case <-s.done:
+						return
+					case s.signal <- struct{}{}:
+						_ResetEvent(syscall.Handle(s.event))
+					}
+				case windows.WAIT_FAILED:
+					fmt.Println("wait failed", status, err)
+					return
+				default:
+					fmt.Println("wait failed unknown err", status)
+				}
 			}
 		}
 	}()
