@@ -13,7 +13,6 @@ import (
 	"github.com/elastic/beats/winlogbeat/sys"
 	win "github.com/elastic/beats/winlogbeat/sys/wineventlog"
 	"github.com/joeshaw/multierror"
-	"golang.org/x/sys/windows"
 )
 
 const (
@@ -91,18 +90,19 @@ func (l *winEventLog) Open(recordNumber uint64) error {
 
 	// Using a pull subscription to receive events. See:
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa385771(v=vs.85).aspx#pull
-	signalEvent, err := windows.CreateEvent(nil, 0, 0, nil)
-	if err != nil {
-		return nil
-	}
+	//signalEvent, err := windows.CreateEvent(nil, 0, 0, nil)
+	//if err != nil {
+	//	return nil
+	//}
 
 	debugf("%s using subscription query=%s", l.logPrefix, l.query)
 	subscriptionHandle, err := win.Subscribe(
 		0, // Session - nil for localhost
-		signalEvent,
+		0,
 		"",       // Channel - empty b/c channel is in the query
 		l.query,  // Query - nil means all events
 		bookmark, // Bookmark - for resuming from a specific event
+		eventCallback,
 		win.EvtSubscribeStartAfterBookmark)
 	if err != nil {
 		return err
@@ -110,6 +110,11 @@ func (l *winEventLog) Open(recordNumber uint64) error {
 
 	l.subscription = subscriptionHandle
 	return nil
+}
+
+func eventCallback(action uint32, userContext uintptr, event win.EvtHandle) int {
+	fmt.Printf("Callback %+v\n", event)
+	return 0
 }
 
 func (l *winEventLog) Read() ([]Record, error) {

@@ -1,5 +1,6 @@
 package wineventlog
 
+import "C"
 import (
 	"bytes"
 	"encoding/binary"
@@ -92,6 +93,7 @@ func Subscribe(
 	channelPath string,
 	query string,
 	bookmark EvtHandle,
+	callback EVT_SUBSCRIBE_CALLBACK,
 	flags EvtSubscribeFlag,
 ) (EvtHandle, error) {
 	var err error
@@ -111,8 +113,13 @@ func Subscribe(
 		}
 	}
 
+	var callbackPtr uintptr
+	if callback != nil {
+		callbackPtr = syscall.NewCallback(callback)
+	}
+
 	eventHandle, err := _EvtSubscribe(session, uintptr(event), cp, q, bookmark,
-		0, 0, flags)
+		0, syscall.Handle(callbackPtr), flags)
 	if err != nil {
 		return 0, err
 	}

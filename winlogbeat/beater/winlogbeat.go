@@ -207,7 +207,7 @@ loop:
 		select {
 		case <-eb.done:
 			break loop
-		default:
+		//default:
 		}
 
 		// Read from the event.
