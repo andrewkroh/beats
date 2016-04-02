@@ -67,6 +67,7 @@ type winEventLog struct {
 	config       winEventLogConfig
 	query        string
 	channelName  string        // Name of the channel from which to read.
+	signalEvent  windows.Handle
 	subscription win.EvtHandle // Handle to the subscription.
 	maxRead      int           // Maximum number returned in one Read.
 
@@ -91,7 +92,7 @@ func (l *winEventLog) Open(recordNumber uint64) error {
 
 	// Using a pull subscription to receive events. See:
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa385771(v=vs.85).aspx#pull
-	signalEvent, err := windows.CreateEvent(nil, 0, 0, nil)
+	l.signalEvent, err = windows.CreateEvent(nil, 0, 1, nil)
 	if err != nil {
 		return nil
 	}
@@ -99,7 +100,7 @@ func (l *winEventLog) Open(recordNumber uint64) error {
 	debugf("%s using subscription query=%s", l.logPrefix, l.query)
 	subscriptionHandle, err := win.Subscribe(
 		0, // Session - nil for localhost
-		signalEvent,
+		l.signalEvent,
 		"",       // Channel - empty b/c channel is in the query
 		l.query,  // Query - nil means all events
 		bookmark, // Bookmark - for resuming from a specific event
@@ -113,6 +114,23 @@ func (l *winEventLog) Open(recordNumber uint64) error {
 }
 
 func (l *winEventLog) Read() ([]Record, error) {
+	s, err := windows.WaitForSingleObject(l.signalEvent, 0)
+	switch s {
+	case windows.WAIT_OBJECT_0:
+		// TODO: this would need to read to completion or else the signal
+	 	// will not reset itself
+	case windows.WAIT_FAILED:
+		debugf("%s signal failed", l.logPrefix)
+		return nil, err
+	case windows.WAIT_TIMEOUT:
+		return nil, nil
+	case windows.WAIT_ABANDONED:
+		debugf("%s wait abandoned", l.logPrefix)
+		return nil, fmt.Errorf("%s unexpected result from WaitForSingleObject abandoned", l.logPrefix)
+	default:
+		return nil, fmt.Errorf("%s unexpected result from WaitForSingleObject", l.logPrefix)
+	}
+
 	handles, err := win.EventHandles(l.subscription, l.maxRead)
 	if err == win.ERROR_NO_MORE_ITEMS {
 		detailf("%s No more events", l.logPrefix)
