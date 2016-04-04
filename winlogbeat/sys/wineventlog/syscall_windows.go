@@ -193,6 +193,8 @@ func (e EvtSystemPropertyID) String() string {
 	return s
 }
 
+type EVT_SUBSCRIBE_CALLBACK func(action uint32, userContext uintptr, event EvtHandle) uint32
+
 // Add -trace to enable debug prints around syscalls.
 //go:generate go run $GOROOT/src/syscall/mksyscall_windows.go -output zsyscall_windows.go syscall_windows.go
 

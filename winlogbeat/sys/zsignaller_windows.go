@@ -10,12 +10,26 @@ var _ unsafe.Pointer
 var (
 	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
 
-	procResetEvent = modkernel32.NewProc("ResetEvent")
+	procResetEvent             = modkernel32.NewProc("ResetEvent")
+	procWaitForMultipleObjects = modkernel32.NewProc("WaitForMultipleObjects")
 )
 
 func _ResetEvent(event syscall.Handle) (err error) {
 	r1, _, e1 := syscall.Syscall(procResetEvent.Addr(), 1, uintptr(event), 0, 0)
 	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func _WaitForMultipleObjects(count uint32, handles *syscall.Handle, waitAll uint32, milliseconds uint32) (index uint32, err error) {
+	r0, _, e1 := syscall.Syscall6(procWaitForMultipleObjects.Addr(), 4, uintptr(count), uintptr(unsafe.Pointer(handles)), uintptr(waitAll), uintptr(milliseconds), 0, 0)
+	index = uint32(r0)
+	if index == 0 {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
