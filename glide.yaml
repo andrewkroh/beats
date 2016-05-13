@@ -65,3 +65,4 @@ import:
   version: cd6e0b425dfeaa184e93ed993aaee9dea03dc14d
 - package: github.com/shirou/gopsutil
   version: v2.0.0
+- package: github.com/fd0/go-iptables
