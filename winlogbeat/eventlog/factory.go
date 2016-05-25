@@ -126,7 +126,9 @@ func New(options map[string]interface{}) (EventLog, error) {
 	// Use the API with the highest priority.
 	keys := make([]int, 0, len(eventLogs))
 	for key := range eventLogs {
-		keys = append(keys, key)
+		if key >= 0 {
+			keys = append(keys, key)
+		}
 	}
 	sort.Ints(keys)
 

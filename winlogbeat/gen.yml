@@ -1,0 +1,35 @@
+winlogbeat.event_logs:
+  # Logon Failure Spike
+  - name: Security
+    api:  generator
+    duration: 45m
+    start:    -15h
+    interval: 15s
+    event_id: 4625
+    fields_under_root: true
+#    fields:
+#      location: "41.12,-71.34"
+    logon_type: 10
+  # Logon Failure Spike
+  - name: Security
+    api:  generator
+    duration: 24h
+    start:    -24h
+    interval: 45m
+    event_id: 4625
+    logon_type: 2
+  # Logon Success
+  - name: Security
+    api:  generator
+    duration: 24h
+    start:    -24h
+    interval: 15m
+    event_id: 4624
+    logon_type: 2
+
+#output.elasticsearch:
+#  hosts: ["localhost:9200"]
+#output.console:
+#  pretty: true
+output.logstash:
+  hosts: ["192.168.99.100:5044"]
