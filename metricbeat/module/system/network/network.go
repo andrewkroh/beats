@@ -3,11 +3,13 @@
 package network
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/metricbeat/mb"
+	"github.com/elastic/beats/metricbeat/module/system"
 
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/net"
@@ -29,27 +31,16 @@ type MetricSet struct {
 
 // New is a mb.MetricSetFactory that returns a new MetricSet.
 func New(base mb.BaseMetricSet) (mb.MetricSet, error) {
-	// Unpack additional configuration options.
-	config := struct {
-		Interfaces []string `config:"interfaces"`
-	}{}
-	err := base.Module().UnpackConfig(&config)
-	if err != nil {
-		return nil, err
+	systemModule, ok := base.Module().(*system.Module)
+	if !ok {
+		return nil, fmt.Errorf("unexpected module type")
 	}
-
-	var interfaceSet map[string]struct{}
-	if len(config.Interfaces) > 0 {
-		interfaceSet = make(map[string]struct{}, len(config.Interfaces))
-		for _, ifc := range config.Interfaces {
-			interfaceSet[strings.ToLower(ifc)] = struct{}{}
-		}
-		debugf("network io stats will be included for %v", interfaceSet)
-	}
+	debugf("network io stats will be included for %v",
+		systemModule.NetworkInterfaces)
 
 	return &MetricSet{
 		BaseMetricSet: base,
-		interfaces:    interfaceSet,
+		interfaces:    systemModule.NetworkInterfaces,
 	}, nil
 }
 

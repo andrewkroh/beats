@@ -3,6 +3,7 @@ package system
 import (
 	"flag"
 	"math"
+	"strings"
 	"sync"
 
 	"github.com/elastic/beats/metricbeat/mb"
@@ -23,7 +24,8 @@ func init() {
 
 type Module struct {
 	mb.BaseModule
-	HostFS string // Mountpoint of the host's filesystem for use in monitoring inside a container.
+	HostFS            string              // Mountpoint of the host's filesystem for use in monitoring inside a container.
+	NetworkInterfaces map[string]struct{} // Network interface names to report metrics for.
 }
 
 func NewModule(base mb.BaseModule) (mb.Module, error) {
@@ -32,7 +34,29 @@ func NewModule(base mb.BaseModule) (mb.Module, error) {
 		configureHostFS()
 	})
 
-	return &Module{BaseModule: base, HostFS: *HostFS}, nil
+	// Unpack additional configuration options.
+	config := struct {
+		Interfaces []string `config:"interfaces"`
+	}{}
+	err := base.UnpackConfig(&config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build a "set" from the list of interfaces.
+	var interfaceSet map[string]struct{}
+	if len(config.Interfaces) > 0 {
+		interfaceSet = make(map[string]struct{}, len(config.Interfaces))
+		for _, ifc := range config.Interfaces {
+			interfaceSet[strings.ToLower(ifc)] = struct{}{}
+		}
+	}
+
+	return &Module{
+		BaseModule:        base,
+		HostFS:            *HostFS,
+		NetworkInterfaces: interfaceSet,
+	}, nil
 }
 
 func Round(val float64, roundOn float64, places int) (newVal float64) {
