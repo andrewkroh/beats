@@ -40,7 +40,7 @@ metricbeat.modules:
 - module: system
   metricsets: [core, memory, process]
   processes: ['winlogbeat\.exe']
-  period: 500ms
+  period: 250ms
 
 output.elasticsearch.hosts: ['{{.ElasticsearchURL}}']
 
@@ -54,7 +54,7 @@ logging.files:
 // Flags
 var (
 	testTimeout      = flag.Duration("timeout", 5*time.Minute, "Test timeout")
-	elasticsearchURL = flag.String("es-url", "", "Elasticsearch URL where metrics will be sent")
+	elasticsearchURL = flag.String("es", "", "Elasticsearch URL where metrics will be sent")
 )
 
 var log = logrus.WithField("package", "benchmark")
@@ -226,6 +226,7 @@ func runBenchmark() error {
 		log.Println("metricbeat output: ", metricbeat.CombinedOutput().String())
 	}()
 
+	time.Sleep(5 * time.Second)
 	winlogbeat := &integ.Beat{
 		Dir:             tempDir,
 		Path:            winlogbeatPath,

@@ -17,6 +17,7 @@ import (
 	_ "github.com/elastic/beats/metricbeat/module/docker/info"
 	_ "github.com/elastic/beats/metricbeat/module/docker/memory"
 	_ "github.com/elastic/beats/metricbeat/module/docker/network"
+	_ "github.com/elastic/beats/metricbeat/module/golang"
 	_ "github.com/elastic/beats/metricbeat/module/haproxy"
 	_ "github.com/elastic/beats/metricbeat/module/haproxy/info"
 	_ "github.com/elastic/beats/metricbeat/module/haproxy/stat"
