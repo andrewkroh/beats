@@ -11,27 +11,14 @@
     },
     "system": {
         "temperature": {
-            "TA0P": 0,
-            "TA1P": 0,
-            "TB0T": 38,
-            "TB1T": 36,
-            "TB2T": 38,
-            "TB3T": 0,
-            "TC0D": 0,
-            "TC0H": 0,
-            "TC0P": 56,
-            "TG0D": 66,
-            "TG0H": 0,
-            "TG0P": 61,
-            "TH0P": 0,
-            "TI0P": 0,
-            "TI1P": 0,
-            "TM0P": 56,
-            "TM0S": 0,
-            "TN0D": 0,
-            "TN0H": 0,
-            "TN0P": 0,
-            "TW0P": 57
+            "cpu_0_proximity": 53,
+            "enclosure_base_0": 38,
+            "enclosure_base_1": 36,
+            "enclosure_base_2": 38,
+            "gpu_0_diode": 63,
+            "gpu_0_proximity": 57,
+            "memory_slots_proximity": 54,
+            "wireless_module": 55
         }
     },
     "type": "metricsets"
