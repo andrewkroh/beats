@@ -19,7 +19,7 @@ indent_style = space
 indent_style = space
 indent_size = 4
 
-[*.yml]
+[*.{lua,yml}]
 indent_style = space
 indent_size = 2
 
