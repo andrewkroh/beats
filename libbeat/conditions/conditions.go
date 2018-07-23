@@ -24,6 +24,8 @@ import (
 	"github.com/elastic/beats/libbeat/logp"
 )
 
+const logName = "conditions"
+
 // Config represents a configuration for a condition, as you would find it in the config files.
 type Config struct {
 	Equals    *Fields  `config:"equals"`
@@ -31,6 +33,7 @@ type Config struct {
 	Regexp    *Fields  `config:"regexp"`
 	Range     *Fields  `config:"range"`
 	HasFields []string `config:"has_fields"`
+	Network   *Fields  `config:"network"`
 	OR        []Config `config:"or"`
 	AND       []Config `config:"and"`
 	NOT       *Config  `config:"not"`
@@ -69,6 +72,8 @@ func NewCondition(config *Config) (Condition, error) {
 		condition, err = NewRangeCondition(config.Range.fields)
 	case config.HasFields != nil:
 		condition = NewHasFieldsCondition(config.HasFields)
+	case config.Network != nil:
+		condition, err = NewNetworkCondition(config.Network.fields)
 	case len(config.OR) > 0:
 		var conditionsList []Condition
 		conditionsList, err = NewConditionList(config.OR)
@@ -90,7 +95,7 @@ func NewCondition(config *Config) (Condition, error) {
 		return nil, err
 	}
 
-	logp.Debug("processors", "New condition %s", condition)
+	logp.L().Named(logName).Debugf("New condition %v", condition)
 	return condition, nil
 }
 
