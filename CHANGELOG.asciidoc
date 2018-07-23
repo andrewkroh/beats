@@ -402,6 +402,41 @@ https://github.com/elastic/beats/compare/v6.2.3...v6.3.0[View commits]
 - Do not log errors if X-Pack Monitoring is enabled but Elastisearch X-Pack is not. {pull}6627[6627]
 - Add rename processor. {pull}6292[6292]
 - Allow override of dynamic template `match_mapping_type` for fields with object_type. {pull}6691[6691]
+- Add IP-addresses and MAC-addresses to add_host_metadata. {pull}6878[6878]
+- Added a seccomp (secure computing) filter on Linux that whitelists the
+  necessary system calls used by each Beat. {issue}5213[5213]
+- Update Sarama to v1.16.0, adding better support for kafka 0.11, 1.0, and 1.1 {pull}7025[7025]
+- Ship fields.yml as part of the binary {pull}4834[4834]
+- Added options to dev-tools/cmd/dashboards/export_dashboard.go: -indexPattern to include index-pattern in output, -quiet to be quiet. {pull}7101[7101]
+- Add Indexer indexing by pod uid. Enable pod uid metadata gathering in add_kubernetes_metadata. Extended Matcher log_path matching to support volume mounts {pull}7072[7072]
+- Add Kibana module with log fileset. {pull}7052[7052]
+- Add default_fields to Elasticsearch template when connecting to Elasticsearch >= 7.0. {pull}7015[7015]
+- Add support for loading a template.json file directly instead of using fields.yml. {pull}7039[7039]
+- Add support for keyword multifields in field.yml. {pull}7131[7131]
+- Add dissect processor. {pull}6925[6925]
+- Add experimental Jolokia Discovery autodiscover provider. {pull}7141[7141]
+- Add owner object info to Kubernetes metadata. {pull}7231[7231]
+- Add beat export dashboard command. {pull}7239[7239]
+- Add support for docker autodiscover to monitor containers on host network {pull}6708[6708]
+- Add ability to define input configuration as stringified JSON for autodiscover. {pull}7372[7372]
+- Add processor definition support for hints builder {pull}7386[7386]
+- Add support to disable html escaping in outputs. {pull}7445[7445]
+- Refactor error handing in schema.Apply(). {pull}7335[7335]
+- Add additional types to kubernetes metadata {pull}7457[7457]
+- Add module state reporting for X-Pack Monitoring. {pull}7075[7075]
+- Release the rename processor as GA. {pull}7656[7656]
+- Add network condition that can be used with processors and auto-discover to
+  determine if an IP value matches a network address space. {pull}NNNN[NNNN]
+
+*Auditbeat*
+
+- Added caching of UID and GID values to auditd module. {pull}6978[6978]
+- Updated syscall tables for Linux 4.16. {pull}6978[6978]
+- Added better error messages for when the auditd module fails due to the
+  Linux kernel not supporting auditing (CONFIG_AUDIT=n). {pull}7012[7012]
+- Added XXH64 hash option for file integrity checks. {pull}7311[7311]
+- Added the `show auditd-rules` and `show auditd-status` commands to show kernel rules and status. {pull}7114[7114]
+- Add kubernetes specs for auditbeat file integrity monitoring {pull}7642[7642]
 
 *Filebeat*
 
