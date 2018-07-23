@@ -105,6 +105,7 @@ var httpResponseTestEvent = &beat.Event{
 }
 
 func testConfig(t *testing.T, expected bool, event *beat.Event, config *Config) {
+	t.Helper()
 	logp.TestingSetup()
 	cond, err := NewCondition(config)
 	assert.Nil(t, err)

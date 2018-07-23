@@ -33,6 +33,7 @@ type Config struct {
 	Regexp    *Fields  `config:"regexp"`
 	Range     *Fields  `config:"range"`
 	HasFields []string `config:"has_fields"`
+	Network   *Fields  `config:"network"`
 	OR        []Config `config:"or"`
 	AND       []Config `config:"and"`
 	NOT       *Config  `config:"not"`
@@ -71,6 +72,8 @@ func NewCondition(config *Config) (Condition, error) {
 		condition, err = NewRangeCondition(config.Range.fields)
 	case config.HasFields != nil:
 		condition = NewHasFieldsCondition(config.HasFields)
+	case config.Network != nil:
+		condition, err = NewNetworkCondition(config.Network.fields)
 	case len(config.OR) > 0:
 		var conditionsList []Condition
 		conditionsList, err = NewConditionList(config.OR)
