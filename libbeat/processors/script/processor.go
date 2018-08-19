@@ -24,6 +24,7 @@ import (
 
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/processors"
+	"github.com/elastic/beats/libbeat/processors/script/goja"
 	"github.com/elastic/beats/libbeat/processors/script/javascript"
 	"github.com/elastic/beats/libbeat/processors/script/lua"
 )
@@ -45,6 +46,8 @@ func newScriptProcessor(c *common.Config) (processors.Processor, error) {
 		return lua.NewProcessorFromConfig(c)
 	case "javascript", "js":
 		return javascript.NewProcessorFromConfig(c)
+	case "goja":
+		return goja.NewProcessorFromConfig(c)
 	default:
 		return nil, errors.Errorf("script type must be defined (e.g. type: lua or type: js)")
 	}
