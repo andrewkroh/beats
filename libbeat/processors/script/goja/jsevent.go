@@ -34,7 +34,10 @@ type jsEvent struct {
 }
 
 func newJSEvent(log *logp.Logger, vm *goja.Runtime) (*jsEvent, error) {
-	e := &jsEvent{}
+	e := &jsEvent{
+		log: log,
+		vm: vm,
+	}
 
 	obj, err := makeObject(e, vm)
 	if err != err {
