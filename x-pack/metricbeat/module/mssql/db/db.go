@@ -5,11 +5,14 @@
 package db
 
 import (
-	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/pkg/errors"
+
 	"github.com/elastic/beats/libbeat/common/cfgwarn"
 	"github.com/elastic/beats/metricbeat/mb"
 	"github.com/elastic/beats/x-pack/metricbeat/module/mssql"
-	"github.com/pkg/errors"
+
+	// Register driver.
+	_ "github.com/denisenkom/go-mssqldb"
 )
 
 // init registers the MetricSet with the central registry as soon as the program

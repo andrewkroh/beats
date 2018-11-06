@@ -8,9 +8,10 @@ import (
 	"database/sql"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/elastic/beats/libbeat/common"
 	s "github.com/elastic/beats/libbeat/common/schema"
-	"github.com/pkg/errors"
 )
 
 func NewFetcher(config *Config, qs []string, schema *s.Schema) (*fetcher, error) {
