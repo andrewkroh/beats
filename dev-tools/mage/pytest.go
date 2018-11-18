@@ -32,18 +32,24 @@ import (
 )
 
 const (
-	libbeatRequirements = "libbeat/tests/system/requirements.txt"
+	libbeatRequirements = "{{ elastic_beats_dir}}/libbeat/tests/system/requirements.txt"
 )
 
 var (
-	pythonVirtualenvDir string
+	// VirtualenvReqs specifies a list of virtualenv requirements files to be
+	// used when calling PythonVirtualenv(). It defaults to the libbeat
+	// requirements.txt file.
+	VirtualenvReqs = []string{
+		libbeatRequirements,
+	}
+
+	pythonVirtualenvDir string // Location of python virtualenv (lazily set).
 )
 
 // PythonTestArgs are the arguments used for the "python*Test" targets and they
 // define how "nosetests" is invoked.
 type PythonTestArgs struct {
 	TestName            string            // Test name used in logging.
-	VirtualenvReqs      []string          // requirements.txt files.
 	Env                 map[string]string // Env vars to add to the current env.
 	XUnitReportFile     string            // File to write the XUnit XML test report to.
 	CoverageProfileFile string            // Test coverage profile file.
@@ -51,11 +57,9 @@ type PythonTestArgs struct {
 
 func makePythonTestArgs(name string) PythonTestArgs {
 	fileName := fmt.Sprintf("build/TEST-python-%s", strings.Replace(strings.ToLower(name), " ", "_", -1))
-	defaultReqsTxt := filepath.Join(MustExpand("{{ elastic_beats_dir }}"), libbeatRequirements)
 
 	params := PythonTestArgs{
 		TestName:        name,
-		VirtualenvReqs:  []string{defaultReqsTxt},
 		Env:             map[string]string{},
 		XUnitReportFile: fileName + ".xml",
 	}
@@ -78,7 +82,7 @@ func DefaultPythonTestIntegrationArgs() PythonTestArgs { return makePythonTestAr
 func PythonNoseTest(params PythonTestArgs) error {
 	fmt.Println(">> python test:", params.TestName, "Testing")
 
-	ve, err := PythonVirtualenv(params.VirtualenvReqs...)
+	ve, err := PythonVirtualenv()
 	if err != nil {
 		return err
 	}
@@ -139,17 +143,19 @@ func PythonNoseTest(params PythonTestArgs) error {
 // PythonVirtualenv constructs a virtualenv that contains the given modules as
 // defined in the requirements file pointed to by requirementsTxt. It returns
 // the path to the virutalenv.
-func PythonVirtualenv(requirementsTxt ...string) (string, error) {
+func PythonVirtualenv() (string, error) {
 	// Determine the location of the virtualenv.
 	ve, err := pythonVirtualenvPath()
 	if err != nil {
 		return "", err
 	}
 
+	reqs := expandVirtualenvReqs()
+
 	// Only execute if requirements.txt is newer than the virtualenv activate
 	// script.
 	activate := virtualenvPath(ve, "activate")
-	if IsUpToDate(activate, requirementsTxt...) {
+	if IsUpToDate(activate, reqs...) {
 		return pythonVirtualenvDir, nil
 	}
 
@@ -171,7 +177,7 @@ func PythonVirtualenv(requirementsTxt ...string) (string, error) {
 	if !mg.Verbose() {
 		args = append(args, "--quiet")
 	}
-	for _, req := range requirementsTxt {
+	for _, req := range reqs {
 		args = append(args, "-Ur", req)
 	}
 
@@ -239,4 +245,12 @@ func lookVirtualenvPath(ve, file string) (string, error) {
 	defer os.Setenv("PATH", path)
 
 	return exec.LookPath(file)
+}
+
+func expandVirtualenvReqs() []string {
+	out := make([]string, 0, len(VirtualenvReqs))
+	for _, path := range VirtualenvReqs {
+		out = append(out, MustExpand(path))
+	}
+	return out
 }
