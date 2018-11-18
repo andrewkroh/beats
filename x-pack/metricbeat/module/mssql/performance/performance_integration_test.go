@@ -9,22 +9,26 @@ package performance
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/libbeat/tests/compose"
 	mbtest "github.com/elastic/beats/metricbeat/mb/testing"
-	"github.com/stretchr/testify/assert"
+	mssqltest "github.com/elastic/beats/x-pack/metricbeat/module/mssql/testing"
 )
 
 func TestFetch(t *testing.T) {
+	logp.TestingSetup()
 	compose.EnsureUp(t, "mssql")
 
-	f := mbtest.NewReportingMetricSetV2(t, getConfig())
+	f := mbtest.NewReportingMetricSetV2(t, mssqltest.GetConfig("performance"))
 	events, errs := mbtest.ReportingFetchV2(f)
-	assert.Empty(t, errs)
+	if len(errs) > 0 {
+		t.Fatal(errs)
+	}
 	if !assert.NotEmpty(t, events) {
 		t.FailNow()
 	}
-
-	t.Logf("Module: %s Metricset: %s", f.Module().Name(), f.Name())
 
 	//TODO Each event is a different field but the order is unknown to check
 	// for _, event := range events {
@@ -36,15 +40,4 @@ func TestFetch(t *testing.T) {
 	// 		assert.True(t, pageSplitsSecondsFloat > 0)
 	// 	}
 	// }
-}
-
-func getConfig() map[string]interface{} {
-	return map[string]interface{}{
-		"module":     "mssql",
-		"metricsets": []string{"performance"},
-		"host":       "127.0.0.1",
-		"user":       "sa",
-		"password":   "1234_asdf",
-		"port":       1433,
-	}
 }

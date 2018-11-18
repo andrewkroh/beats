@@ -7,9 +7,12 @@ package mssql
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/elastic/beats/metricbeat/mb"
 	"net/url"
+
+	"github.com/elastic/beats/metricbeat/mb"
+
+	// Register driver.
+	_ "github.com/denisenkom/go-mssqldb"
 )
 
 func init() {
