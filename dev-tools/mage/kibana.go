@@ -87,3 +87,26 @@ func KibanaDashboards(moduleDirs ...string) error {
 
 	return indexPatternCmd()
 }
+
+func PackageKibanaDashboardsFromBuildDir() {
+	kibanaDashboards := PackageFile{
+		Source: "build/kibana",
+		Mode:   0644,
+	}
+
+	for _, pkgArgs := range Packages {
+		for _, pkgType := range pkgArgs.Types {
+			switch pkgType {
+			case TarGz, Zip, Docker:
+				pkgArgs.Spec.ReplaceFile("kibana", kibanaDashboards)
+			case Deb, RPM:
+				pkgArgs.Spec.ReplaceFile("/usr/share/{{.BeatName}}/kibana", kibanaDashboards)
+			case DMG:
+				pkgArgs.Spec.ReplaceFile("/Library/Application Support/{{.BeatVendor}}/{{.BeatName}}/kibana", kibanaDashboards)
+			default:
+				panic(errors.Errorf("unhandled package type: %v", pkgType))
+			}
+			break
+		}
+	}
+}

@@ -15,7 +15,7 @@ collect: collect-docs configs kibana
 
 # Collects all module configs
 .PHONY: configs
-configs: python-env
+configs:
 	@cat ${ES_BEATS}/auditbeat/_meta/common.p1.yml \
 		<(go run scripts/generate_config.go -os ${DEV_OS} -concat) \
 		${ES_BEATS}/auditbeat/_meta/common.p2.yml > _meta/beat.yml
@@ -32,7 +32,5 @@ collect-docs: python-env
 
 # Collects all module dashboards
 .PHONY: kibana
-kibana:
-	@-rm -rf _meta/kibana.generated
-	@mkdir -p _meta/kibana.generated
-	@-cp -pr module/*/_meta/kibana/* _meta/kibana.generated
+kibana: mage
+	mage dashboards

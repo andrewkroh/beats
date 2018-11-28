@@ -17,7 +17,7 @@ XPACK_SUFFIX=x-pack/
 # Mage. For compatibility with CI testing these projects support a subset of the
 # makefile targets. After all Beats converge to primarily using Mage we can
 # remove this and treat all sub-projects the same.
-PROJECTS_XPACK_MAGE=x-pack/filebeat x-pack/metricbeat
+PROJECTS_XPACK_MAGE=x-pack/auditbeat x-pack/filebeat x-pack/metricbeat
 
 # Runs complete testsuites (unit, system, integration) for all beats with coverage and race detection.
 # Also it builds the docs and the generators
