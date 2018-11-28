@@ -33,6 +33,10 @@ help:
 	@echo Use mage rather than make. Here are the available mage targets:
 	@mage -l
 
+.PHONY: release
+release: mage
+	mage package
+
 .PHONY: testsuite
 testsuite: mage
 	mage update build unitTest integTest

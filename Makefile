@@ -156,8 +156,8 @@ snapshot:
 # Builds a release.
 .PHONY: release
 release: beats-dashboards
-	@$(foreach var,$(BEATS),$(MAKE) -C $(var) release || exit 1;)
-	@$(foreach var,$(BEATS), \
+	@$(foreach var,$(BEATS) $(PROJECTS_XPACK_MAGE),$(MAKE) -C $(var) release || exit 1;)
+	@$(foreach var,$(BEATS) $(PROJECTS_XPACK_MAGE), \
       test -d $(var)/build/distributions && test -n "$$(ls $(var)/build/distributions)" || exit 0; \
       mkdir -p build/distributions/$(subst $(XPACK_SUFFIX),'',$(var)) && mv -f $(var)/build/distributions/* build/distributions/$(subst $(XPACK_SUFFIX),'',$(var))/ || exit 1;)
 
