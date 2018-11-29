@@ -48,10 +48,9 @@ var Elastic = `
 
 func Find(name string) (string, error) {
 	switch name {
-
-	case "ASL2":
+	case "ASL2", "ASL 2.0":
 		return ASL2, nil
-	case "Elastic":
+	case "Elastic", "Elastic License":
 		return Elastic, nil
 	}
 	return "", fmt.Errorf("unknown license: %s", name)
