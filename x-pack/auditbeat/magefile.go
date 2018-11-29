@@ -19,7 +19,7 @@ import (
 
 func init() {
 	mage.BeatDescription = "Audit the activities of users and processes on your system."
-	mage.BeatLicense = "Elastic"
+	mage.BeatLicense = "Elastic License"
 }
 
 // Build builds the Beat binary.
