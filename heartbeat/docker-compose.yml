@@ -4,9 +4,11 @@ services:
     build: ${PWD}/.
     depends_on:
     - proxy_dep
-    env_file:
-    - ${PWD}/build/test.env
     environment:
+    - ES_HOST=elasticsearch
+    - ES_PORT=9200
+    - ES_USER=beats
+    - ES_PASS=testing
     - REDIS_HOST=redis
     - REDIS_PORT=6379
     working_dir: /go/src/github.com/elastic/beats/heartbeat

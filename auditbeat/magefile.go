@@ -106,12 +106,13 @@ func Dashboards() error {
 	return mage.KibanaDashboards("module")
 }
 
-// Config generates both the short and reference configs.
+// Config generates both the short/reference configs and populates the modules.d
+// directory.
 func Config() error {
 	return auditbeat.Config(auditbeat.ConfigTemplateGlob)
 }
 
-// Update is an alias for running fields, dashboards, config.
+// Update is an alias for running fields, dashboards, config, includes.
 func Update() {
 	mg.SerialDeps(Fields, Dashboards, Config,
 		mage.GenerateModuleIncludeListGo,

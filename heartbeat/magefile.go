@@ -81,6 +81,7 @@ func Package() {
 	defer func() { fmt.Println("package ran for", time.Since(start)) }()
 
 	mage.UseElasticBeatPackaging()
+	mage.PackageKibanaDashboardsFromBuildDir()
 	customizePackaging()
 
 	mg.Deps(Update)
@@ -95,6 +96,7 @@ func TestPackages() error {
 
 // Update updates the generated files (aka make update).
 func Update() error {
+	// TODO: Convert this to use only Mage.
 	return sh.Run("make", "update")
 }
 
@@ -103,26 +105,90 @@ func Fields() error {
 	return mage.GenerateFieldsYAML("monitors/active")
 }
 
-// GoTestUnit executes the Go unit tests.
+// ExportDashboard exports a dashboard and writes it into the correct directory.
+//
+// Required environment variables:
+// - MODULE: Name of the module
+// - ID:     Dashboard id
+func ExportDashboard() error {
+	return mage.ExportDashboard()
+}
+
+// Dashboards collects all the dashboards and generates index patterns.
+func Dashboards() error {
+	return mage.KibanaDashboards("monitors/active")
+}
+
+// IncludeList generates include/list.go with imports for monitors.
+func IncludeList() error {
+	return mage.GenerateIncludeListGo(nil, []string{"monitors/active/*"})
+}
+
+// Fmt formats source code and adds file headers.
+func Fmt() {
+	mg.Deps(mage.Format)
+}
+
+// Check runs fmt and update then returns an error if any modifications are found.
+func Check() {
+	mg.SerialDeps(mage.Format, Update, mage.Check)
+}
+
+// IntegTest executes integration tests (it uses Docker to run the tests).
+func IntegTest() {
+	mage.AddIntegTestUsage()
+	defer mage.StopIntegTestEnv()
+	// Heartbeat doesn't have any Go tests tagged with integration so skip
+	// the dependency on GoIntegTest.
+	mg.SerialDeps(PythonIntegTest)
+}
+
+// UnitTest executes the unit tests.
+func UnitTest() {
+	mg.SerialDeps(GoUnitTest, PythonUnitTest)
+}
+
+// GoUnitTest executes the Go unit tests.
 // Use TEST_COVERAGE=true to enable code coverage profiling.
 // Use RACE_DETECTOR=true to enable the race detector.
-func GoTestUnit(ctx context.Context) error {
+func GoUnitTest(ctx context.Context) error {
 	return mage.GoTest(ctx, mage.DefaultGoTestUnitArgs())
 }
 
-// GoTestIntegration executes the Go integration tests.
+// GoIntegTest executes the Go integration tests.
 // Use TEST_COVERAGE=true to enable code coverage profiling.
 // Use RACE_DETECTOR=true to enable the race detector.
-func GoTestIntegration(ctx context.Context) error {
-	return mage.GoTest(ctx, mage.DefaultGoTestIntegrationArgs())
+func GoIntegTest(ctx context.Context) error {
+	return mage.RunIntegTest("goIntegTest", func() error {
+		return mage.GoTest(ctx, mage.DefaultGoTestIntegrationArgs())
+	})
+}
+
+// PythonUnitTest executes the python system tests.
+func PythonUnitTest() error {
+	mg.Deps(mage.BuildSystemTestBinary)
+	return mage.PythonNoseTest(mage.DefaultPythonTestUnitArgs())
+}
+
+// PythonIntegTest executes the python system tests in the integration environment (Docker).
+func PythonIntegTest(ctx context.Context) error {
+	if !mage.IsInIntegTestEnv() {
+		mg.Deps(Fields)
+	}
+	return mage.RunIntegTest("pythonIntegTest", func() error {
+		mg.Deps(mage.BuildSystemTestBinary)
+		return mage.PythonNoseTest(mage.DefaultPythonTestIntegrationArgs())
+	})
 }
 
 func customizePackaging() {
 	for _, args := range mage.Packages {
-		pkgType := args.Types[0]
-		switch pkgType {
-		case mage.Docker:
-			args.Spec.ExtraVar("linux_capabilities", "cap_net_raw=eip")
+		for _, pkgType := range args.Types {
+			switch pkgType {
+			case mage.Docker:
+				args.Spec.ExtraVar("linux_capabilities", "cap_net_raw=eip")
+			}
+			break
 		}
 	}
 }

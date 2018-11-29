@@ -114,13 +114,13 @@ func Config() {
 
 // Update is an alias for executing fields, dashboards, config, includes.
 func Update() {
-	mg.SerialDeps(Fields, Dashboards, Config, Includes,
+	mg.SerialDeps(Fields, Dashboards, Config, includeList,
 		filebeat.CollectDocs,
 		filebeat.PrepareModulePackagingOSS)
 }
 
-// Generate includes/list.go with imports for inputs.
-func Includes() error {
+// includeList generates include/list.go with imports for inputs.
+func includeList() error {
 	return mage.GenerateIncludeListGo([]string{"module"}, []string{"input/*"})
 }
 

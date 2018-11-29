@@ -28,8 +28,9 @@ class BaseTest(TestCase):
                 self.end_headers()
                 if "write_delay" in kwargs:
                     sleep(float(kwargs["write_delay"]))
-
                 self.wfile.write(content)
+            def log_message(self, format, *args):
+                return
 
         server = BaseHTTPServer.HTTPServer(('localhost', 0), HTTPHandler)
 

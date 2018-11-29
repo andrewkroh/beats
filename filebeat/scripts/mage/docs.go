@@ -34,6 +34,7 @@ func CollectDocs() error {
 		return err
 	}
 
+	// TODO: Port this script to Go.
 	return sh.Run(python,
 		mage.OSSBeatDir("scripts/docs_collector.py"),
 		"--beat", mage.BeatName)
