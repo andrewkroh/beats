@@ -7,7 +7,6 @@ ES_BEATS?=..
 
 include ${ES_BEATS}/libbeat/scripts/Makefile
 
-# Overwrite the update target (this causes a warning).
 .PHONY: update
 update: mage
 	mage update
