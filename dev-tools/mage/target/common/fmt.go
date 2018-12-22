@@ -15,27 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// +build mage
-
-package main
+package common
 
 import (
-	"github.com/elastic/beats/dev-tools/mage"
+	"github.com/magefile/mage/mg"
 
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/common"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/build"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
-	// mage:import
-	auditbeat "github.com/elastic/beats/auditbeat/scripts/mage"
+	"github.com/elastic/beats/dev-tools/mage"
 )
 
-func init() {
-	auditbeat.SelectLogic = auditbeat.OSSProject
-
-	mage.BeatDescription = "Audit the activities of users and processes on your system."
+// Fmt formats source code (.go and .py) and adds license headers.
+func Fmt() {
+	mg.Deps(mage.Format)
 }

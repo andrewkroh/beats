@@ -15,27 +15,30 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// +build mage
-
-package main
+package unittest
 
 import (
-	"github.com/elastic/beats/dev-tools/mage"
+	"context"
 
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/common"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/build"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
-	// mage:import
-	auditbeat "github.com/elastic/beats/auditbeat/scripts/mage"
+	"github.com/magefile/mage/mg"
+
+	"github.com/elastic/beats/dev-tools/mage"
 )
 
-func init() {
-	auditbeat.SelectLogic = auditbeat.OSSProject
+// UnitTest executes the unit tests (Go and Python).
+func UnitTest() {
+	mg.SerialDeps(GoUnitTest, PythonUnitTest)
+}
 
-	mage.BeatDescription = "Audit the activities of users and processes on your system."
+// GoUnitTest executes the Go unit tests.
+// Use TEST_COVERAGE=true to enable code coverage profiling.
+// Use RACE_DETECTOR=true to enable the race detector.
+func GoUnitTest(ctx context.Context) error {
+	return mage.GoTest(ctx, mage.DefaultGoTestUnitArgs())
+}
+
+// PythonUnitTest executes the python system tests.
+func PythonUnitTest() error {
+	mg.Deps(mage.BuildSystemTestBinary)
+	return mage.PythonNoseTest(mage.DefaultPythonTestUnitArgs())
 }

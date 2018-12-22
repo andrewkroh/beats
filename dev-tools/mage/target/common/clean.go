@@ -15,27 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// +build mage
+package common
 
-package main
+import "github.com/elastic/beats/dev-tools/mage"
 
-import (
-	"github.com/elastic/beats/dev-tools/mage"
-
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/common"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/build"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
-	// mage:import
-	auditbeat "github.com/elastic/beats/auditbeat/scripts/mage"
-)
-
-func init() {
-	auditbeat.SelectLogic = auditbeat.OSSProject
-
-	mage.BeatDescription = "Audit the activities of users and processes on your system."
+// Clean cleans all generated files and build artifacts.
+func Clean() error {
+	return mage.Clean()
 }

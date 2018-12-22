@@ -16,6 +16,8 @@ env:
     - GO_VERSION="$(cat .go-version)"
     # Newer versions of minikube fail on travis, see: https://github.com/kubernetes/minikube/issues/2704
     - TRAVIS_MINIKUBE_VERSION=v0.25.2
+    - SNAPSHOT=true
+    - MAGE_TARGETS="clean update build unitTest integTest"
 
 jobs:
   include:
@@ -51,19 +53,28 @@ jobs:
 
     # Auditbeat
     - os: linux
-      env: TARGETS="-C auditbeat testsuite"
+      env:
+      - BUILD_CMD="mage -d auditbeat"
+      - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
     - os: osx
-      env: TARGETS="TEST_ENVIRONMENT=0 -C auditbeat testsuite"
+      env:
+      - BUILD_CMD="mage -d auditbeat"
+      - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
+    # X-Pack Auditbeat
     - os: linux
-      env: TARGETS="-C auditbeat crosscompile"
+      env:
+      - BUILD_CMD="mage -d x-pack/auditbeat"
+      - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
-    - os: linux
-      env: TARGETS="-C x-pack/auditbeat testsuite"
+    - os: osx
+      env:
+      - BUILD_CMD="mage -d x-pack/auditbeat"
+      - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
 
@@ -194,13 +205,13 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - if [ $TRAVIS_OS_NAME = osx ]; then pip install virtualenv; fi
-
+  - make mage
 
 # Skips installations step
 install: true
 
 script:
-  - make $TARGETS
+  - ${BUILD_TOOL:-make} $TARGETS
 
 notifications:
   slack:

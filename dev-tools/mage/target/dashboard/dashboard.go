@@ -15,27 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// +build mage
-
-package main
+package dashboard
 
 import (
 	"github.com/elastic/beats/dev-tools/mage"
-
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/common"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/build"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
-	// mage:import
-	auditbeat "github.com/elastic/beats/auditbeat/scripts/mage"
 )
 
-func init() {
-	auditbeat.SelectLogic = auditbeat.OSSProject
-
-	mage.BeatDescription = "Audit the activities of users and processes on your system."
+// DashboardExport exports a dashboard from Kibana and writes it into the correct
+// directory.
+//
+// Required environment variables:
+// - MODULE: Name of the module
+// - ID:     Dashboard ID
+func DashboardExport() error {
+	return mage.ExportDashboard()
 }

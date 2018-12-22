@@ -22,14 +22,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 	"github.com/pkg/errors"
 
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// ModuleDocs collects documentation from modules (both OSS and X-Pack).
-func ModuleDocs() error {
+// Docs generates modules and field documentation.
+func Docs() {
+	mg.Deps(docs.Module, docs.Fields)
+}
+
+type docs struct{}
+
+// Module collects documentation from modules (both OSS and X-Pack).
+func (docs) Module() error {
 	dirsWithModules := []string{
 		mage.OSSBeatDir(),
 		mage.XPackBeatDir(),
@@ -88,9 +96,8 @@ func ModuleDocs() error {
 	return sh.Run(python, args...)
 }
 
-// FieldDocs generates docs/fields.asciidoc containing all fields
-// (including x-pack).
-func FieldDocs() error {
+// Fields generates docs/fields.asciidoc containing all fields (including x-pack).
+func (docs) Fields() error {
 	inputs := []string{
 		mage.OSSBeatDir("module"),
 		mage.XPackBeatDir("module"),
