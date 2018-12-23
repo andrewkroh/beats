@@ -26,7 +26,14 @@ import (
 
 // Docs generates modules and field documentation.
 func Docs() {
-	mg.Deps(docs.Module, docs.Fields)
+	switch SelectLogic {
+	case mage.OSSProject:
+		// Module() only works from the OSS dir because the python script is
+		// not portable.
+		mg.Deps(docs.Module, docs.Fields)
+	case mage.XPackProject:
+		mg.Deps(docs.Fields)
+	}
 }
 
 type docs struct{}
