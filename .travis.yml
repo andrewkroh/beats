@@ -31,15 +31,28 @@ jobs:
 
     # Filebeat
     - os: linux
-      env: TARGETS="-C filebeat testsuite"
+      env:
+      - BUILD_CMD="mage -d filebeat"
+      - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
     - os: osx
-      env: TARGETS="TEST_ENVIRONMENT=0 -C filebeat testsuite"
+      env:
+      - BUILD_CMD="mage -d filebeat"
+      - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
+    # X-Pack Filebeat
     - os: linux
-      env: TARGETS="-C x-pack/filebeat testsuite"
+      env:
+      - BUILD_CMD="mage -d x-pack/filebeat"
+      - TARGETS=$MAGE_TARGETS
+      go: $GO_VERSION
+      stage: test
+    - os: osx
+      env:
+      - BUILD_CMD="mage -d x-pack/filebeat"
+      - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
 
