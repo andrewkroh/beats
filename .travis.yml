@@ -213,7 +213,7 @@ before_install:
 install: true
 
 script:
-  - ${BUILD_TOOL:-make} $TARGETS
+  - ${BUILD_CMD:-make} $TARGETS
 
 notifications:
   slack:
