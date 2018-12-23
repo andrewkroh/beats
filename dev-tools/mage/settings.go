@@ -101,7 +101,7 @@ func init() {
 
 	Snapshot, err = strconv.ParseBool(EnvOr("SNAPSHOT", "false"))
 	if err != nil {
-		panic(errors.Errorf("failed to parse SNAPSHOT env value", err))
+		panic(errors.Wrap(err, "failed to parse SNAPSHOT env value"))
 	}
 
 	versionQualifier, versionQualified = os.LookupEnv("VERSION_QUALIFIER")
