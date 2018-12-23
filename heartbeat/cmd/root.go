@@ -19,7 +19,7 @@ package cmd
 
 import (
 	// register default heartbeat monitors
-	_ "github.com/elastic/beats/heartbeat/monitors/defaults"
+	_ "github.com/elastic/beats/heartbeat/include"
 
 	"github.com/elastic/beats/heartbeat/beater"
 	cmd "github.com/elastic/beats/libbeat/cmd"

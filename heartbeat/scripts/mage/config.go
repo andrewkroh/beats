@@ -15,32 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// +build mage
-
-package main
+package mage
 
 import (
 	"github.com/elastic/beats/dev-tools/mage"
-
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/common"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/build"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
-	// mage:import
-	heartbeat "github.com/elastic/beats/heartbeat/scripts/mage"
 )
 
-func init() {
-	heartbeat.SelectLogic = mage.OSSProject
-	
-	mage.BeatDescription = "Ping remote services for availability and log " +
-		"results to Elasticsearch or send to Logstash."
-	mage.BeatServiceName = "heartbeat-elastic"
+// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+var SelectLogic mage.ProjectType
+
+// Config generates short/reference/docker configs and populates the modules.d
+// directory.
+func Config() error {
+	return mage.Config(mage.AllConfigTypes, configFileParams(), ".")
 }
 
+func configFileParams() mage.ConfigFileParams {
+	return mage.ConfigFileParams{
+		ShortParts: []string{
+			mage.OSSBeatDir("_meta/beat.yml"),
+			mage.LibbeatDir("_meta/config.yml"),
+		},
+		ReferenceParts: []string{
+			mage.OSSBeatDir("_meta/beat.reference.yml"),
+			mage.LibbeatDir("_meta/config.reference.yml"),
+		},
+		DockerParts: []string{
+			mage.OSSBeatDir("_meta/beat.docker.yml"),
+			mage.LibbeatDir("_meta/config.docker.yml"),
+		},
+	}
+}
