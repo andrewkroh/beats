@@ -38,7 +38,7 @@ import (
 
 func init() {
 	heartbeat.SelectLogic = mage.OSSProject
-	
+
 	mage.BeatDescription = "Ping remote services for availability and log " +
 		"results to Elasticsearch or send to Logstash."
 	mage.BeatServiceName = "heartbeat-elastic"
