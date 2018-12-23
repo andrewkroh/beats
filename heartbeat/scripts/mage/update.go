@@ -18,9 +18,10 @@
 package mage
 
 import (
+	"github.com/magefile/mage/mg"
+
 	"github.com/elastic/beats/dev-tools/mage"
 	"github.com/elastic/beats/dev-tools/mage/target/build"
-	"github.com/magefile/mage/mg"
 )
 
 // Check runs fmt and update then returns an error if any modifications are found.

@@ -18,8 +18,9 @@
 package mage
 
 import (
-	"github.com/elastic/beats/dev-tools/mage"
 	"github.com/magefile/mage/mg"
+
+	"github.com/elastic/beats/dev-tools/mage"
 )
 
 // Fields generates fields.yml and fields.go files for the Beat.

@@ -19,12 +19,14 @@ package mage
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/magefile/mage/mg"
+	"github.com/pkg/errors"
+
 	"github.com/elastic/beats/dev-tools/mage"
 	"github.com/elastic/beats/dev-tools/mage/target/build"
 	"github.com/elastic/beats/dev-tools/mage/target/pkg"
-	"github.com/magefile/mage/mg"
 )
 
 // Package packages the Beat for distribution.

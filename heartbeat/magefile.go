@@ -43,4 +43,3 @@ func init() {
 		"results to Elasticsearch or send to Logstash."
 	mage.BeatServiceName = "heartbeat-elastic"
 }
-
