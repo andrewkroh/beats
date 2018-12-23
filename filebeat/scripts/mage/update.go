@@ -51,7 +51,15 @@ func DashboardsImport() error {
 	return mage.ImportDashboards(build.Build, Dashboards)
 }
 
-// Update is an alias for running fields, dashboards, config, includes.
+// Update is an alias for running fields, dashboards, config, includes, docs.
 func Update() {
-	mg.SerialDeps(Fields, Dashboards, Config, mage.GenerateModuleIncludeListGo, Docs)
+	mg.SerialDeps(updateWithoutDocs, Docs)
+}
+
+func updateWithoutDocs() {
+	mg.SerialDeps(Fields, Dashboards, Config, includeList, prepareModulePackaging)
+}
+
+func includeList() error {
+	return mage.GenerateIncludeListGo([]string{"input/*"}, []string{"module"})
 }

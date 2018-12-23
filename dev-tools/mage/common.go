@@ -51,6 +51,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ProjectType specifies the type of project (OSS vs X-Pack).
+type ProjectType uint8
+
+// Project types.
+const (
+	OSSProject ProjectType = iota
+	XPackProject
+)
+
 // Expand expands the given Go text/template string.
 func Expand(in string, args ...map[string]interface{}) (string, error) {
 	return expandTemplate("inline", in, FuncMap, EnvMap(args...))

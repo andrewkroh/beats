@@ -31,11 +31,15 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
 	// mage:import
+	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
+	// mage:import
+	_ "github.com/elastic/beats/dev-tools/mage/target/integtest"
+	// mage:import
 	auditbeat "github.com/elastic/beats/auditbeat/scripts/mage"
 )
 
 func init() {
-	auditbeat.SelectLogic = auditbeat.OSSProject
+	auditbeat.SelectLogic = mage.OSSProject
 
 	mage.BeatDescription = "Audit the activities of users and processes on your system."
 }

@@ -30,7 +30,7 @@ func Fields() {
 		mg.Deps(libbeatAndBeatCommonFieldsGo, moduleFieldsGo)
 		mg.Deps(ossFieldsYML)
 	case mage.XPackProject:
-		mg.Deps(xpackFieldsYML, moduleFieldsGo)
+		mg.Deps(xpackFieldsYML, moduleFieldsGo, inputFieldsGo)
 	}
 }
 
@@ -50,10 +50,14 @@ func ossFieldsYML() error {
 
 // fieldsYML generates the fields.yml file containing all fields.
 func xpackFieldsYML() error {
-	return mage.GenerateFieldsYAML(mage.OSSBeatDir("module"), "module")
+	return mage.GenerateFieldsYAML(mage.OSSBeatDir("module"), "module", "input")
 }
 
 // moduleFieldsGo generates a fields.go for each module.
 func moduleFieldsGo() error {
 	return mage.GenerateModuleFieldsGo("module")
+}
+
+func inputFieldsGo() error {
+	return mage.GenerateModuleFieldsGo("input")
 }

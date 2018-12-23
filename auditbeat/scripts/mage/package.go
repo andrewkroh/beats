@@ -29,18 +29,6 @@ import (
 	"github.com/elastic/beats/dev-tools/mage/target/pkg"
 )
 
-// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
-var SelectLogic ProjectType
-
-// ProjectType specifies the type of project (OSS vs X-Pack).
-type ProjectType uint8
-
-// Project types.
-const (
-	OSSProject ProjectType = iota
-	XPackProject
-)
-
 // Package packages the Beat for distribution.
 // Use SNAPSHOT=true to build snapshots.
 // Use PLATFORMS to control the target platforms.
@@ -50,9 +38,9 @@ func Package() {
 	defer func() { fmt.Println("package ran for", time.Since(start)) }()
 
 	switch SelectLogic {
-	case OSSProject:
+	case mage.OSSProject:
 		mage.UseElasticBeatOSSPackaging()
-	case XPackProject:
+	case mage.XPackProject:
 		mage.UseElasticBeatXPackPackaging()
 	}
 	mage.PackageKibanaDashboardsFromBuildDir()

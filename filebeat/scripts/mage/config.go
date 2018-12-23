@@ -18,10 +18,40 @@
 package mage
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-const modulesConfigYml = "build/config.modules.yml"
+// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+var SelectLogic mage.ProjectType
+
+const (
+	modulesConfigYml = "build/config.modules.yml"
+)
+
+// Config generates short/reference/docker configs and populates the modules.d
+// directory.
+func Config() error {
+	var args mage.ConfigFileParams
+	switch SelectLogic {
+	case mage.OSSProject:
+		args = configFileParams(mage.OSSBeatDir("module"))
+	case mage.XPackProject:
+		args = configFileParams(mage.OSSBeatDir("module"), "module")
+		args.ReferenceParts = []string{
+			mage.OSSBeatDir("_meta/common.reference.p1.yml"),
+			modulesConfigYml,
+			mage.OSSBeatDir("_meta/common.reference.inputs.yml"),
+			"_meta/common.reference.inputs.yml", // Added only to X-Pack.
+			mage.OSSBeatDir("_meta/common.reference.p2.yml"),
+			mage.LibbeatDir("_meta/config.reference.yml"),
+		}
+	default:
+		panic(errors.Errorf("invalid SelectLogic value"))
+	}
+	return mage.Config(mage.AllConfigTypes, args, ".")
+}
 
 func configFileParams(moduleDirs ...string) mage.ConfigFileParams {
 	collectModuleConfig := func() error {
@@ -47,25 +77,4 @@ func configFileParams(moduleDirs ...string) mage.ConfigFileParams {
 			mage.LibbeatDir("_meta/config.docker.yml"),
 		},
 	}
-}
-
-// OSSConfigFileParams returns the default ConfigFileParams for generating
-// filebeat*.yml files.
-func OSSConfigFileParams(moduleDirs ...string) mage.ConfigFileParams {
-	return configFileParams(mage.OSSBeatDir("module"))
-}
-
-// XPackConfigFileParams returns the default ConfigFileParams for generating
-// filebeat*.yml files.
-func XPackConfigFileParams() mage.ConfigFileParams {
-	args := configFileParams(mage.OSSBeatDir("module"), "module")
-	args.ReferenceParts = []string{
-		mage.OSSBeatDir("_meta/common.reference.p1.yml"),
-		modulesConfigYml,
-		mage.OSSBeatDir("_meta/common.reference.inputs.yml"),
-		"_meta/common.reference.inputs.yml", // Added only to X-Pack.
-		mage.OSSBeatDir("_meta/common.reference.p2.yml"),
-		mage.LibbeatDir("_meta/config.reference.yml"),
-	}
-	return args
 }

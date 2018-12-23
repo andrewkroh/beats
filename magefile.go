@@ -103,7 +103,7 @@ func DumpVariables() error {
 
 // Check checks that code is formatted and generated files are up-to-date.
 func Check() {
-	mg.SerialDeps(Fmt, Test.MageTargets, Update.All, mage.Check)
+	mg.SerialDeps(Fmt, Update.All, mage.Check)
 }
 
 // Fmt formats code and adds license headers.

@@ -18,14 +18,21 @@
 package mage
 
 import (
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// CollectDocs executes the Filebeat docs_collector script to collect/generate
-// documentation from each module.
-func CollectDocs() error {
+// Docs generates modules and field documentation.
+func Docs() {
+	mg.Deps(docs.Module, docs.Fields)
+}
+
+type docs struct{}
+
+// Module collects documentation from modules (both OSS and X-Pack).
+func (docs) Module() error {
 	ve, err := mage.PythonVirtualenv()
 	if err != nil {
 		return err
@@ -40,4 +47,19 @@ func CollectDocs() error {
 	return sh.Run(python,
 		mage.OSSBeatDir("scripts/docs_collector.py"),
 		"--beat", mage.BeatName)
+}
+
+// Fields generates docs/fields.asciidoc containing all fields (including x-pack).
+func (docs) Fields() error {
+	inputs := []string{
+		mage.OSSBeatDir("module"),
+		mage.XPackBeatDir("module"),
+		mage.OSSBeatDir("input"),
+		mage.XPackBeatDir("input"),
+	}
+	output := mage.CreateDir(mage.OSSBeatDir("build/fields/fields.all.yml"))
+	if err := mage.GenerateFieldsYAMLTo(output, inputs...); err != nil {
+		return err
+	}
+	return mage.Docs.FieldDocs(output)
 }

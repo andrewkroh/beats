@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package unittest
+package mage
 
 import (
 	"context"
@@ -25,34 +25,31 @@ import (
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-var (
-	goTestDeps, pythonTestDeps []interface{}
-)
-
-func RegisterGoTestDeps(deps ...interface{}) {
-	goTestDeps = append(goTestDeps, deps...)
+// IntegTest executes integration tests (it uses Docker to run the tests).
+func IntegTest() {
+	mage.AddIntegTestUsage()
+	defer mage.StopIntegTestEnv()
+	mg.SerialDeps(GoIntegTest, PythonIntegTest)
 }
 
-func RegisterPythonTestDeps(deps ...interface{}) {
-	goTestDeps = append(goTestDeps, deps...)
-}
-
-// UnitTest executes the unit tests (Go and Python).
-func UnitTest() {
-	mg.SerialDeps(GoUnitTest, PythonUnitTest)
-}
-
-// GoUnitTest executes the Go unit tests.
+// GoIntegTest executes the Go integration tests.
 // Use TEST_COVERAGE=true to enable code coverage profiling.
 // Use RACE_DETECTOR=true to enable the race detector.
-func GoUnitTest(ctx context.Context) error {
-	mg.SerialCtxDeps(ctx, goTestDeps...)
-	return mage.GoTest(ctx, mage.DefaultGoTestUnitArgs())
+func GoIntegTest(ctx context.Context) error {
+	return mage.RunIntegTest("goIntegTest", func() error {
+		return mage.GoTest(ctx, mage.DefaultGoTestIntegrationArgs())
+	})
 }
 
-// PythonUnitTest executes the python system tests.
-func PythonUnitTest() error {
-	mg.SerialDeps(pythonTestDeps...)
-	mg.Deps(mage.BuildSystemTestBinary)
-	return mage.PythonNoseTest(mage.DefaultPythonTestUnitArgs())
+// PythonIntegTest executes the python system tests in the integration environment (Docker).
+func PythonIntegTest(ctx context.Context) error {
+	if !mage.IsInIntegTestEnv() {
+		mg.Deps(Fields)
+	}
+	return mage.RunIntegTest("pythonIntegTest", func() error {
+		mg.Deps(mage.BuildSystemTestBinary)
+		args := mage.DefaultPythonTestIntegrationArgs()
+		args.Env["MODULES_PATH"] = mage.CWD("module")
+		return mage.PythonNoseTest(args)
+	})
 }

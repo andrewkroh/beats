@@ -102,7 +102,7 @@ func (docs) Fields() error {
 		mage.OSSBeatDir("module"),
 		mage.XPackBeatDir("module"),
 	}
-	output := mage.CreateDir("build/fields/fields.all.yml")
+	output := mage.CreateDir(mage.OSSBeatDir("build/fields/fields.all.yml"))
 	if err := mage.GenerateFieldsYAMLTo(output, inputs...); err != nil {
 		return err
 	}

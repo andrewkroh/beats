@@ -23,6 +23,9 @@ import (
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
+// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+var SelectLogic mage.ProjectType
+
 const (
 	// configTemplateGlob matches Auditbeat modules' config file templates.
 	configTemplateGlob = "module/*/_meta/config*.yml.tmpl"
@@ -41,8 +44,8 @@ func Config() error {
 func configFileParams() (mage.ConfigFileParams, error) {
 	globs := []string{mage.OSSBeatDir(configTemplateGlob)}
 	switch SelectLogic {
-	case OSSProject:
-	case XPackProject:
+	case mage.OSSProject:
+	case mage.XPackProject:
 		globs = append(globs, mage.XPackBeatDir(configTemplateGlob))
 	default:
 		panic(errors.Errorf("invalid SelectLogic value"))
