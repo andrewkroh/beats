@@ -15,19 +15,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package cmd
+package mage
 
 import (
-	"github.com/elastic/beats/journalbeat/beater"
+	"github.com/magefile/mage/mg"
 
-	cmd "github.com/elastic/beats/libbeat/cmd"
-
-	// Register includes.
-	_ "github.com/elastic/beats/journalbeat/include"
+	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// Name of this beat
-var Name = "journalbeat"
+// Fields generates fields.yml and fields.go files for the Beat.
+func Fields() {
+	switch SelectLogic {
+	case mage.OSSProject:
+		mg.Deps(libbeatAndBeatCommonFieldsGo)
+	case mage.XPackProject:
+		mg.Deps(mage.GenerateFieldsYAML)
+	}
+}
 
-// RootCmd to handle beats cli
-var RootCmd = cmd.GenRootCmd(Name, "", beater.New)
+// libbeatAndBeatCommonFieldsGo generates a fields.go containing both
+// libbeat and Auditbeat's common fields.
+func libbeatAndBeatCommonFieldsGo() error {
+	if err := mage.GenerateFieldsYAML(); err != nil {
+		return err
+	}
+	return mage.GenerateAllInOneFieldsGo()
+}

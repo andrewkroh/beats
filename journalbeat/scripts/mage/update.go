@@ -15,19 +15,35 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package cmd
+package mage
 
 import (
-	"github.com/elastic/beats/journalbeat/beater"
+	"github.com/magefile/mage/mg"
 
-	cmd "github.com/elastic/beats/libbeat/cmd"
+	"github.com/elastic/beats/dev-tools/mage/target/build"
 
-	// Register includes.
-	_ "github.com/elastic/beats/journalbeat/include"
+	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// Name of this beat
-var Name = "journalbeat"
+// Check runs fmt and update then returns an error if any modifications are found.
+func Check() {
+	mg.SerialDeps(mage.Format, Update, mage.Check)
+}
 
-// RootCmd to handle beats cli
-var RootCmd = cmd.GenRootCmd(Name, "", beater.New)
+// Dashboards collects all the dashboards and generates index patterns.
+func Dashboards() error {
+	return mage.KibanaDashboards()
+}
+
+// DashboardsImport imports all dashboards to Kibana.
+//
+// Optional environment variables:
+// - KIBANA_URL: URL of Kibana
+func DashboardsImport() error {
+	return mage.ImportDashboards(build.Build, Dashboards)
+}
+
+// Update is an alias for running fields, dashboards, config, includes, docs.
+func Update() {
+	mg.SerialDeps(Fields, Dashboards, Config)
+}

@@ -15,9 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package build
+package mage
 
 import (
+	"github.com/magefile/mage/mg"
+
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
@@ -29,6 +31,7 @@ func Build() error {
 // GolangCrossBuild build the Beat binary inside of the golang-builder.
 // Do not use directly, use crossBuild instead.
 func GolangCrossBuild() error {
+	mg.Deps(installCrossBuildDeps)
 	return mage.GolangCrossBuild(mage.DefaultGolangCrossBuildArgs())
 }
 
@@ -39,7 +42,7 @@ func BuildGoDaemon() error {
 
 // CrossBuild cross-builds the beat for all target platforms.
 func CrossBuild() error {
-	return mage.CrossBuild()
+	return mage.CrossBuild(mage.ImageSelector(selectImage))
 }
 
 // CrossBuildGoDaemon cross-builds the go-daemon binary using Docker.
