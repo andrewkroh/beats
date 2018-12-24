@@ -38,6 +38,7 @@ import (
 
 var (
 	projects = projectList{
+		{"libbeat", unitTest | integTest},
 		{"auditbeat", packaging | update | unitTest | integTest},
 		{"dev-tools", none},
 		{"filebeat", packaging | update | unitTest | integTest},
@@ -46,16 +47,23 @@ var (
 		{"metricbeat", packaging | dashboards | update | unitTest | integTest},
 		{"packetbeat", packaging | dashboards | update | unitTest | integTest},
 		{"winlogbeat", packaging | dashboards | update | unitTest | integTest},
+		{"x-pack/libbeat", unitTest | integTest},
 		{"x-pack/auditbeat", packaging | dashboards | update | unitTest | integTest},
 		{"x-pack/filebeat", packaging | dashboards | update | unitTest | integTest},
 		{"x-pack/functionbeat", packaging | dashboards | update | unitTest | integTest},
-		{"x-pack/libbeat", none},
+		{"x-pack/heartbeat", packaging | dashboards | update | unitTest | integTest},
+		{"x-pack/journalbeat", packaging | dashboards | update | unitTest | integTest},
 		{"x-pack/metricbeat", packaging | update | unitTest | integTest},
+		{"x-pack/packetbeat", packaging | update | unitTest | integTest},
+		{"x-pack/winlogbeat", packaging | update | unitTest | integTest},
 	}
 
 	Aliases = map[string]interface{}{
-		"update":  Update.All,
+		"check":   Check.All,
+		"fmt":     Check.Fmt,
 		"package": Package.All,
+		"update":  Update.All,
+		"vet":     Check.Vet,
 	}
 )
 
@@ -101,13 +109,15 @@ func DumpVariables() error {
 	return mage.DumpVariables()
 }
 
+type Check mg.Namespace
+
 // Check checks that code is formatted and generated files are up-to-date.
-func Check() {
-	mg.SerialDeps(Fmt, Update.All, mage.Check)
+func (Check) All() {
+	mg.SerialDeps(Check.Fmt, Update.All, mage.Check)
 }
 
 // Fmt formats code and adds license headers.
-func Fmt() {
+func (Check) Fmt() {
 	mg.Deps(mage.GoImports, mage.PythonAutopep8)
 	mg.Deps(addLicenseHeaders)
 }
@@ -125,6 +135,72 @@ func addLicenseHeaders() error {
 		sh.RunV("go-licenser", "-license", "ASL2", "-exclude", "x-pack"),
 		sh.RunV("go-licenser", "-license", "Elastic", "x-pack"),
 	)
+}
+
+func (Check) Vet() {
+	mg.Deps(mage.GoVet)
+}
+
+func (Check) Targets() error {
+	mageCmd := sh.OutCmd("mage", "-d")
+	return projects.ForEach(any, func(proj project) error {
+		fmt.Println("> check:targets:", proj.Dir)
+		out, err := mageCmd(proj.Dir, "-l")
+		if err != nil {
+			return errors.Wrapf(err, "failed checking mage targets of project %v", proj.Dir)
+		}
+		targets, err := parseTargets(out)
+		if err != nil {
+			return errors.Wrapf(err, "failed parsing mage -l output of project %v", proj.Dir)
+		}
+
+		// TODO: Reduce duplication and test more targets like build/fmt/check.
+		var errs []error
+		if proj.HasAttribute(update) {
+			if _, found := targets["update"]; !found {
+				errs = append(errs, fmt.Errorf("missing update target"))
+			}
+		}
+		if proj.HasAttribute(dashboards) {
+			if _, found := targets["dashboards"]; !found {
+				errs = append(errs, fmt.Errorf("missing dashboards target"))
+			}
+		}
+		if proj.HasAttribute(packaging) {
+			if _, found := targets["package"]; !found {
+				errs = append(errs, fmt.Errorf("missing package target"))
+			}
+		}
+		if proj.HasAttribute(unitTest) {
+			if _, found := targets["unitTest"]; !found {
+				errs = append(errs, fmt.Errorf("missing unitTest target"))
+			}
+		}
+		if proj.HasAttribute(integTest) {
+			if _, found := targets["unitTest"]; !found {
+				errs = append(errs, fmt.Errorf("missing unitTest target"))
+			}
+			if _, found := targets["integTest"]; !found {
+				errs = append(errs, fmt.Errorf("missing integTest target"))
+			}
+		}
+		return errors.Wrapf(multierr.Combine(errs...), "failed checking mage targets of project %v", proj.Dir)
+	})
+}
+
+func parseTargets(rawOutput string) (map[string]string, error) {
+	targets := map[string]string{}
+	s := bufio.NewScanner(bytes.NewBufferString(rawOutput))
+	for s.Scan() {
+		line := s.Text()
+		if line == "Target:" {
+			continue
+		}
+		if parts := strings.Fields(line); len(parts) > 0 {
+			targets[parts[0]] = strings.Join(parts[1:], " ")
+		}
+	}
+	return targets, s.Err()
 }
 
 type Update mg.Namespace
@@ -221,8 +297,6 @@ func (Package) Beats() (err error) {
 type Test mg.Namespace
 
 func (Test) All() error {
-	mg.Deps(Test.MageTargets)
-
 	// Assumes that projects support integTest is a subset of unitTest.
 	return projects.ForEach(unitTest, func(proj project) error {
 		fmt.Println("> test:all:", proj.Dir)
@@ -246,68 +320,6 @@ func (Test) Integ() error {
 		fmt.Println("> test:integ:", proj.Dir)
 		return errors.Wrapf(mage.Mage(proj.Dir, "integTest"), "failed testing project %v", proj.Dir)
 	})
-}
-
-func (Test) MageTargets() error {
-	mageCmd := sh.OutCmd("mage", "-d")
-	return projects.ForEach(any, func(proj project) error {
-		fmt.Println("> test:mageTargets:", proj.Dir)
-		out, err := mageCmd(proj.Dir, "-l")
-		if err != nil {
-			return errors.Wrapf(err, "failed testing mage targets of project %v", proj.Dir)
-		}
-		targets, err := parseTargets(out)
-		if err != nil {
-			return errors.Wrapf(err, "failed parsing mage -l output of project %v", proj.Dir)
-		}
-
-		// TODO: Reduce duplication and test more targets like build/fmt/check.
-		var errs []error
-		if proj.HasAttribute(update) {
-			if _, found := targets["update"]; !found {
-				errs = append(errs, fmt.Errorf("missing update target"))
-			}
-		}
-		if proj.HasAttribute(dashboards) {
-			if _, found := targets["dashboards"]; !found {
-				errs = append(errs, fmt.Errorf("missing dashboards target"))
-			}
-		}
-		if proj.HasAttribute(packaging) {
-			if _, found := targets["package"]; !found {
-				errs = append(errs, fmt.Errorf("missing package target"))
-			}
-		}
-		if proj.HasAttribute(unitTest) {
-			if _, found := targets["unitTest"]; !found {
-				errs = append(errs, fmt.Errorf("missing unitTest target"))
-			}
-		}
-		if proj.HasAttribute(integTest) {
-			if _, found := targets["unitTest"]; !found {
-				errs = append(errs, fmt.Errorf("missing unitTest target"))
-			}
-			if _, found := targets["integTest"]; !found {
-				errs = append(errs, fmt.Errorf("missing integTest target"))
-			}
-		}
-		return errors.Wrapf(multierr.Combine(errs...), "failed testing mage targets of project %v", proj.Dir)
-	})
-}
-
-func parseTargets(rawOutput string) (map[string]string, error) {
-	targets := map[string]string{}
-	s := bufio.NewScanner(bytes.NewBufferString(rawOutput))
-	for s.Scan() {
-		line := s.Text()
-		if line == "Target:" {
-			continue
-		}
-		if parts := strings.Fields(line); len(parts) > 0 {
-			targets[parts[0]] = strings.Join(parts[1:], " ")
-		}
-	}
-	return targets, s.Err()
 }
 
 // TODO: Add targets for
