@@ -20,8 +20,9 @@
 package main
 
 import (
-	"github.com/elastic/beats/dev-tools/mage"
 	"github.com/magefile/mage/mg"
+
+	"github.com/elastic/beats/dev-tools/mage"
 
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/common"

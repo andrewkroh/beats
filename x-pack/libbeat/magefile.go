@@ -1,9 +1,14 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 // +build mage
 
 package main
 
 import (
 	"fmt"
+
 	"github.com/magefile/mage/mg"
 
 	"github.com/elastic/beats/dev-tools/mage"
