@@ -34,7 +34,7 @@ func RegisterGoTestDeps(deps ...interface{}) {
 }
 
 func RegisterPythonTestDeps(deps ...interface{}) {
-	goTestDeps = append(goTestDeps, deps...)
+	pythonTestDeps = append(pythonTestDeps, deps...)
 }
 
 // IntegTest executes integration tests (it uses Docker to run the tests).

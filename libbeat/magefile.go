@@ -20,36 +20,30 @@
 package main
 
 import (
-	"context"
-
 	"github.com/elastic/beats/dev-tools/mage"
+	"github.com/magefile/mage/mg"
+
+	// mage:import
+	_ "github.com/elastic/beats/dev-tools/mage/target/common"
+	// mage:import
+	_ "github.com/elastic/beats/dev-tools/mage/target/build"
+	// mage:import
+	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
+	// mage:import
+	integtest "github.com/elastic/beats/dev-tools/mage/target/integtest"
 )
 
-// Build builds the Beat binary.
-func Build() error {
-	return mage.Build(mage.DefaultBuildArgs())
-}
-
-// Clean cleans all generated files and build artifacts.
-func Clean() error {
-	return mage.Clean()
+func init() {
+	integtest.RegisterGoTestDeps(Fields)
+	integtest.RegisterPythonTestDeps(Fields)
 }
 
 // Fields generates a fields.yml for the Beat.
 func Fields() error {
-	return mage.GenerateFieldsYAML("processors")
+	return mage.GenerateFieldsYAML(mage.OSSBeatDir("processors"))
 }
 
-// GoTestUnit executes the Go unit tests.
-// Use TEST_COVERAGE=true to enable code coverage profiling.
-// Use RACE_DETECTOR=true to enable the race detector.
-func GoTestUnit(ctx context.Context) error {
-	return mage.GoTest(ctx, mage.DefaultGoTestUnitArgs())
-}
-
-// GoTestIntegration executes the Go integration tests.
-// Use TEST_COVERAGE=true to enable code coverage profiling.
-// Use RACE_DETECTOR=true to enable the race detector.
-func GoTestIntegration(ctx context.Context) error {
-	return mage.GoTest(ctx, mage.DefaultGoTestIntegrationArgs())
+// Check checks that source code is formatted, vetted, and up-to-date.
+func Check() {
+	mg.SerialDeps(mage.Format, mage.Check)
 }

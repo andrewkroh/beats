@@ -1,9 +1,9 @@
-BEAT_NAME=libbeat
-TEST_ENVIRONMENT?=true
-SYSTEM_TESTS=true
+#
+# Variables
+#
+ES_BEATS=..
 
-include scripts/Makefile
-
-# Collects all dependencies and then calls update
-.PHONY: collect
-collect:
+#
+# Includes
+#
+include $(ES_BEATS/dev-tools/make/oss.mk

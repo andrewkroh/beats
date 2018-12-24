@@ -8,6 +8,11 @@ language: go
 # Make sure project can also be built on travis for clones of the repo
 go_import_path: github.com/elastic/beats
 
+stages:
+  - crosscompile
+  - check
+  - test
+
 env:
   global:
     # Cross-compile for amd64 only to speed up testing.
@@ -28,6 +33,33 @@ jobs:
         - TARGETS=check
       go: $GO_VERSION
       stage: check
+
+    # Auditbeat
+    - os: linux
+      env:
+      - BUILD_CMD="mage -d auditbeat"
+      - TARGETS=$MAGE_TARGETS
+      go: $GO_VERSION
+      stage: test
+    - os: osx
+      env:
+      - BUILD_CMD="mage -d auditbeat"
+      - TARGETS=$MAGE_TARGETS
+      go: $GO_VERSION
+      stage: test
+    # X-Pack Auditbeat
+    - os: linux
+      env:
+      - BUILD_CMD="mage -d x-pack/auditbeat"
+      - TARGETS=$MAGE_TARGETS
+      go: $GO_VERSION
+      stage: test
+    - os: osx
+      env:
+      - BUILD_CMD="mage -d x-pack/auditbeat"
+      - TARGETS=$MAGE_TARGETS
+      go: $GO_VERSION
+      stage: test
 
     # Filebeat
     - os: linux
@@ -66,50 +98,27 @@ jobs:
       go: $GO_VERSION
       stage: test
 
-    # Auditbeat
+    # Libbeat
     - os: linux
       env:
-      - BUILD_CMD="mage -d auditbeat"
-      - TARGETS=$MAGE_TARGETS
-      go: $GO_VERSION
-      stage: test
-    - os: osx
-      env:
-      - BUILD_CMD="mage -d auditbeat"
-      - TARGETS=$MAGE_TARGETS
-      go: $GO_VERSION
-      stage: test
-    # X-Pack Auditbeat
-    - os: linux
-      env:
-      - BUILD_CMD="mage -d x-pack/auditbeat"
-      - TARGETS=$MAGE_TARGETS
-      go: $GO_VERSION
-      stage: test
-    - os: osx
-      env:
-      - BUILD_CMD="mage -d x-pack/auditbeat"
+      - BUILD_CMD="mage -d libbeat"
       - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
 
-    # Libbeat
     - os: linux
-      env: TARGETS="-C libbeat testsuite"
+      env:
+        - STRESS_TEST_OPTIONS="-timeout=20m -race -v -parallel 1"
+        - TARGETS="-C libbeat stress-tests"
       go: $GO_VERSION
       stage: test
+    # X-Pack Libbeat
     - os: linux
-      env: TARGETS="-C libbeat crosscompile"
+      env:
+      - BUILD_CMD="mage -d x-pack/libbeat"
+      - TARGETS=$MAGE_TARGETS
       go: $GO_VERSION
       stage: test
-    - os: linux
-      env: STRESS_TEST_OPTIONS="-timeout=20m -race -v -parallel 1" TARGETS="-C libbeat stress-tests"
-      go: $GO_VERSION
-      stage: test
-    #- os: linux
-    #  env: TARGETS="-C x-pack/libbeat testsuite"
-    #  go: $GO_VERSION
-    #  stage: test
 
     # Metricbeat
     - os: linux
@@ -121,10 +130,6 @@ jobs:
       go: $GO_VERSION
       stage: test
     - os: linux
-      env: TARGETS="-C metricbeat crosscompile"
-      go: $GO_VERSION
-      stage: test
-    - os: linux
       env: TARGETS="-C x-pack/metricbeat testsuite"
       go: $GO_VERSION
       stage: test
@@ -132,12 +137,6 @@ jobs:
     # Packetbeat
     - os: linux
       env: TARGETS="-C packetbeat testsuite"
-      go: $GO_VERSION
-      stage: test
-
-    # Winlogbeat
-    - os: linux
-      env: TARGETS="-C winlogbeat crosscompile"
       go: $GO_VERSION
       stage: test
 
@@ -199,6 +198,68 @@ jobs:
     #    - TARGETS="-C deploy/kubernetes test"
     #    - TRAVIS_K8S_VERSION=v1.11.0
     #  stage: test
+
+    # Cross-compile Stage
+    - os: linux
+      env: TARGETS="-C libbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C auditbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C heartbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C journalbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C metricbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C packetbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C winlogbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C x-pack/auditbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C x-pack/filebeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C x-pack/functionbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C x-pack/heartbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C x-pack/journalbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C x-pack/metricbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C x-pack/packetbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
+    - os: linux
+      env: TARGETS="-C x-pack/winlogbeat gox"
+      go: $GO_VERSION
+      stage: crosscompile
 
 addons:
   apt:
