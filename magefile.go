@@ -278,7 +278,7 @@ func (Update) TravisCI() error {
 		}
 
 		// We don't run the integTest which require Docker on OSX workers.
-		if proj.HasAttribute(unitTest | osxTesting) {
+		if proj.HasAttribute(osxTesting) && proj.HasAttribute(unitTest) {
 			data.Jobs = append(data.Jobs, TravisCIJob{
 				OS:    "osx",
 				Stage: "test",

@@ -92,12 +92,6 @@ jobs:
         - BUILD_CMD="mage -d journalbeat"
         - TARGETS="unitTest"
 
-    - os: osx
-      stage: test
-      env:
-        - BUILD_CMD="mage -d journalbeat"
-        - TARGETS="unitTest"
-
     - os: linux
       stage: test
       env:
@@ -128,23 +122,11 @@ jobs:
         - BUILD_CMD="mage -d winlogbeat"
         - TARGETS="unitTest integTest"
 
-    - os: osx
-      stage: test
-      env:
-        - BUILD_CMD="mage -d winlogbeat"
-        - TARGETS="unitTest"
-
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/libbeat"
         - TARGETS="unitTest integTest"
-
-    - os: osx
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/libbeat"
-        - TARGETS="unitTest"
 
     - os: linux
       stage: test
@@ -176,12 +158,6 @@ jobs:
         - BUILD_CMD="mage -d x-pack/functionbeat"
         - TARGETS="unitTest integTest"
 
-    - os: osx
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/functionbeat"
-        - TARGETS="unitTest"
-
     - os: linux
       stage: test
       env:
@@ -195,12 +171,6 @@ jobs:
         - TARGETS="unitTest"
 
     - os: linux
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/journalbeat"
-        - TARGETS="unitTest"
-
-    - os: osx
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/journalbeat"
@@ -235,12 +205,6 @@ jobs:
       env:
         - BUILD_CMD="mage -d x-pack/winlogbeat"
         - TARGETS="unitTest integTest"
-
-    - os: osx
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/winlogbeat"
-        - TARGETS="unitTest"
 
     - os: linux
       stage: crosscompile
