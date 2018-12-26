@@ -57,9 +57,13 @@ func Update() {
 }
 
 func updateWithoutDocs() {
-	mg.SerialDeps(Fields, Dashboards, Config, includeList, prepareModulePackaging)
+	mg.SerialDeps(Fields, Dashboards, Config, includeList, modulesD)
 }
 
 func includeList() error {
 	return mage.GenerateIncludeListGo([]string{"input/*"}, []string{"module"})
+}
+
+func modulesD() error {
+	return mage.GenerateDirModulesD()
 }

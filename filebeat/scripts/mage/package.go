@@ -121,7 +121,7 @@ func prepareModulePackaging() error {
 // build/package/modules.d directories for use in packaging.
 func _prepareModulePackaging(files ...struct{ Src, Dst string }) error {
 	// This depends on the modules.d directory being up-to-date.
-	mg.Deps(mage.GenerateDirModulesD)
+	mg.Deps(modulesD)
 
 	// Clean any existing generated directories.
 	if err := mage.Clean([]string{dirModuleGenerated, dirModulesDGenerated}); err != nil {
