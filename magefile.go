@@ -26,6 +26,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -43,13 +44,12 @@ var (
 	projects = projectList{
 		{"libbeat", unitTest | integTest | osxTesting},
 		{"auditbeat", packaging | update | unitTest | integTest | osxTesting},
-		{"dev-tools", none},
 		{"filebeat", packaging | update | unitTest | integTest | osxTesting},
 		{"heartbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"journalbeat", packaging | dashboards | update | unitTest},
 		{"metricbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
-		{"packetbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
-		{"winlogbeat", packaging | dashboards | update | unitTest | integTest},
+		{"packetbeat", packaging | dashboards | update | unitTest | osxTesting},
+		{"winlogbeat", packaging | dashboards | update | unitTest},
 		{"x-pack/libbeat", unitTest | integTest},
 		{"x-pack/auditbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"x-pack/filebeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
@@ -57,8 +57,9 @@ var (
 		{"x-pack/heartbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"x-pack/journalbeat", packaging | dashboards | update | unitTest},
 		{"x-pack/metricbeat", packaging | update | unitTest | integTest | osxTesting},
-		{"x-pack/packetbeat", packaging | update | unitTest | integTest | osxTesting},
-		{"x-pack/winlogbeat", packaging | update | unitTest | integTest},
+		{"x-pack/packetbeat", packaging | update | unitTest | osxTesting},
+		{"x-pack/winlogbeat", packaging | update | unitTest},
+		{"dev-tools/packaging/preference-pane", none},
 	}
 
 	Aliases = map[string]interface{}{
@@ -145,9 +146,24 @@ func (Check) Vet() {
 	mg.Deps(mage.GoVet)
 }
 
+var commonBeatTargets = []string{
+	"check",
+	"clean",
+	"dumpVariables",
+	"fields",
+	"fmt",
+	"build",
+	"buildGoDaemon",
+	"crossBuild",
+	"crossBuildGoDaemon",
+	"crossBuildGoDaemon",
+	"golangCrossBuild",
+}
+
 func (Check) Targets() error {
 	mageCmd := sh.OutCmd("mage", "-d")
-	return projects.ForEach(any, func(proj project) error {
+	var errs []error
+	projects.ForEach(any, func(proj project) error {
 		fmt.Println("> check:targets:", proj.Dir)
 		out, err := mageCmd(proj.Dir, "-l")
 		if err != nil {
@@ -158,38 +174,44 @@ func (Check) Targets() error {
 			return errors.Wrapf(err, "failed parsing mage -l output of project %v", proj.Dir)
 		}
 
-		// TODO: Reduce duplication and test more targets like build/fmt/check.
-		var errs []error
+		// Build list of expected targets based on attributes.
+		expectedTargets := make([]string, len(commonBeatTargets))
+		copy(expectedTargets, commonBeatTargets)
 		if proj.HasAttribute(update) {
-			if _, found := targets["update"]; !found {
-				errs = append(errs, fmt.Errorf("missing update target"))
-			}
+			expectedTargets = append(expectedTargets,
+				"update", "config", "dashboards", "dashboardsImport",
+				"dashboardExport")
 		}
 		if proj.HasAttribute(dashboards) {
-			if _, found := targets["dashboards"]; !found {
-				errs = append(errs, fmt.Errorf("missing dashboards target"))
-			}
+			expectedTargets = append(expectedTargets, "update")
 		}
 		if proj.HasAttribute(packaging) {
-			if _, found := targets["package"]; !found {
-				errs = append(errs, fmt.Errorf("missing package target"))
-			}
+			expectedTargets = append(expectedTargets, "package", "packageTest")
 		}
 		if proj.HasAttribute(unitTest) {
-			if _, found := targets["unitTest"]; !found {
-				errs = append(errs, fmt.Errorf("missing unitTest target"))
-			}
+			expectedTargets = append(expectedTargets, "unitTest")
 		}
 		if proj.HasAttribute(integTest) {
-			if _, found := targets["unitTest"]; !found {
-				errs = append(errs, fmt.Errorf("missing unitTest target"))
-			}
-			if _, found := targets["integTest"]; !found {
-				errs = append(errs, fmt.Errorf("missing integTest target"))
+			expectedTargets = append(expectedTargets, "integTest")
+		}
+
+		// Check for missing targets.
+		var missing []string
+		for _, target := range expectedTargets {
+			if _, found := targets[target]; !found {
+				missing = append(missing, target)
 			}
 		}
-		return errors.Wrapf(multierr.Combine(errs...), "failed checking mage targets of project %v", proj.Dir)
+		if len(missing) > 0 {
+			sort.Strings(missing)
+			err = errors.Errorf("failed checking mage targets of project "+
+				"%v: missing [%v]", proj.Dir, strings.Join(missing, ", "))
+			errs = append(errs, err)
+		}
+		return nil
 	})
+
+	return multierr.Combine(errs...)
 }
 
 func parseTargets(rawOutput string) (map[string]string, error) {

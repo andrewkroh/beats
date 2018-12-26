@@ -108,7 +108,7 @@ jobs:
       stage: test
       env:
         - BUILD_CMD="mage -d packetbeat"
-        - TARGETS="unitTest integTest"
+        - TARGETS="unitTest"
 
     - os: osx
       stage: test
@@ -120,7 +120,7 @@ jobs:
       stage: test
       env:
         - BUILD_CMD="mage -d winlogbeat"
-        - TARGETS="unitTest integTest"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
@@ -192,7 +192,7 @@ jobs:
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/packetbeat"
-        - TARGETS="unitTest integTest"
+        - TARGETS="unitTest"
 
     - os: osx
       stage: test
@@ -204,7 +204,7 @@ jobs:
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/winlogbeat"
-        - TARGETS="unitTest integTest"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: crosscompile
