@@ -29,7 +29,7 @@ func Fields() {
 	case mage.OSSProject:
 		mg.Deps(libbeatAndBeatCommonFieldsGo)
 	case mage.XPackProject:
-		mg.Deps(mage.GenerateFieldsYAML)
+		mg.Deps(fieldsYML)
 	}
 }
 
@@ -40,4 +40,8 @@ func libbeatAndBeatCommonFieldsGo() error {
 		return err
 	}
 	return mage.GenerateAllInOneFieldsGo()
+}
+
+func fieldsYML() error {
+	return mage.GenerateFieldsYAML()
 }
