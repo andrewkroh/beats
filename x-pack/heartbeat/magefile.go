@@ -20,13 +20,11 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
 	// mage:import
+	_ "github.com/elastic/beats/dev-tools/mage/target/integtest"
+	// mage:import
 	heartbeat "github.com/elastic/beats/heartbeat/scripts/mage"
 )
 
 func init() {
 	heartbeat.SelectLogic = mage.XPackProject
-
-	mage.BeatDescription = "Ping remote services for availability and log " +
-		"results to Elasticsearch or send to Logstash."
-	mage.BeatServiceName = "heartbeat-elastic"
 }

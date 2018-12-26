@@ -29,6 +29,12 @@ import (
 	"github.com/elastic/beats/dev-tools/mage/target/pkg"
 )
 
+func init() {
+	mage.BeatDescription = "Ping remote services for availability and log " +
+		"results to Elasticsearch or send to Logstash."
+	mage.BeatServiceName = "heartbeat-elastic"
+}
+
 // Package packages the Beat for distribution.
 // Use SNAPSHOT=true to build snapshots.
 // Use PLATFORMS to control the target platforms.
