@@ -22,7 +22,48 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
 )
+
+type moduleOptions struct {
+	Enable     map[string]struct{}
+	ExtraVars  map[string]interface{}
+	InputGlobs []string
+	OutputDir  string
+}
+
+type ModuleOption func(params *moduleOptions)
+
+func EnableModule(name string) ModuleOption {
+	return func(params *moduleOptions) {
+		if params.Enable == nil {
+			params.Enable = map[string]struct{}{}
+		}
+		params.Enable[name] = struct{}{}
+	}
+}
+
+func SetTemplateVariable(key string, value interface{}) ModuleOption {
+	return func(params *moduleOptions) {
+		if params.ExtraVars == nil {
+			params.ExtraVars = map[string]interface{}{}
+		}
+		params.ExtraVars[key] = value
+	}
+}
+
+func OutputDir(outputDir string) ModuleOption {
+	return func(params *moduleOptions) {
+		params.OutputDir = outputDir
+	}
+}
+
+func InputGlobs(inputGlobs ...string) ModuleOption {
+	return func(params *moduleOptions) {
+		params.InputGlobs = inputGlobs
+	}
+}
 
 var modulesDConfigTemplate = `
 # Module: {{.Module}}
@@ -33,12 +74,20 @@ var modulesDConfigTemplate = `
 // GenerateDirModulesD generates a modules.d directory containing the
 // <module>.yml.disabled files. It adds a header to each file containing a
 // link to the documentation.
-func GenerateDirModulesD() error {
-	if err := os.RemoveAll("modules.d"); err != nil {
+func GenerateDirModulesD(opts ...ModuleOption) error {
+	args := moduleOptions{
+		OutputDir:  "modules.d",
+		InputGlobs: []string{"module/*/_meta/config.yml"},
+	}
+	for _, f := range opts {
+		f(&args)
+	}
+
+	if err := os.RemoveAll(args.OutputDir); err != nil {
 		return err
 	}
 
-	shortConfigs, err := filepath.Glob("module/*/_meta/config.yml")
+	shortConfigs, err := FindFiles("module/*/_meta/config.yml")
 	if err != nil {
 		return err
 	}
@@ -55,16 +104,36 @@ func GenerateDirModulesD() error {
 			return err
 		}
 
+		params := map[string]interface{}{
+			"GOOS":      EnvOr("DEV_OS", "linux"),
+			"GOARCH":    EnvOr("DEV_ARCH", "amd64"),
+			"Reference": false,
+			"Docker":    false,
+		}
+		for k, v := range args.ExtraVars {
+			params[k] = v
+		}
+		expandedConfig, err := Expand(string(config), params)
+		if err != nil {
+			return errors.Wrapf(err, "failed expanding config file=%v", f)
+		}
+
 		data, err := Expand(modulesDConfigTemplate, map[string]interface{}{
 			"Module": moduleName,
-			"Config": string(config),
+			"Config": string(expandedConfig),
 		})
 		if err != nil {
 			return err
 		}
 
-		target := filepath.Join("modules.d", moduleName+".yml.disabled")
-		err = ioutil.WriteFile(createDir(target), []byte(data), 0644)
+		target := filepath.Join(args.OutputDir, moduleName)
+		if _, enabled := args.Enable[moduleName]; enabled {
+			target += ".yml"
+		} else {
+			target += ".yml.disabled"
+		}
+
+		err = ioutil.WriteFile(CreateDir(target), []byte(data), 0644)
 		if err != nil {
 			return err
 		}

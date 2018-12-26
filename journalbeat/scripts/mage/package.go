@@ -42,6 +42,7 @@ func init() {
 	mage.Platforms = mage.Platforms.Filter("linux !linux/ppc64 !linux/mips64")
 }
 
+// Package packages the Beat for distribution.
 // Use SNAPSHOT=true to build snapshots.
 // Use PLATFORMS to control the target platforms.
 // Use VERSION_QUALIFIER to control the version qualifier.

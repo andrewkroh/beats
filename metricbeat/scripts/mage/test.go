@@ -15,29 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// +build mage
+package mage
 
-package main
-
-import (
-	"github.com/elastic/beats/dev-tools/mage"
-
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/common"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/build"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/integtest"
-	// mage:import
-	metricbeat "github.com/elastic/beats/metricbeat/scripts/mage"
-)
+import "github.com/elastic/beats/dev-tools/mage/target/integtest"
 
 func init() {
-	metricbeat.SelectLogic = mage.OSSProject
+	integtest.RegisterPythonTestDeps(Fields)
 }
