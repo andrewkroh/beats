@@ -18,12 +18,13 @@
 package mage
 
 import (
-	"github.com/magefile/mage/mg"
-	"github.com/magefile/mage/sh"
-	"github.com/pkg/errors"
 	"log"
 	"regexp"
 	"strings"
+
+	"github.com/magefile/mage/mg"
+	"github.com/magefile/mage/sh"
+	"github.com/pkg/errors"
 
 	"github.com/elastic/beats/dev-tools/mage"
 )

@@ -1,15 +1,18 @@
-BEAT_NAME=winlogbeat
-BEAT_TITLE=Winlogbeat
-SYSTEM_TESTS=true
-TEST_ENVIRONMENT=false
-GOX_OS=windows
+#
+# Variables
+#
+ES_BEATS := ..
+GOX_OS   := windows
 
-include ../libbeat/scripts/Makefile
+#
+# Includes
+#
+include $(ES_BEATS)/dev-tools/make/oss.mk
+
+#
+# Targets
+#
 
 .PHONY: gen
 gen:
 	GOOS=windows GOARCH=386 go generate -v -x ./...
-
-# Collects all dependencies and then calls update
-.PHONY: collect
-collect:

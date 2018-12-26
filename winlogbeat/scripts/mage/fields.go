@@ -15,27 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// +build mage
-
-package main
+package mage
 
 import (
-	"github.com/elastic/beats/dev-tools/mage"
+	"github.com/magefile/mage/mg"
 
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/common"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/build"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
-	// mage:import
-	winlogbeat "github.com/elastic/beats/winlogbeat/scripts/mage"
+	"github.com/elastic/beats/dev-tools/mage"
 )
 
-func init() {
-	winlogbeat.SelectLogic = mage.OSSProject
+// Fields generates fields.yml and fields.go files for the Beat.
+func Fields() {
+	switch SelectLogic {
+	case mage.OSSProject:
+		mg.Deps(libbeatAndBeatCommonFieldsGo)
+	case mage.XPackProject:
+		mg.Deps(fieldsYML)
+	}
+}
+
+// libbeatAndBeatCommonFieldsGo generates a fields.go containing both
+// libbeat and Auditbeat's common fields.
+func libbeatAndBeatCommonFieldsGo() error {
+	if err := mage.GenerateFieldsYAML(); err != nil {
+		return err
+	}
+	return mage.GenerateAllInOneFieldsGo()
+}
+
+func fieldsYML() error {
+	return mage.GenerateFieldsYAML()
 }
