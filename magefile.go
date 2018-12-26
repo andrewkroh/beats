@@ -24,8 +24,11 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/pkg/errors"
 
@@ -43,7 +46,7 @@ var (
 		{"dev-tools", none},
 		{"filebeat", packaging | update | unitTest | integTest},
 		{"heartbeat", packaging | dashboards | update | unitTest | integTest},
-		{"journalbeat", packaging | dashboards | update | unitTest | integTest},
+		{"journalbeat", packaging | dashboards | update | unitTest},
 		{"metricbeat", packaging | dashboards | update | unitTest | integTest},
 		{"packetbeat", packaging | dashboards | update | unitTest | integTest},
 		{"winlogbeat", packaging | dashboards | update | unitTest | integTest},
@@ -52,7 +55,7 @@ var (
 		{"x-pack/filebeat", packaging | dashboards | update | unitTest | integTest},
 		{"x-pack/functionbeat", packaging | dashboards | update | unitTest | integTest},
 		{"x-pack/heartbeat", packaging | dashboards | update | unitTest | integTest},
-		{"x-pack/journalbeat", packaging | dashboards | update | unitTest | integTest},
+		{"x-pack/journalbeat", packaging | dashboards | update | unitTest},
 		{"x-pack/metricbeat", packaging | update | unitTest | integTest},
 		{"x-pack/packetbeat", packaging | update | unitTest | integTest},
 		{"x-pack/winlogbeat", packaging | update | unitTest | integTest},
@@ -240,6 +243,84 @@ func (Update) Notice() error {
 		return err
 	}
 	return sh.RunV(pythonPath, filepath.Clean("dev-tools/generate_notice.py"), ".")
+}
+
+func (Update) TravisCI() error {
+	var data TravisCITemplateData
+
+	data.Jobs = append(data.Jobs, TravisCIJob{
+		OS:    "linux",
+		Stage: "check",
+		Env: []string{
+			"BUILD_CMD=" + strconv.Quote("mage"),
+			"TARGETS=" + strconv.Quote("check"),
+		},
+	})
+
+	projects.ForEach(any, func(proj project) error {
+		if proj.HasAttribute(unitTest) || proj.HasAttribute(integTest) {
+			targets := []string{"clean"}
+			if proj.HasAttribute(unitTest) {
+				targets = append(targets, "unitTest")
+			}
+			if proj.HasAttribute(integTest) {
+				targets = append(targets, "integTest")
+			}
+			data.Jobs = append(data.Jobs, TravisCIJob{
+				OS:    "linux",
+				Stage: "test",
+				Env: []string{
+					"BUILD_CMD=" + strconv.Quote("mage -d "+filepath.ToSlash(proj.Dir)),
+					"TARGETS=" + strconv.Quote(strings.Join(targets, " ")),
+				},
+			})
+		}
+		return nil
+	})
+
+	projects.ForEach(any, func(proj project) error {
+		if !strings.HasSuffix(filepath.Base(proj.Dir), "beat") {
+			return nil
+		}
+
+		data.Jobs = append(data.Jobs, TravisCIJob{
+			OS:    "linux",
+			Stage: "crosscompile",
+			Env: []string{
+				"BUILD_CMD=" + strconv.Quote("make"),
+				"TARGETS=" + strconv.Quote("gox"),
+			},
+		})
+		return nil
+	})
+
+	elasticBeats, err := mage.ElasticBeatsDir()
+	if err != nil {
+		return err
+	}
+
+	t, err := template.ParseFiles(filepath.Join(elasticBeats, "dev-tools/ci/templates/travis.yml.tmpl"))
+	if err != nil {
+		return err
+	}
+
+	out, err := os.OpenFile(".travis.yml", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0755)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	return t.Execute(out, data)
+}
+
+type TravisCITemplateData struct {
+	Jobs []TravisCIJob
+}
+
+type TravisCIJob struct {
+	OS    string
+	Env   []string
+	Stage string
 }
 
 type Package mg.Namespace
