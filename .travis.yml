@@ -42,103 +42,205 @@ jobs:
       stage: test
       env:
         - BUILD_CMD="mage -d libbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d libbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d auditbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d auditbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d filebeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d filebeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d heartbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d heartbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d journalbeat"
-        - TARGETS="clean unitTest"
+        - TARGETS="unitTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d journalbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d metricbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d metricbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d packetbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d packetbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d winlogbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d winlogbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/libbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/libbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/auditbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/auditbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/filebeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/filebeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/functionbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/functionbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/heartbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/heartbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/journalbeat"
-        - TARGETS="clean unitTest"
+        - TARGETS="unitTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/journalbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/metricbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/metricbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/packetbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/packetbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/winlogbeat"
-        - TARGETS="clean unitTest integTest"
+        - TARGETS="unitTest integTest"
+
+    - os: osx
+      stage: test
+      env:
+        - BUILD_CMD="mage -d x-pack/winlogbeat"
+        - TARGETS="unitTest"
 
     - os: linux
       stage: crosscompile

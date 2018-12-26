@@ -41,23 +41,23 @@ import (
 
 var (
 	projects = projectList{
-		{"libbeat", unitTest | integTest},
-		{"auditbeat", packaging | update | unitTest | integTest},
+		{"libbeat", unitTest | integTest | osxTesting},
+		{"auditbeat", packaging | update | unitTest | integTest | osxTesting},
 		{"dev-tools", none},
-		{"filebeat", packaging | update | unitTest | integTest},
-		{"heartbeat", packaging | dashboards | update | unitTest | integTest},
+		{"filebeat", packaging | update | unitTest | integTest | osxTesting},
+		{"heartbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"journalbeat", packaging | dashboards | update | unitTest},
-		{"metricbeat", packaging | dashboards | update | unitTest | integTest},
-		{"packetbeat", packaging | dashboards | update | unitTest | integTest},
+		{"metricbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
+		{"packetbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"winlogbeat", packaging | dashboards | update | unitTest | integTest},
 		{"x-pack/libbeat", unitTest | integTest},
-		{"x-pack/auditbeat", packaging | dashboards | update | unitTest | integTest},
-		{"x-pack/filebeat", packaging | dashboards | update | unitTest | integTest},
+		{"x-pack/auditbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
+		{"x-pack/filebeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"x-pack/functionbeat", packaging | dashboards | update | unitTest | integTest},
-		{"x-pack/heartbeat", packaging | dashboards | update | unitTest | integTest},
+		{"x-pack/heartbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"x-pack/journalbeat", packaging | dashboards | update | unitTest},
-		{"x-pack/metricbeat", packaging | update | unitTest | integTest},
-		{"x-pack/packetbeat", packaging | update | unitTest | integTest},
+		{"x-pack/metricbeat", packaging | update | unitTest | integTest | osxTesting},
+		{"x-pack/packetbeat", packaging | update | unitTest | integTest | osxTesting},
 		{"x-pack/winlogbeat", packaging | update | unitTest | integTest},
 	}
 
@@ -88,6 +88,7 @@ const (
 	packaging
 	unitTest
 	integTest
+	osxTesting
 
 	any attribute = math.MaxUint16
 )
@@ -259,7 +260,7 @@ func (Update) TravisCI() error {
 
 	projects.ForEach(any, func(proj project) error {
 		if proj.HasAttribute(unitTest) || proj.HasAttribute(integTest) {
-			targets := []string{"clean"}
+			var targets []string
 			if proj.HasAttribute(unitTest) {
 				targets = append(targets, "unitTest")
 			}
@@ -275,6 +276,18 @@ func (Update) TravisCI() error {
 				},
 			})
 		}
+
+		// We don't run the integTest which require Docker on OSX workers.
+		if proj.HasAttribute(unitTest | osxTesting) {
+			data.Jobs = append(data.Jobs, TravisCIJob{
+				OS:    "osx",
+				Stage: "test",
+				Env: []string{
+					"BUILD_CMD=" + strconv.Quote("mage -d "+filepath.ToSlash(proj.Dir)),
+					"TARGETS=" + strconv.Quote("unitTest"),
+				},
+			})
+		}
 		return nil
 	})
 
@@ -287,7 +300,7 @@ func (Update) TravisCI() error {
 			OS:    "linux",
 			Stage: "crosscompile",
 			Env: []string{
-				"BUILD_CMD=" + strconv.Quote("make -C " + proj.Dir),
+				"BUILD_CMD=" + strconv.Quote("make -C "+proj.Dir),
 				"TARGETS=" + strconv.Quote("gox"),
 			},
 		})
