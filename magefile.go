@@ -287,7 +287,7 @@ func (Update) TravisCI() error {
 			OS:    "linux",
 			Stage: "crosscompile",
 			Env: []string{
-				"BUILD_CMD=" + strconv.Quote("make"),
+				"BUILD_CMD=" + strconv.Quote("make -C " + proj.Dir),
 				"TARGETS=" + strconv.Quote("gox"),
 			},
 		})
