@@ -210,7 +210,7 @@ type Update mg.Namespace
 
 // All updates all Beats.
 func (Update) All() error {
-	mg.Deps(Update.Notice)
+	mg.Deps(Update.Notice, Update.TravisCI)
 	return projects.ForEach(update, func(proj project) error {
 		fmt.Println("> update:all:", proj.Dir)
 		return errors.Wrapf(mage.Mage(proj.Dir, "update"), "failed updating project %v", proj.Dir)

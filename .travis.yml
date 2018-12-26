@@ -12,9 +12,9 @@ language: go
 go_import_path: github.com/elastic/beats
 
 stages:
-  - crosscompile
   - check
   - test
+  - crosscompile
 
 env:
   global:
@@ -143,103 +143,103 @@ jobs:
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C libbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C auditbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C filebeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C heartbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C journalbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C metricbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C packetbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C winlogbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/libbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/auditbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/filebeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/functionbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/heartbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/journalbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/metricbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/packetbeat"
         - TARGETS="gox"
 
     - os: linux
       stage: crosscompile
       env:
-        - BUILD_CMD="make"
+        - BUILD_CMD="make -C x-pack/winlogbeat"
         - TARGETS="gox"
 
 
