@@ -21,10 +21,43 @@ import (
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
+// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+var SelectLogic mage.ProjectType
+
 const (
 	// configTemplateGlob matches Packetbeat protocol config file templates.
 	configTemplateGlob = "protos/*/_meta/config*.yml.tmpl"
 )
+
+// Config generates the config files.
+func Config() error {
+	return mage.Config(mage.AllConfigTypes, configFileParams(), ".")
+}
+
+// ConfigFileParams returns the default ConfigFileParams for generating
+// packetbeat*.yml files.
+func configFileParams() mage.ConfigFileParams {
+	return mage.ConfigFileParams{
+		ShortParts: []string{
+			mage.OSSBeatDir("_meta/beat.yml"),
+			mage.OSSBeatDir(configTemplateGlob),
+			mage.LibbeatDir("_meta/config.yml"),
+		},
+		ReferenceParts: []string{
+			mage.OSSBeatDir("_meta/beat.reference.yml"),
+			mage.OSSBeatDir(configTemplateGlob),
+			mage.LibbeatDir("_meta/config.reference.yml"),
+		},
+		DockerParts: []string{
+			mage.OSSBeatDir("_meta/beat.docker.yml"),
+			mage.OSSBeatDir(configTemplateGlob),
+			mage.LibbeatDir("_meta/config.docker.yml"),
+		},
+		ExtraVars: map[string]interface{}{
+			"device": device,
+		},
+	}
+}
 
 var defaultDevice = map[string]string{
 	"darwin":  "en0",
@@ -38,29 +71,4 @@ func device(goos string) string {
 		return dev
 	}
 	return "any"
-}
-
-// ConfigFileParams returns the default ConfigFileParams for generating
-// packetbeat*.yml files.
-func ConfigFileParams() mage.ConfigFileParams {
-	return mage.ConfigFileParams{
-		ShortParts: []string{
-			mage.OSSBeatDir("_meta/beat.yml"),
-			configTemplateGlob,
-			mage.LibbeatDir("_meta/config.yml"),
-		},
-		ReferenceParts: []string{
-			mage.OSSBeatDir("_meta/beat.reference.yml"),
-			configTemplateGlob,
-			mage.LibbeatDir("_meta/config.reference.yml"),
-		},
-		DockerParts: []string{
-			mage.OSSBeatDir("_meta/beat.docker.yml"),
-			configTemplateGlob,
-			mage.LibbeatDir("_meta/config.docker.yml"),
-		},
-		ExtraVars: map[string]interface{}{
-			"device": device,
-		},
-	}
 }

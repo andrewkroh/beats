@@ -1,15 +1,19 @@
-BEAT_NAME?=packetbeat
-BEAT_TITLE?=Packetbeat
-SYSTEM_TESTS?=true
-TEST_ENVIRONMENT=false
-ES_BEATS?=..
-EXCLUDE_COMMON_UPDATE_TARGET=true
+#
+# Variables
+#
+ES_BEATS  := ..
 
-include ${ES_BEATS}/libbeat/scripts/Makefile
+#
+# Includes
+#
+include $(ES_BEATS)/dev-tools/make/oss.mk
 
-.PHONY: update
-update: mage
-	mage update
+#
+# Targets
+#
+# TODO (andrewkroh on 12-26-2018): These targets need refactored to work in the
+# Mage based build system.
+#
 
 .PHONY: benchmark
 benchmark:
