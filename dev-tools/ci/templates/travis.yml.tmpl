@@ -64,7 +64,7 @@ before_install:
 
   # Python setup.
   - python --version
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then pyenv version; pyenv global 2.7; python --version; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then pyenv versions; pyenv global 2.7; python --version; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then pip install virtualenv; fi
 
   # Mage tool setup.
