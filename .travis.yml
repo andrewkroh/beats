@@ -7,6 +7,8 @@ dist: trusty
 services:
   - docker
 
+python: 2.7.14
+
 language: go
 
 go_import_path: github.com/elastic/beats
@@ -29,6 +31,7 @@ env:
     - GO_VERSION="$(cat .go-version)"
     # Newer versions of minikube fail on travis. See https://github.com/kubernetes/minikube/issues/2704.
     - TRAVIS_MINIKUBE_VERSION=v0.25.2
+    - PYENV_VERSION=2.7.14
 
 jobs:
   include:
@@ -322,7 +325,7 @@ before_install:
 
   # Python setup.
   - python --version
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then pyenv versions; pyenv global 2.7; pyenv global system 2.7; pyenv versions; python --version; which python; cat `which python`; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then pyenv versions; pyenv global $PYENV_VERSION; pyenv global system $PYENV_VERSION; pyenv versions; python --version; which python; cat `which python`; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then pip install virtualenv; fi
   - echo PATH=$PATH
 
