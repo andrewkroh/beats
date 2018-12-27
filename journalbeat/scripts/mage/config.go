@@ -36,7 +36,7 @@ func configFileParams() mage.ConfigFileParams {
 			mage.LibbeatDir("_meta/config.yml"),
 		},
 		ReferenceParts: []string{
-			mage.OSSBeatDir("_meta/beat.reference.yml"),
+			mage.OSSBeatDir("_meta/beat.yml"),
 			mage.LibbeatDir("_meta/config.reference.yml"),
 		},
 		DockerParts: []string{
