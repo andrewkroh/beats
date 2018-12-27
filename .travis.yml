@@ -186,41 +186,6 @@ jobs:
 
     - os: linux
       go: $GO_VERSION
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/metricbeat"
-        - TARGETS="unitTest integTest"
-
-    - os: osx
-      go: $GO_VERSION
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/metricbeat"
-        - TARGETS="unitTest"
-
-    - os: linux
-      go: $GO_VERSION
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/packetbeat"
-        - TARGETS="unitTest"
-
-    - os: osx
-      go: $GO_VERSION
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/packetbeat"
-        - TARGETS="unitTest"
-
-    - os: linux
-      go: $GO_VERSION
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/winlogbeat"
-        - TARGETS="unitTest"
-
-    - os: linux
-      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C libbeat"

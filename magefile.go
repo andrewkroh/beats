@@ -56,9 +56,9 @@ var (
 		{"x-pack/functionbeat", packaging | dashboards | update | unitTest | integTest},
 		{"x-pack/heartbeat", packaging | dashboards | update},
 		{"x-pack/journalbeat", packaging | dashboards | update},
-		{"x-pack/metricbeat", packaging | update | unitTest | integTest | osxTesting},
-		{"x-pack/packetbeat", packaging | update | unitTest | osxTesting},
-		{"x-pack/winlogbeat", packaging | update | unitTest},
+		{"x-pack/metricbeat", packaging | update },
+		{"x-pack/packetbeat", packaging | update },
+		{"x-pack/winlogbeat", packaging | update },
 		{"dev-tools/packaging/preference-pane", none},
 	}
 
