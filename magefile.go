@@ -438,6 +438,23 @@ func (Test) Integ() error {
 	})
 }
 
+func Clean() error {
+	paths := []string{
+		"build",
+	}
+
+	projects.ForEach(any, func(proj project) error {
+		if !strings.HasSuffix(filepath.Base(proj.Dir), "beat") {
+			for _, p := range mage.DefaultCleanPaths {
+				paths = append(paths, filepath.Join(proj.Dir, p))
+			}
+		}
+		return nil
+	})
+
+	return mage.Clean(paths)
+}
+
 // TODO: Add targets for
 // - check:misspell
 // - docs
