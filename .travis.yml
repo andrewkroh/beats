@@ -14,9 +14,10 @@ language: go
 go_import_path: github.com/elastic/beats
 
 stages:
-  - check
-  - test
-  - crosscompile
+  - name: check
+  - name: test
+  - name: crosscompile
+    if: type != pull_request
 
 env:
   global:
