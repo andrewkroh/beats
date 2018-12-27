@@ -17,9 +17,13 @@
 
 package mage
 
+import (
+	"github.com/elastic/beats/dev-tools/mage/target/integtest"
+	"github.com/elastic/beats/dev-tools/mage/target/unittest"
+)
+
 func init() {
-	//unittest.RegisterGoTestDeps(Fields)
-	//unittest.RegisterPythonTestDeps(Fields)
-	//
-	//integtest.RegisterPythonTestDeps(Fields, Dashboards)
+	unittest.RegisterGoTestDeps(Fields)
+	unittest.RegisterPythonTestDeps(Fields)
+	integtest.RegisterPythonTestDeps(Fields)
 }
