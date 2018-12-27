@@ -278,6 +278,9 @@ func integTestDockerComposeEnvVars() (map[string]string, error) {
 	}
 
 	return map[string]string{
+		// When using mage -d or make -C the PWD env var is not changed so we
+		// must manually set it to reflect the CWD.
+		"PWD":               CWD(),
 		"ES_BEATS":          esBeatsDir,
 		"STACK_ENVIRONMENT": StackEnvironment,
 		// Deprecated use STACK_ENVIRONMENT instead (it's more descriptive).
