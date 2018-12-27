@@ -12,9 +12,9 @@ language: go
 go_import_path: github.com/elastic/beats
 
 stages:
-  - check
   - test
   - crosscompile
+  - check
 
 env:
   global:
