@@ -161,18 +161,6 @@ jobs:
     - os: linux
       stage: test
       env:
-        - BUILD_CMD="mage -d x-pack/heartbeat"
-        - TARGETS="unitTest integTest"
-
-    - os: osx
-      stage: test
-      env:
-        - BUILD_CMD="mage -d x-pack/heartbeat"
-        - TARGETS="unitTest"
-
-    - os: linux
-      stage: test
-      env:
         - BUILD_CMD="mage -d x-pack/journalbeat"
         - TARGETS="unitTest"
 
@@ -333,7 +321,8 @@ before_install:
   # Python setup.
   - python --version
   - pyenv versions
-  - pyenv 2.7.10
+  - pyenv global 2.7.14
+  - python --version
   - if [ $TRAVIS_OS_NAME = osx ]; then pip install virtualenv; fi
 
   # Mage tool setup.

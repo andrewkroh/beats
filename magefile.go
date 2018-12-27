@@ -54,7 +54,7 @@ var (
 		{"x-pack/auditbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"x-pack/filebeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
 		{"x-pack/functionbeat", packaging | dashboards | update | unitTest | integTest},
-		{"x-pack/heartbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
+		{"x-pack/heartbeat", packaging | dashboards | update },
 		{"x-pack/journalbeat", packaging | dashboards | update | unitTest},
 		{"x-pack/metricbeat", packaging | update | unitTest | integTest | osxTesting},
 		{"x-pack/packetbeat", packaging | update | unitTest | osxTesting},
