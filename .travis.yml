@@ -38,258 +38,301 @@ env:
 jobs:
   include:
     - os: linux
+      go: $GO_VERSION
       stage: check
       env:
         - BUILD_CMD="mage"
         - TARGETS="check"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d libbeat"
         - TARGETS="unitTest integTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d libbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d auditbeat"
         - TARGETS="unitTest integTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d auditbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d filebeat"
         - TARGETS="unitTest integTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d filebeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d heartbeat"
         - TARGETS="unitTest integTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d heartbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d journalbeat"
         - TARGETS="integTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d metricbeat"
         - TARGETS="unitTest integTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d metricbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d packetbeat"
         - TARGETS="unitTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d packetbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d winlogbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/libbeat"
         - TARGETS="unitTest integTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/auditbeat"
         - TARGETS="unitTest integTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/auditbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/filebeat"
         - TARGETS="unitTest integTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/filebeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/functionbeat"
         - TARGETS="unitTest integTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/metricbeat"
         - TARGETS="unitTest integTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/metricbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/packetbeat"
         - TARGETS="unitTest"
 
     - os: osx
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/packetbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: test
       env:
         - BUILD_CMD="mage -d x-pack/winlogbeat"
         - TARGETS="unitTest"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C libbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C auditbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C filebeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C heartbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C journalbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C metricbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C packetbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C winlogbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/libbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/auditbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/filebeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/functionbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/heartbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/journalbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/metricbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/packetbeat"
         - TARGETS="gox"
 
     - os: linux
+      go: $GO_VERSION
       stage: crosscompile
       env:
         - BUILD_CMD="make -C x-pack/winlogbeat"

@@ -39,6 +39,7 @@ jobs:
   include:
 {{- range $job := .Jobs}}
     - os: {{$job.OS}}
+      go: $GO_VERSION
       stage: {{$job.Stage}}
       env:
 {{- range $envVar := $job.Env}}
