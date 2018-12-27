@@ -118,7 +118,7 @@ type Check mg.Namespace
 
 // Check checks that code is formatted and generated files are up-to-date.
 func (Check) All() {
-	mg.SerialDeps(Check.Fmt, Update.All, mage.Check)
+	mg.SerialDeps(Check.Fmt, Check.Targets, Update.All, mage.Check)
 }
 
 // Fmt formats code and adds license headers.
