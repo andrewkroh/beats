@@ -78,7 +78,7 @@ func GenerateFieldsGo(fieldsYML, out string) error {
 		filepath.Join(beatsDir, assetCmdPath),
 		"-pkg", "include",
 		"-in", fieldsYML,
-		"-out", createDir(out),
+		"-out", CreateDir(out),
 		"-license", toLibbeatLicenseName(BeatLicense),
 		BeatName,
 	)
@@ -97,11 +97,15 @@ func GenerateModuleFieldsGo(moduleDir string) error {
 		return err
 	}
 
+	if !filepath.IsAbs(moduleDir) {
+		moduleDir = CWD(moduleDir)
+	}
+
 	moduleFieldsCmd := sh.RunCmd("go", "run",
 		filepath.Join(beatsDir, moduleFieldsCmdPath),
 		"-beat", BeatName,
 		"-license", toLibbeatLicenseName(BeatLicense),
-		filepath.Join(CWD(), moduleDir),
+		moduleDir,
 	)
 
 	return moduleFieldsCmd()
@@ -110,9 +114,7 @@ func GenerateModuleFieldsGo(moduleDir string) error {
 // GenerateModuleIncludeListGo generates an include/list.go file containing
 // a import statement for each module and dataset.
 func GenerateModuleIncludeListGo() error {
-	return GenerateIncludeListGo(nil, []string{
-		filepath.Join(CWD(), "module"),
-	})
+	return GenerateIncludeListGo(nil, []string{"module"})
 }
 
 // GenerateIncludeListGo generates an include/list.go file containing imports
@@ -133,9 +135,15 @@ func GenerateIncludeListGo(importDirs []string, moduleDirs []string) error {
 
 	var args []string
 	for _, dir := range importDirs {
+		if !filepath.IsAbs(dir) {
+			dir = CWD(dir)
+		}
 		args = append(args, "-import", dir)
 	}
 	for _, dir := range moduleDirs {
+		if !filepath.IsAbs(dir) {
+			dir = CWD(dir)
+		}
 		args = append(args, "-moduleDir", dir)
 	}
 
