@@ -76,8 +76,8 @@ script:
   - ${BUILD_CMD:-make} $TARGETS
 
 after_failure:
-  - build/ve/darwin/python --version || true
-  - cat journalbeat/build/system-tests/run/test*/journalbeat.log || true
+  - /home/travis/gopath/src/github.com/elastic/beats/build/ve/linux/bin/python --version || true
+  - cat /home/travis/gopath/src/github.com/elastic/beats/journalbeat/build/system-tests/run/test*/journalbeat.log || true
 
 notifications:
   slack:
