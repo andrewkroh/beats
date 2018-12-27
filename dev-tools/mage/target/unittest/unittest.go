@@ -34,7 +34,7 @@ func RegisterGoTestDeps(deps ...interface{}) {
 }
 
 func RegisterPythonTestDeps(deps ...interface{}) {
-	goTestDeps = append(goTestDeps, deps...)
+	pythonTestDeps = append(pythonTestDeps, deps...)
 }
 
 // UnitTest executes the unit tests (Go and Python).

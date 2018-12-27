@@ -29,12 +29,13 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/build"
 	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
+	"github.com/elastic/beats/dev-tools/mage/target/unittest"
 	// mage:import
-	integtest "github.com/elastic/beats/dev-tools/mage/target/integtest"
+	"github.com/elastic/beats/dev-tools/mage/target/integtest"
 )
 
 func init() {
+	unittest.RegisterPythonTestDeps(Fields)
 	integtest.RegisterGoTestDeps(Fields)
 	integtest.RegisterPythonTestDeps(Fields)
 }
