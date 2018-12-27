@@ -18,10 +18,6 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
 	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/integtest"
-	// mage:import
 	heartbeat "github.com/elastic/beats/heartbeat/scripts/mage"
 )
 
