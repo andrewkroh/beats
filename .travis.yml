@@ -330,6 +330,8 @@ before_install:
 
 script:
   - ${BUILD_CMD:-make} $TARGETS
+  - build/ve/darwin/python --version || true
+  - cat journalbeat/build/system-tests/run/test*/journalbeat.log || true
 
 notifications:
   slack:
