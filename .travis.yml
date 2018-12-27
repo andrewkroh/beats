@@ -321,7 +321,7 @@ before_install:
 
   # Python setup.
   - python --version
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then pyenv versions; pyenv global 2.7; python --version; update-alternatives --list python; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then pyenv versions; pyenv global 2.7; pyenv versions; python --version; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then pip install virtualenv; fi
   - echo PATH=$PATH
 
