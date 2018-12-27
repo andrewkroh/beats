@@ -413,12 +413,6 @@ before_install:
   # Mage tool setup.
   - make mage
 
-  - go env
-  - which goimports || true
-  - rm -f `which goimports` || true
-  - echo PATH=$PATH
-  - printenv | sort
-
 script:
   - ${BUILD_CMD:-make} $TARGETS
 
