@@ -63,7 +63,7 @@ func GoImports() error {
 	}
 
 	fmt.Println(">> fmt - goimports: Formatting Go code")
-	if err := sh.Run("go", "get", GoImportsImportPath); err != nil {
+	if err := sh.Run("go", "get", "-u", GoImportsImportPath); err != nil {
 		return err
 	}
 
