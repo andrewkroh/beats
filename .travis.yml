@@ -164,12 +164,6 @@ jobs:
     - os: linux
       stage: test
       env:
-        - BUILD_CMD="mage -d x-pack/journalbeat"
-        - TARGETS="integTest"
-
-    - os: linux
-      stage: test
-      env:
         - BUILD_CMD="mage -d x-pack/metricbeat"
         - TARGETS="unitTest integTest"
 

@@ -16,8 +16,6 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
 	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
-	// mage:import
 	journalbeat "github.com/elastic/beats/journalbeat/scripts/mage"
 )
 
