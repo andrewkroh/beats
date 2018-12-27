@@ -14,9 +14,9 @@ language: go
 go_import_path: github.com/elastic/beats
 
 stages:
+  - check
   - test
   - crosscompile
-  - check
 
 env:
   global:
@@ -31,6 +31,8 @@ env:
     - GO_VERSION="$(cat .go-version)"
     # Newer versions of minikube fail on travis. See https://github.com/kubernetes/minikube/issues/2704.
     - TRAVIS_MINIKUBE_VERSION=v0.25.2
+
+    # Set Python version returned by pyenv.
     - PYENV_VERSION=2.7.14
 
 jobs:
