@@ -319,9 +319,15 @@ before_install:
 
   # Python setup.
   - python --version
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then pyenv versions; pyenv global $PYENV_VERSION; pyenv global system $PYENV_VERSION; pyenv versions; python --version; pyenv prefix $PYENV_VERSION; which python; cat `which python`; export PATH=$(pyenv prefix $PYENV_VERSION)/bin:$PATH; which python; fi
+  ## Put the pyenv python version directly on the PATH so that virtualenv works properly.
+  - >
+    if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+      pyenv versions;
+      export PATH=$(pyenv prefix $PYENV_VERSION)/bin:$PATH;
+      export VIRTUALENV_PYTHON=$(pyenv prefix $PYENV_VERSION)/bin/python;
+      which python;
+    fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then pip install virtualenv; fi
-  - echo PATH=$PATH
 
   # Mage tool setup.
   - make mage
