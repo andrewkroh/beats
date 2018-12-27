@@ -24,5 +24,5 @@ import (
 
 func init() {
 	unittest.RegisterPythonTestDeps(Fields)
-	integtest.RegisterPythonTestDeps(Fields)
+	integtest.RegisterPythonTestDeps(Fields, Dashboards)
 }

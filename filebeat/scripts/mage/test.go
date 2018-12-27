@@ -44,7 +44,7 @@ func GoIntegTest(ctx context.Context) error {
 // PythonIntegTest executes the python system tests in the integration environment (Docker).
 func PythonIntegTest(ctx context.Context) error {
 	if !mage.IsInIntegTestEnv() {
-		mg.Deps(Fields)
+		mg.Deps(Fields, Dashboards)
 	}
 	return mage.RunIntegTest("pythonIntegTest", func() error {
 		mg.Deps(mage.BuildSystemTestBinary)
