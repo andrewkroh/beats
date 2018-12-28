@@ -1,9 +1,9 @@
 #
 # Variables
 #
-ES_BEATS  := ..
-GOX_OS    := netbsd linux windows
-GOX_FLAGS := -arch="amd64 386 arm ppc64 ppc64le"
+ES_BEATS  ?= ..
+GOX_OS    ?= netbsd linux windows
+GOX_FLAGS ?= -arch="amd64 386 arm ppc64 ppc64le"
 
 #
 # Includes
@@ -19,8 +19,8 @@ include $(ES_BEATS)/dev-tools/make/oss.mk
 
 # Creates a new metricset. Requires the params MODULE and METRICSET.
 .PHONY: create-metricset
-create-metricset: python-env
-	@${PYTHON_ENV}/bin/python ${ES_BEATS}/metricbeat/scripts/create_metricset.py --path=$(PWD) --es_beats=$(ES_BEATS) --module=$(MODULE) --metricset=$(METRICSET)
+create-metricset: mage
+	mage generateMetricSet
 
 # Generates the data.json example documents.
 .PHONY: generate-json
