@@ -19,6 +19,7 @@ func Check() {
 
 // Dashboards collects all the dashboards and generates index patterns.
 func Dashboards() error {
+	mg.Deps(Fields)
 	return mage.KibanaDashboards()
 }
 

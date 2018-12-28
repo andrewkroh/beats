@@ -34,8 +34,10 @@ func Check() {
 func Dashboards() error {
 	switch SelectLogic {
 	case mage.OSSProject:
+		mg.Deps(ossFieldsYML)
 		return mage.KibanaDashboards("module")
 	case mage.XPackProject:
+		mg.Deps(xpackFieldsYML)
 		return mage.KibanaDashboards(mage.OSSBeatDir("module"), "module")
 	default:
 		panic(errors.Errorf("invalid SelectLogic value"))

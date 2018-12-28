@@ -35,11 +35,6 @@ func KibanaDashboards(moduleDirs ...string) error {
 		return err
 	}
 
-	// Create symlink from old directory so `make beats-dashboards` works.
-	if err := os.Symlink(filepath.Join("..", kibanaBuildDir), "_meta/kibana.generated"); err != nil && !os.IsExist(err) && !os.IsNotExist(err) {
-		return err
-	}
-
 	// Copy the OSS Beat's common dashboards if they exist. This assumes that
 	// X-Pack Beats only add dashboards with modules (this will require a
 	// change if we have X-Pack only Beats).
@@ -81,13 +76,19 @@ func KibanaDashboards(moduleDirs ...string) error {
 		return err
 	}
 
+	// Sanity check that fields.yml exists.
+	const fieldsYML = "fields.yml"
+	if _, err := os.Stat(fieldsYML); err != nil {
+		return errors.Wrap(err, "failed checking if fields.yml exists")
+	}
+
 	// Generate Kibana index pattern files from fields.yml.
 	indexPatternCmd := sh.RunCmd("go", "run",
 		filepath.Join(esBeatsDir, "dev-tools/cmd/kibana_index_pattern/kibana_index_pattern.go"),
 		"-beat", BeatName,
 		"-version", beatVersion,
 		"-index", BeatIndexPrefix+"-*",
-		"-fields", "fields.yml",
+		"-fields", fieldsYML,
 		"-out", kibanaBuildDir,
 	)
 
