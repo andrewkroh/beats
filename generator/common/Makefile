@@ -30,6 +30,7 @@ prepare-test:: python-env
 	mkdir -p ${BUILD_DIR}/src/github.com/elastic/beats/
 	rsync -a \
 	  --include=vendor/github.com/magefile/mage/build \
+	  --include=dev-tools/mage/target/build \
 	  --exclude=build/ \
 	  --exclude=.git/ \
 	  ${PWD}/../../* ${BUILD_DIR}/src/github.com/elastic/beats/
