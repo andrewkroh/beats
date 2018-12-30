@@ -26,22 +26,20 @@ import (
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// Docs generates modules and field documentation.
-func Docs() {
+// updateDocs generates modules and field documentation.
+func updateDocs() {
 	switch SelectLogic {
 	case mage.OSSProject:
 		// Module() only works from the OSS dir because the python script is
 		// not portable.
-		mg.Deps(docs.Module, docs.Fields)
+		mg.Deps(moduleDocs, fieldDocs)
 	case mage.XPackProject:
-		mg.Deps(docs.Fields)
+		mg.Deps(fieldDocs)
 	}
 }
 
-type docs struct{}
-
-// Module collects documentation from modules (both OSS and X-Pack).
-func (docs) Module() error {
+// moduleDocs collects documentation from modules (both OSS and X-Pack).
+func moduleDocs() error {
 	ve, err := mage.PythonVirtualenv()
 	if err != nil {
 		return err
@@ -65,8 +63,8 @@ func (docs) Module() error {
 		"--beat", mage.BeatName)
 }
 
-// Fields generates docs/fields.asciidoc containing all fields (including x-pack).
-func (docs) Fields() error {
+// fieldDocs generates docs/fields.asciidoc containing all fields (including x-pack).
+func fieldDocs() error {
 	inputs := []string{
 		mage.OSSBeatDir("module"),
 		mage.XPackBeatDir("module"),

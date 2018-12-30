@@ -18,12 +18,17 @@
 package mage
 
 import (
+	"github.com/elastic/beats/dev-tools/mage/target/docs"
 	"github.com/magefile/mage/mg"
 
 	"github.com/elastic/beats/dev-tools/mage/target/build"
 
 	"github.com/elastic/beats/dev-tools/mage"
 )
+
+func init() {
+	docs.RegisterDeps(updateDocs)
+}
 
 // Check runs fmt and update then returns an error if any modifications are found.
 func Check() {
@@ -46,5 +51,20 @@ func DashboardsImport() error {
 
 // Update is an alias for running fields, dashboards, config, includes, docs.
 func Update() {
+	mg.Deps(updateNoDocs)
+	if SelectLogic == mage.OSSProject {
+		mg.Deps(updateDocs)
+	}
+}
+
+func updateNoDocs() {
 	mg.SerialDeps(Fields, Dashboards, Config)
+}
+
+func updateDocs() {
+	mg.Deps(fieldDocs)
+}
+
+func fieldDocs() error {
+	return mage.Docs.FieldDocs("fields.yml")
 }

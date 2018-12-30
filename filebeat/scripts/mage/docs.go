@@ -24,8 +24,8 @@ import (
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// Docs generates modules and field documentation.
-func Docs() {
+// updateDocs generates modules and field documentation.
+func updateDocs() {
 	switch SelectLogic {
 	case mage.OSSProject:
 		// Module() only works from the OSS dir because the python script is

@@ -55,7 +55,7 @@ func DashboardsImport() error {
 
 // Update is an alias for running fields, dashboards, config, includes, docs.
 func Update() {
-	mg.SerialDeps(updateWithoutDocs, Docs)
+	mg.SerialDeps(updateWithoutDocs, updateDocs)
 }
 
 func updateWithoutDocs() {

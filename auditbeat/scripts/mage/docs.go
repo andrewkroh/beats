@@ -18,26 +18,24 @@
 package mage
 
 import (
+	"github.com/magefile/mage/mg"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 	"github.com/pkg/errors"
 
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// Docs generates modules and field documentation.
-func Docs() {
-	mg.Deps(docs.Module, docs.Fields)
+// updateDocs generates modules and field documentation.
+func updateDocs() {
+	mg.Deps(ModuleDocs, FieldDocs)
 }
 
-type docs struct{}
-
 // Module collects documentation from modules (both OSS and X-Pack).
-func (docs) Module() error {
+func ModuleDocs() error {
 	dirsWithModules := []string{
 		mage.OSSBeatDir(),
 		mage.XPackBeatDir(),
@@ -97,7 +95,7 @@ func (docs) Module() error {
 }
 
 // Fields generates docs/fields.asciidoc containing all fields (including x-pack).
-func (docs) Fields() error {
+func FieldDocs() error {
 	inputs := []string{
 		mage.OSSBeatDir("module"),
 		mage.XPackBeatDir("module"),

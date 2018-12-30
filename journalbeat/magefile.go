@@ -27,6 +27,8 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
 	// mage:import
+	_ "github.com/elastic/beats/dev-tools/mage/target/docs"
+	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/integtest"

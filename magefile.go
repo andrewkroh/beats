@@ -42,24 +42,28 @@ import (
 
 var (
 	projects = projectList{
-		{"libbeat", unitTest | integTest | osxTesting},
-		{"auditbeat", packaging | update | unitTest | integTest | osxTesting},
-		{"filebeat", packaging | update | unitTest | integTest | osxTesting},
-		{"heartbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
-		{"journalbeat", packaging | dashboards | update | integTest},
-		{"metricbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
-		{"packetbeat", packaging | dashboards | update | unitTest | osxTesting},
-		{"winlogbeat", packaging | dashboards | update | unitTest},
-		{"x-pack/libbeat", unitTest | integTest},
-		{"x-pack/auditbeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
-		{"x-pack/filebeat", packaging | dashboards | update | unitTest | integTest | osxTesting},
-		{"x-pack/functionbeat", packaging | dashboards | update | unitTest | integTest},
-		{"x-pack/heartbeat", packaging | dashboards | update},
-		{"x-pack/journalbeat", packaging | dashboards | update},
-		{"x-pack/metricbeat", packaging | update},
-		{"x-pack/packetbeat", packaging | update},
-		{"x-pack/winlogbeat", packaging | update},
-		{"dev-tools/packaging/preference-pane", none},
+		{"libbeat", build | docs | unitTest | integTest | linuxCI | macosCI | windowsCI},
+		{"auditbeat", build | update | docs | packaging | unitTest | integTest | linuxCI | macosCI | windowsCI},
+		{"filebeat", build | update | docs | packaging | unitTest | integTest | linuxCI | macosCI | windowsCI},
+		{"heartbeat", build | update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI | windowsCI},
+		{"journalbeat", build | update | docs | packaging | dashboards | integTest | linuxCI},
+		{"metricbeat", build | update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI | windowsCI},
+		{"packetbeat", build | update | docs | packaging | dashboards | unitTest | linuxCI | macosCI | windowsCI},
+		{"winlogbeat", build | update | docs | packaging | dashboards | unitTest | linuxCI | windowsCI},
+		{"x-pack/libbeat", build | unitTest | integTest | linuxCI},
+		{"x-pack/auditbeat", build | update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI | windowsCI},
+		{"x-pack/filebeat", build | update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI | windowsCI},
+		{"x-pack/functionbeat", build | update | packaging | dashboards | unitTest | integTest | linuxCI},
+		{"x-pack/heartbeat", build | update | packaging | linuxCI | macosCI | windowsCI},
+		{"x-pack/journalbeat", build | update | packaging | linuxCI},
+		{"x-pack/metricbeat", build | update | packaging | update | linuxCI},
+		{"x-pack/packetbeat", build | update | packaging | linuxCI},
+		{"x-pack/winlogbeat", build | update | packaging | windowsCI},
+		{"dev-tools/packaging/preference-pane", build | macosCI},
+		{"deploy/kubernetes", update},
+		{"docs", docs},
+
+		// TODO: Add generators.
 	}
 
 	Aliases = map[string]interface{}{
@@ -85,11 +89,16 @@ type attribute uint16
 const (
 	none   attribute = 0
 	update attribute = 1 << iota
+	build
 	dashboards
 	packaging
 	unitTest
 	integTest
-	osxTesting
+	docs
+
+	linuxCI
+	macosCI
+	windowsCI
 
 	any attribute = math.MaxUint16
 )
@@ -163,7 +172,7 @@ var commonBeatTargets = []string{
 func (Check) Targets() error {
 	mageCmd := sh.OutCmd("mage", "-d")
 	var errs []error
-	projects.ForEach(any, func(proj project) error {
+	err := projects.ForEach(any, func(proj project) error {
 		fmt.Println("> check:targets:", proj.Dir)
 		out, err := mageCmd(proj.Dir, "-l")
 		if err != nil {
@@ -174,16 +183,23 @@ func (Check) Targets() error {
 			return errors.Wrapf(err, "failed parsing mage -l output of project %v", proj.Dir)
 		}
 
-		// Build list of expected targets based on attributes.
-		expectedTargets := make([]string, len(commonBeatTargets))
-		copy(expectedTargets, commonBeatTargets)
+		var expectedTargets []string
+		if strings.HasSuffix(proj.Dir, "beat") {
+			// Build list of expected targets based on attributes.
+			expectedTargets = make([]string, len(commonBeatTargets))
+			copy(expectedTargets, commonBeatTargets)
+		}
+		if proj.HasAttribute(build) {
+			expectedTargets = append(expectedTargets, "build")
+		}
 		if proj.HasAttribute(update) {
-			expectedTargets = append(expectedTargets,
-				"update", "config", "dashboards", "dashboardsImport",
-				"dashboardExport")
+			expectedTargets = append(expectedTargets, "update")
 		}
 		if proj.HasAttribute(dashboards) {
-			expectedTargets = append(expectedTargets, "update")
+			expectedTargets = append(expectedTargets, "dashboards", "dashboardsImport", "dashboardExport")
+		}
+		if proj.HasAttribute(docs) {
+			expectedTargets = append(expectedTargets, "docs")
 		}
 		if proj.HasAttribute(packaging) {
 			expectedTargets = append(expectedTargets, "package", "packageTest")
@@ -210,6 +226,9 @@ func (Check) Targets() error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	return multierr.Combine(errs...)
 }
@@ -280,7 +299,16 @@ func (Update) TravisCI() error {
 		},
 	})
 
-	projects.ForEach(any, func(proj project) error {
+	data.Jobs = append(data.Jobs, TravisCIJob{
+		OS:    "linux",
+		Stage: "test",
+		Env: []string{
+			"BUILD_CMD=" + strconv.Quote("mage"),
+			"TARGETS=" + strconv.Quote("docs"),
+		},
+	})
+
+	_ = projects.ForEach(any, func(proj project) error {
 		if proj.HasAttribute(unitTest) || proj.HasAttribute(integTest) {
 			var targets []string
 			if proj.HasAttribute(unitTest) {
@@ -300,7 +328,7 @@ func (Update) TravisCI() error {
 		}
 
 		// We don't run the integTest which require Docker on OSX workers.
-		if proj.HasAttribute(osxTesting) && proj.HasAttribute(unitTest) {
+		if proj.HasAttribute(macosCI) && proj.HasAttribute(unitTest) {
 			data.Jobs = append(data.Jobs, TravisCIJob{
 				OS:    "osx",
 				Stage: "test",
@@ -313,7 +341,7 @@ func (Update) TravisCI() error {
 		return nil
 	})
 
-	projects.ForEach(any, func(proj project) error {
+	_ = projects.ForEach(any, func(proj project) error {
 		if !strings.HasSuffix(filepath.Base(proj.Dir), "beat") {
 			return nil
 		}
@@ -386,10 +414,10 @@ func (Package) Dashboards() error {
 		OutputFile: "build/distributions/dashboards/{{.Name}}-{{.Version}}{{if .Snapshot}}-SNAPSHOT{{end}}",
 	}
 
-	projects.ForEach(dashboards, func(proj project) error {
+	_ = projects.ForEach(dashboards, func(proj project) error {
 		beat := filepath.Base(proj.Dir)
 		spec.Files[beat] = mage.PackageFile{
-			Source: filepath.Join(beat, "_meta/kibana.generated"),
+			Source: filepath.Join(proj.Dir, "build/kibana"),
 		}
 		return nil
 	})
@@ -403,10 +431,27 @@ func (Package) Dashboards() error {
 // Use PLATFORMS to control the target platforms.
 // Use VERSION_QUALIFIER to control the version qualifier.
 func (Package) Beats() (err error) {
-	// TODO: copy packages to build/distributions/{BeatName}.
 	return projects.ForEach(packaging, func(proj project) error {
 		fmt.Println("> package:beats:", proj.Dir)
-		return errors.Wrapf(mage.Mage(proj.Dir, "package"), "failed packaging project %v", proj.Dir)
+		if err := mage.Mage(proj.Dir, "package"); err != nil {
+			return errors.Wrapf(err, "failed packaging project %v", proj.Dir)
+		}
+
+		// Copy files to build/distributions.
+		const distDir = "build/distributions"
+		if err = os.MkdirAll(distDir, 0755); err != nil {
+			return err
+		}
+		files, err := mage.FindFiles(filepath.Join(proj.Dir, distDir, "*"))
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			if err = os.Rename(f, filepath.Join(distDir, filepath.Base(f))); err != nil {
+				return errors.Wrap(err, "failed moving packages to top-level build dir")
+			}
+		}
+		return nil
 	})
 }
 
@@ -441,9 +486,12 @@ func (Test) Integ() error {
 func Clean() error {
 	paths := []string{
 		"build",
+		"docs/build",
+		"generator/beat/build",
+		"generator/metricbeat/build",
 	}
 
-	projects.ForEach(any, func(proj project) error {
+	_ = projects.ForEach(any, func(proj project) error {
 		if !strings.HasSuffix(filepath.Base(proj.Dir), "beat") {
 			for _, p := range mage.DefaultCleanPaths {
 				paths = append(paths, filepath.Join(proj.Dir, p))
@@ -455,6 +503,12 @@ func Clean() error {
 	return mage.Clean(paths)
 }
 
+func Docs() error {
+	return projects.ForEach(docs, func(proj project) error {
+		fmt.Println("> docs:", proj.Dir)
+		return mage.Mage(proj.Dir, "docs")
+	})
+}
+
 // TODO: Add targets for
 // - check:misspell
-// - docs

@@ -37,7 +37,7 @@ func ExportDashboard() error {
 
 	id := EnvOr("ID", "")
 	if id == "" {
-		return fmt.Errorf("Dashboad ID must be specified")
+		return fmt.Errorf("Dashboard ID must be specified")
 	}
 
 	beatsDir, err := ElasticBeatsDir()

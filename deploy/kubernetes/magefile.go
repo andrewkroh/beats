@@ -22,12 +22,14 @@ var (
 	kubectlCmd = sh.RunCmd("kubectl")
 )
 
+// Clean deletes the generated beat-kubernetes.yaml files.
 func Clean() error {
 	return mage.Clean([]string{
 		"*beat-kubernetes.yaml",
 	})
 }
 
+// IntegTest tests the kubernetes config by deploying it. kubectl is required.
 func IntegTest() error {
 	if err := haveKubernetes(); err != nil {
 		fmt.Println(">> integTest: kubernetes testing (SKIPPED - kubernetes unavailable)")
@@ -43,6 +45,7 @@ func IntegTest() error {
 	return nil
 }
 
+// Update generates the kubernetes config files.
 func Update() error {
 	mg.Deps(Clean)
 
@@ -71,6 +74,8 @@ func Update() error {
 	return nil
 }
 
+// haveKubernetes returns an error if the 'kubectl version' command returns a
+// non-zero exit code.
 func haveKubernetes() error {
 	err := kubectlCmd("version")
 	return errors.Wrap(err, "kubernetes is not available")

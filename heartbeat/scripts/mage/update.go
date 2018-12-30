@@ -54,3 +54,5 @@ func Update() {
 func includeList() error {
 	return mage.GenerateIncludeListGo([]string{"monitors/active/*"}, nil)
 }
+
+// TODO: update:docs
