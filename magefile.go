@@ -42,23 +42,23 @@ import (
 
 var (
 	projects = projectList{
-		{"libbeat", build | docs | unitTest | integTest | linuxCI | macosCI | windowsCI},
-		{"auditbeat", build | update | docs | packaging | unitTest | integTest | linuxCI | macosCI | windowsCI},
-		{"filebeat", build | update | docs | packaging | unitTest | integTest | linuxCI | macosCI | windowsCI},
-		{"heartbeat", build | update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI | windowsCI},
-		{"journalbeat", build | update | docs | packaging | dashboards | integTest | linuxCI},
-		{"metricbeat", build | update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI | windowsCI},
-		{"packetbeat", build | update | docs | packaging | dashboards | unitTest | linuxCI | macosCI | windowsCI},
-		{"winlogbeat", build | update | docs | packaging | dashboards | unitTest | linuxCI | windowsCI},
+		{"libbeat", build | fields | docs | unitTest | integTest | linuxCI | macosCI },
+		{"auditbeat", build | fields| update | docs | packaging | unitTest | integTest | linuxCI | macosCI },
+		{"filebeat", build | fields| update | docs | packaging | unitTest | integTest | linuxCI | macosCI },
+		{"heartbeat", build | fields| update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI },
+		{"journalbeat", build | fields| update | docs | packaging | dashboards | integTest | linuxCI},
+		{"metricbeat", build | fields| update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI },
+		{"packetbeat", build | fields| update | docs | packaging | dashboards | unitTest | linuxCI | macosCI },
+		{"winlogbeat", build | fields| update | docs | packaging | dashboards | unitTest | linuxCI },
 		{"x-pack/libbeat", build | unitTest | integTest | linuxCI},
-		{"x-pack/auditbeat", build | update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI | windowsCI},
-		{"x-pack/filebeat", build | update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI | windowsCI},
-		{"x-pack/functionbeat", build | update | packaging | dashboards | unitTest | integTest | linuxCI},
-		{"x-pack/heartbeat", build | update | packaging | linuxCI | macosCI | windowsCI},
-		{"x-pack/journalbeat", build | update | packaging | linuxCI},
-		{"x-pack/metricbeat", build | update | packaging | update | linuxCI},
-		{"x-pack/packetbeat", build | update | packaging | linuxCI},
-		{"x-pack/winlogbeat", build | update | packaging | windowsCI},
+		{"x-pack/auditbeat", build | fields| update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI },
+		{"x-pack/filebeat", build | fields| update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI },
+		{"x-pack/functionbeat", build | fields| update | packaging | dashboards | unitTest | integTest | linuxCI},
+		{"x-pack/heartbeat", build | fields| update | packaging | linuxCI },
+		{"x-pack/journalbeat", build | fields| update | packaging | linuxCI},
+		{"x-pack/metricbeat", build | fields| update | packaging | update | linuxCI},
+		{"x-pack/packetbeat", build | fields| update | packaging | linuxCI},
+		{"x-pack/winlogbeat", build | fields| update | packaging | linuxCI},
 		{"dev-tools/packaging/preference-pane", build | macosCI},
 		{"deploy/kubernetes", update},
 		{"docs", docs},
@@ -88,17 +88,17 @@ type attribute uint16
 
 const (
 	none   attribute = 0
-	update attribute = 1 << iota
-	build
+	build attribute = 1 << iota
+	update
 	dashboards
+	docs
+	fields
 	packaging
 	unitTest
 	integTest
-	docs
 
 	linuxCI
 	macosCI
-	windowsCI
 
 	any attribute = math.MaxUint16
 )
@@ -178,8 +178,8 @@ func addLicenseHeaders() error {
 	)
 }
 
-func (Check) Vet() {
-	mg.Deps(mage.GoVet)
+func (Check) Vet() error {
+	return mage.GoVet()
 }
 
 var commonBeatTargets = []string{
@@ -218,6 +218,9 @@ func (Check) Targets() error {
 		}
 		if proj.HasAttribute(build) {
 			expectedTargets = append(expectedTargets, "build")
+		}
+		if proj.HasAttribute(fields) {
+			expectedTargets = append(expectedTargets, "fields")
 		}
 		if proj.HasAttribute(update) {
 			expectedTargets = append(expectedTargets, "update")
@@ -288,7 +291,7 @@ func (Update) All() error {
 
 // Fields updates the fields for each Beat.
 func (Update) Fields() error {
-	return projects.ForEach(update, func(proj project) error {
+	return projects.ForEach(fields, func(proj project) error {
 		fmt.Println("> update:fields:", proj.Dir)
 		return errors.Wrapf(mage.Mage(proj.Dir, "fields"), "failed updating project %v", proj.Dir)
 	})
@@ -317,6 +320,7 @@ func (Update) Notice() error {
 func (Update) TravisCI() error {
 	var data TravisCITemplateData
 
+	// Check
 	data.Jobs = append(data.Jobs, TravisCIJob{
 		OS:    "linux",
 		Stage: "check",
@@ -326,6 +330,7 @@ func (Update) TravisCI() error {
 		},
 	})
 
+	// Docs
 	data.Jobs = append(data.Jobs, TravisCIJob{
 		OS:    "linux",
 		Stage: "test",
@@ -336,7 +341,7 @@ func (Update) TravisCI() error {
 	})
 
 	_ = projects.ForEach(any, func(proj project) error {
-		if proj.HasAttribute(unitTest) || proj.HasAttribute(integTest) {
+		if proj.HasAttribute(linuxCI) && (proj.HasAttribute(unitTest) || proj.HasAttribute(integTest)) {
 			var targets []string
 			if proj.HasAttribute(unitTest) {
 				targets = append(targets, "unitTest")
@@ -354,7 +359,7 @@ func (Update) TravisCI() error {
 			})
 		}
 
-		// We don't run the integTest which require Docker on OSX workers.
+		// We don't run the integTest on OSX because they require Docker.
 		if proj.HasAttribute(macosCI) && proj.HasAttribute(unitTest) {
 			data.Jobs = append(data.Jobs, TravisCIJob{
 				OS:    "osx",
