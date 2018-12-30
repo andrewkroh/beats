@@ -16,6 +16,7 @@ include $(ES_BEATS)/dev-tools/make/mage.mk
 #
 # Targets (alphabetically sorted).
 #
+
 .PHONY: check
 check: mage
 	mage check

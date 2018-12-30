@@ -42,7 +42,7 @@ const (
 type docsBuilder struct{}
 
 type asciidocParams struct {
-	name string
+	name      string
 	indexFile string
 }
 
@@ -92,7 +92,7 @@ func (docsBuilder) FieldDocs(fieldsYML string) error {
 
 func (b docsBuilder) AsciidocBook(opts ...DocsOption) error {
 	params := asciidocParams{
-		name: BeatName,
+		name:      BeatName,
 		indexFile: CWD("docs/index.asciidoc"),
 	}
 	for _, opt := range opts {

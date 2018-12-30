@@ -1,13 +1,12 @@
 #
 # Variables
 #
-ES_BEATS := ..
 GOX_OS   := windows
 
 #
 # Includes
 #
-include $(ES_BEATS)/dev-tools/make/oss.mk
+include ../dev-tools/make/oss.mk
 
 #
 # Targets

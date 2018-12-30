@@ -118,6 +118,33 @@ func (l projectList) ForEach(attr attribute, f func(proj project) error) error {
 
 // --- Targets ---
 
+func Clean() error {
+	paths := []string{
+		"build",
+		"docs/build",
+		"generator/beat/build",
+		"generator/metricbeat/build",
+	}
+
+	_ = projects.ForEach(any, func(proj project) error {
+		if !strings.HasSuffix(filepath.Base(proj.Dir), "beat") {
+			for _, p := range mage.DefaultCleanPaths {
+				paths = append(paths, filepath.Join(proj.Dir, p))
+			}
+		}
+		return nil
+	})
+
+	return mage.Clean(paths)
+}
+
+func Docs() error {
+	return projects.ForEach(docs, func(proj project) error {
+		fmt.Println("> docs:", proj.Dir)
+		return mage.Mage(proj.Dir, "docs")
+	})
+}
+
 // DumpVariables writes the template variables and values to stdout.
 func DumpVariables() error {
 	return mage.DumpVariables()
@@ -458,14 +485,19 @@ func (Package) Beats() (err error) {
 type Test mg.Namespace
 
 func (Test) All() error {
-	// Assumes that projects support integTest is a subset of unitTest.
-	return projects.ForEach(unitTest, func(proj project) error {
+	return projects.ForEach(any, func(proj project) error {
 		fmt.Println("> test:all:", proj.Dir)
-		target := "unitTest"
-		if proj.Attrs&integTest > 0 {
-			target += " integTest"
+		var targets []string
+		if proj.HasAttribute(unitTest) {
+			targets = append(targets, "unitTest")
 		}
-		return errors.Wrapf(mage.Mage(proj.Dir, target), "failed testing project %v", proj.Dir)
+		if proj.HasAttribute(integTest) {
+			targets = append(targets, "integTest")
+		}
+		if len(targets) == 0 {
+			return nil
+		}
+		return errors.Wrapf(mage.Mage(proj.Dir, targets...), "failed testing project %v", proj.Dir)
 	})
 }
 
@@ -480,33 +512,6 @@ func (Test) Integ() error {
 	return projects.ForEach(integTest, func(proj project) error {
 		fmt.Println("> test:integ:", proj.Dir)
 		return errors.Wrapf(mage.Mage(proj.Dir, "integTest"), "failed testing project %v", proj.Dir)
-	})
-}
-
-func Clean() error {
-	paths := []string{
-		"build",
-		"docs/build",
-		"generator/beat/build",
-		"generator/metricbeat/build",
-	}
-
-	_ = projects.ForEach(any, func(proj project) error {
-		if !strings.HasSuffix(filepath.Base(proj.Dir), "beat") {
-			for _, p := range mage.DefaultCleanPaths {
-				paths = append(paths, filepath.Join(proj.Dir, p))
-			}
-		}
-		return nil
-	})
-
-	return mage.Clean(paths)
-}
-
-func Docs() error {
-	return projects.ForEach(docs, func(proj project) error {
-		fmt.Println("> docs:", proj.Dir)
-		return mage.Mage(proj.Dir, "docs")
 	})
 }
 

@@ -18,8 +18,9 @@
 package mage
 
 import (
-	"github.com/elastic/beats/dev-tools/mage/target/docs"
 	"github.com/magefile/mage/mg"
+
+	"github.com/elastic/beats/dev-tools/mage/target/docs"
 
 	"github.com/elastic/beats/dev-tools/mage/target/build"
 
