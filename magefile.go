@@ -42,23 +42,23 @@ import (
 
 var (
 	projects = projectList{
-		{"libbeat", build | fields | docs | unitTest | integTest | linuxCI | macosCI },
-		{"auditbeat", build | fields| update | docs | packaging | unitTest | integTest | linuxCI | macosCI },
-		{"filebeat", build | fields| update | docs | packaging | unitTest | integTest | linuxCI | macosCI },
-		{"heartbeat", build | fields| update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI },
-		{"journalbeat", build | fields| update | docs | packaging | dashboards | integTest | linuxCI},
-		{"metricbeat", build | fields| update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI },
-		{"packetbeat", build | fields| update | docs | packaging | dashboards | unitTest | linuxCI | macosCI },
-		{"winlogbeat", build | fields| update | docs | packaging | dashboards | unitTest | linuxCI },
+		{"libbeat", build | fields | docs | unitTest | integTest | linuxCI | macosCI},
+		{"auditbeat", build | fields | update | docs | packaging | unitTest | integTest | linuxCI | macosCI},
+		{"filebeat", build | fields | update | docs | packaging | unitTest | integTest | linuxCI | macosCI},
+		{"heartbeat", build | fields | update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI},
+		{"journalbeat", build | fields | update | docs | packaging | dashboards | integTest | linuxCI},
+		{"metricbeat", build | fields | update | docs | packaging | dashboards | unitTest | integTest | linuxCI | macosCI},
+		{"packetbeat", build | fields | update | docs | packaging | dashboards | unitTest | linuxCI | macosCI},
+		{"winlogbeat", build | fields | update | docs | packaging | dashboards | unitTest | linuxCI},
 		{"x-pack/libbeat", build | unitTest | integTest | linuxCI},
-		{"x-pack/auditbeat", build | fields| update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI },
-		{"x-pack/filebeat", build | fields| update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI },
-		{"x-pack/functionbeat", build | fields| update | packaging | dashboards | unitTest | integTest | linuxCI},
-		{"x-pack/heartbeat", build | fields| update | packaging | linuxCI },
-		{"x-pack/journalbeat", build | fields| update | packaging | linuxCI},
-		{"x-pack/metricbeat", build | fields| update | packaging | update | linuxCI},
-		{"x-pack/packetbeat", build | fields| update | packaging | linuxCI},
-		{"x-pack/winlogbeat", build | fields| update | packaging | linuxCI},
+		{"x-pack/auditbeat", build | fields | update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI},
+		{"x-pack/filebeat", build | fields | update | packaging | dashboards | unitTest | integTest | linuxCI | macosCI},
+		{"x-pack/functionbeat", build | fields | update | packaging | dashboards | unitTest | integTest | linuxCI},
+		{"x-pack/heartbeat", build | fields | update | packaging | linuxCI},
+		{"x-pack/journalbeat", build | fields | update | packaging | linuxCI},
+		{"x-pack/metricbeat", build | fields | update | packaging | update | linuxCI},
+		{"x-pack/packetbeat", build | fields | update | packaging | linuxCI},
+		{"x-pack/winlogbeat", build | fields | update | packaging | linuxCI},
 		{"dev-tools/packaging/preference-pane", build | macosCI},
 		{"deploy/kubernetes", update},
 		{"docs", docs},
@@ -87,7 +87,7 @@ func (p project) HasAttribute(a attribute) bool {
 type attribute uint16
 
 const (
-	none   attribute = 0
+	none  attribute = 0
 	build attribute = 1 << iota
 	update
 	dashboards
