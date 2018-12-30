@@ -23,7 +23,12 @@ import (
 	"github.com/magefile/mage/mg"
 
 	"github.com/elastic/beats/dev-tools/mage"
+	"github.com/elastic/beats/dev-tools/mage/target/test"
 )
+
+func init() {
+	test.RegisterDeps(IntegTest)
+}
 
 var (
 	goTestDeps, pythonTestDeps []interface{}

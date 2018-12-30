@@ -49,6 +49,13 @@ jobs:
       go: $GO_VERSION
       stage: test
       env:
+        - BUILD_CMD="mage"
+        - TARGETS="docs"
+
+    - os: linux
+      go: $GO_VERSION
+      stage: test
+      env:
         - BUILD_CMD="mage -d libbeat"
         - TARGETS="unitTest integTest"
 

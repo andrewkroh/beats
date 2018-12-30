@@ -18,6 +18,8 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/build"
 	// mage:import
+	_ "github.com/elastic/beats/dev-tools/mage/target/test"
+	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
 	// TODO: Skip tests because of https://github.com/elastic/beats/issues/9597.
 	// The root magefile.go needs updated too when this is added back.

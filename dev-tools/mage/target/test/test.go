@@ -15,25 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// +build mage
+package test
 
-package main
+import "github.com/magefile/mage/mg"
 
-import (
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/common"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/docs"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/test"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
-	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/integtest"
-	// mage:import
-	_ "github.com/elastic/beats/journalbeat/scripts/mage"
+var (
+	testDeps []interface{}
 )
+
+func RegisterDeps(deps ...interface{}) {
+	testDeps = append(testDeps, deps...)
+}
+
+func Test() {
+	mg.SerialDeps(testDeps...)
+}

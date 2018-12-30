@@ -497,7 +497,7 @@ func (Test) All() error {
 		if len(targets) == 0 {
 			return nil
 		}
-		return errors.Wrapf(mage.Mage(proj.Dir, targets...), "failed testing project %v", proj.Dir)
+		return errors.Wrapf(mage.Mage(proj.Dir, "test"), "failed testing project %v", proj.Dir)
 	})
 }
 
