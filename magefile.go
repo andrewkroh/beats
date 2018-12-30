@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -490,6 +491,9 @@ func (Package) Beats() (err error) {
 type Test mg.Namespace
 
 func (Test) All() error {
+	start := time.Now()
+	defer func() { fmt.Println("test:all ran for", time.Since(start)) }()
+
 	return projects.ForEach(any, func(proj project) error {
 		fmt.Println("> test:all:", proj.Dir)
 		var targets []string
@@ -507,6 +511,9 @@ func (Test) All() error {
 }
 
 func (Test) Unit() error {
+	start := time.Now()
+	defer func() { fmt.Println("test:unit ran for", time.Since(start)) }()
+
 	return projects.ForEach(unitTest, func(proj project) error {
 		fmt.Println("> test:unit:", proj.Dir)
 		return errors.Wrapf(mage.Mage(proj.Dir, "unitTest"), "failed testing project %v", proj.Dir)
@@ -514,6 +521,9 @@ func (Test) Unit() error {
 }
 
 func (Test) Integ() error {
+	start := time.Now()
+	defer func() { fmt.Println("test:integ ran for", time.Since(start)) }()
+
 	return projects.ForEach(integTest, func(proj project) error {
 		fmt.Println("> test:integ:", proj.Dir)
 		return errors.Wrapf(mage.Mage(proj.Dir, "integTest"), "failed testing project %v", proj.Dir)
