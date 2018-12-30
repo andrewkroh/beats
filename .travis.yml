@@ -323,13 +323,6 @@ jobs:
       go: $GO_VERSION
       stage: test
 
-    # Docs
-    - os: linux
-      env:
-        - TARGETS="docs"
-      go: $GO_VERSION
-      stage: test
-
     # Kubernetes
     - os: linux
       go: $GO_VERSION
