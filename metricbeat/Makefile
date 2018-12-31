@@ -1,13 +1,14 @@
 #
 # Variables
 #
+ES_BEATS  ?= ..
 GOX_OS    ?= netbsd linux windows
 GOX_FLAGS ?= -arch="amd64 386 arm ppc64 ppc64le"
 
 #
 # Includes
 #
-include ../dev-tools/make/oss.mk
+include $(ES_BEATS)/dev-tools/make/oss.mk
 
 #
 # Targets
