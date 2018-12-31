@@ -20,11 +20,9 @@ package mage
 import (
 	"github.com/magefile/mage/mg"
 
-	"github.com/elastic/beats/dev-tools/mage/target/docs"
-
-	"github.com/elastic/beats/dev-tools/mage/target/build"
-
 	"github.com/elastic/beats/dev-tools/mage"
+	"github.com/elastic/beats/dev-tools/mage/target/build"
+	"github.com/elastic/beats/dev-tools/mage/target/docs"
 )
 
 func init() {
@@ -63,9 +61,10 @@ func updateNoDocs() {
 }
 
 func updateDocs() {
-	mg.Deps(fieldDocs)
+	mg.SerialDeps(fieldDocs)
 }
 
 func fieldDocs() error {
+	mg.Deps(Fields)
 	return mage.Docs.FieldDocs("fields.yml")
 }
