@@ -71,6 +71,7 @@ var (
 		"check":   Check.All,
 		"fmt":     Check.Fmt,
 		"package": Package.All,
+		"test":    Test.All,
 		"update":  Update.All,
 		"vet":     Check.Vet,
 	}
@@ -137,18 +138,6 @@ func Clean() error {
 	})
 
 	return mage.Clean(paths)
-}
-
-func Docs() error {
-	return projects.ForEach(docs, func(proj project) error {
-		fmt.Println("> docs:", proj.Dir)
-		return mage.Mage(proj.Dir, "docs")
-	})
-}
-
-// DumpVariables writes the template variables and values to stdout.
-func DumpVariables() error {
-	return mage.DumpVariables()
 }
 
 type Check mg.Namespace
@@ -279,6 +268,18 @@ func parseTargets(rawOutput string) (map[string]string, error) {
 	return targets, s.Err()
 }
 
+func Docs() error {
+	return projects.ForEach(docs, func(proj project) error {
+		fmt.Println("> docs:", proj.Dir)
+		return mage.Mage(proj.Dir, "docs")
+	})
+}
+
+// DumpVariables writes the template variables and values to stdout.
+func DumpVariables() error {
+	return mage.DumpVariables()
+}
+
 type Update mg.Namespace
 
 // All updates all Beats.
@@ -331,16 +332,6 @@ func (Update) TravisCI() error {
 		},
 	})
 
-	// Docs
-	data.Jobs = append(data.Jobs, TravisCIJob{
-		OS:    "linux",
-		Stage: "test",
-		Env: []string{
-			"BUILD_CMD=" + strconv.Quote("mage"),
-			"TARGETS=" + strconv.Quote("docs"),
-		},
-	})
-
 	_ = projects.ForEach(any, func(proj project) error {
 		if proj.HasAttribute(linuxCI) && (proj.HasAttribute(unitTest) || proj.HasAttribute(integTest)) {
 			var targets []string
@@ -372,6 +363,16 @@ func (Update) TravisCI() error {
 			})
 		}
 		return nil
+	})
+
+	// Docs
+	data.Jobs = append(data.Jobs, TravisCIJob{
+		OS:    "linux",
+		Stage: "test",
+		Env: []string{
+			"BUILD_CMD=" + strconv.Quote("mage"),
+			"TARGETS=" + strconv.Quote("docs"),
+		},
 	})
 
 	_ = projects.ForEach(any, func(proj project) error {
