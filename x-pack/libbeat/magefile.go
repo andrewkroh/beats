@@ -21,26 +21,23 @@ import (
 	_ "github.com/elastic/beats/dev-tools/mage/target/test"
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
-	// TODO: Skip tests because of https://github.com/elastic/beats/issues/9597.
-	// The root magefile.go needs updated too when this is added back.
-	// mage:import
-	//integtest "github.com/elastic/beats/dev-tools/mage/target/integtest"
+	// TODO:import - Not imported because we are skipping integTest.
+	"github.com/elastic/beats/dev-tools/mage/target/integtest"
 )
 
 func init() {
-	// TODO: Skip tests because of https://github.com/elastic/beats/issues/9597.
-	//integtest.RegisterGoTestDeps(Fields)
-	//integtest.RegisterPythonTestDeps(Fields)
-}
-
-// Fields generates a fields.yml for the Beat.
-func Fields() error {
-	return mage.GenerateFieldsYAML(mage.OSSBeatDir("processors"))
+	integtest.RegisterGoTestDeps(Fields)
+	integtest.RegisterPythonTestDeps(Fields)
 }
 
 // Check checks that source code is formatted, vetted, and up-to-date.
 func Check() {
 	mg.SerialDeps(mage.Format, mage.Check)
+}
+
+// Fields generates a fields.yml for the Beat.
+func Fields() error {
+	return mage.GenerateFieldsYAML(mage.OSSBeatDir("processors"))
 }
 
 func IntegTest() {

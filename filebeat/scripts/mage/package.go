@@ -35,6 +35,10 @@ const (
 	dirModulesDGenerated = "build/package/modules.d"
 )
 
+func init() {
+	mage.BeatDescription = "Filebeat sends log files to Logstash or directly to Elasticsearch."
+}
+
 // Use SNAPSHOT=true to build snapshots.
 // Use PLATFORMS to control the target platforms.
 // Use VERSION_QUALIFIER to control the version qualifier.

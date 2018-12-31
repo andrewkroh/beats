@@ -17,7 +17,6 @@ import (
 
 func init() {
 	mage.BeatDescription = "Functionbeat is a beat implementation for a serverless architecture."
-	mage.BeatLicense = "Elastic License"
 }
 
 // Package packages the Beat for distribution.

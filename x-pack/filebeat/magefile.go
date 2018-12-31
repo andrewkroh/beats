@@ -28,6 +28,5 @@ import (
 func init() {
 	filebeat.SelectLogic = mage.XPackProject
 
-	mage.BeatDescription = "Filebeat sends log files to Logstash or directly to Elasticsearch."
 	mage.BeatLicense = "Elastic License"
 }

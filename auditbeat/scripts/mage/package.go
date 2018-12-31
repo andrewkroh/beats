@@ -29,6 +29,10 @@ import (
 	"github.com/elastic/beats/dev-tools/mage/target/pkg"
 )
 
+func init() {
+	mage.BeatDescription = "Audit the activities of users and processes on your system."
+}
+
 // Package packages the Beat for distribution.
 // Use SNAPSHOT=true to build snapshots.
 // Use PLATFORMS to control the target platforms.

@@ -40,16 +40,17 @@ import (
 
 func init() {
 	unittest.RegisterPythonTestDeps(Fields)
+
 	integtest.RegisterGoTestDeps(Fields)
 	integtest.RegisterPythonTestDeps(Fields)
-}
-
-// Fields generates a fields.yml for the Beat.
-func Fields() error {
-	return mage.GenerateFieldsYAML(mage.OSSBeatDir("processors"))
 }
 
 // Check checks that source code is formatted, vetted, and up-to-date.
 func Check() {
 	mg.SerialDeps(mage.Format, mage.Check)
+}
+
+// Fields generates a fields.yml file. This file is needed by tests only.
+func Fields() error {
+	return mage.GenerateFieldsYAML(mage.OSSBeatDir("processors"))
 }

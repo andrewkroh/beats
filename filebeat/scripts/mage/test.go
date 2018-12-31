@@ -23,7 +23,12 @@ import (
 	"github.com/magefile/mage/mg"
 
 	"github.com/elastic/beats/dev-tools/mage"
+	"github.com/elastic/beats/dev-tools/mage/target/test"
 )
+
+func init() {
+	test.RegisterDeps(IntegTest)
+}
 
 // IntegTest executes integration tests (it uses Docker to run the tests).
 func IntegTest() {
@@ -49,6 +54,7 @@ func PythonIntegTest(ctx context.Context) error {
 	return mage.RunIntegTest("pythonIntegTest", func() error {
 		mg.Deps(mage.BuildSystemTestBinary)
 		args := mage.DefaultPythonTestIntegrationArgs()
+		// This is the reason why the common integtest package is not being used.
 		args.Env["MODULES_PATH"] = mage.CWD("module")
 		return mage.PythonNoseTest(args)
 	})

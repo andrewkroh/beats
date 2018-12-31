@@ -30,6 +30,5 @@ import (
 func init() {
 	auditbeat.SelectLogic = mage.XPackProject
 
-	mage.BeatDescription = "Audit the activities of users and processes on your system."
 	mage.BeatLicense = "Elastic License"
 }

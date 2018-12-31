@@ -44,6 +44,4 @@ import (
 
 func init() {
 	auditbeat.SelectLogic = mage.OSSProject
-
-	mage.BeatDescription = "Audit the activities of users and processes on your system."
 }

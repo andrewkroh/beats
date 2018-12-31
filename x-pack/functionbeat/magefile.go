@@ -7,6 +7,7 @@
 package main
 
 import (
+	"github.com/elastic/beats/dev-tools/mage"
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/common"
 	// mage:import
@@ -24,3 +25,7 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/x-pack/functionbeat/scripts/mage"
 )
+
+func init() {
+	mage.BeatLicense = "Elastic License"
+}

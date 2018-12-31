@@ -20,6 +20,8 @@
 package main
 
 import (
+	"github.com/elastic/beats/dev-tools/mage"
+
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/common"
 	// mage:import
@@ -35,5 +37,9 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/integtest"
 	// mage:import
-	_ "github.com/elastic/beats/journalbeat/scripts/mage"
+	journalbeat "github.com/elastic/beats/journalbeat/scripts/mage"
 )
+
+func init() {
+	journalbeat.SelectLogic = mage.OSSProject
+}

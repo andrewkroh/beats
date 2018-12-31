@@ -42,6 +42,4 @@ import (
 
 func init() {
 	filebeat.SelectLogic = mage.OSSProject
-
-	mage.BeatDescription = "Filebeat sends log files to Logstash or directly to Elasticsearch."
 }
