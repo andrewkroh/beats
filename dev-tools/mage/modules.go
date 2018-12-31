@@ -87,7 +87,7 @@ func GenerateDirModulesD(opts ...ModuleOption) error {
 		return err
 	}
 
-	shortConfigs, err := FindFiles("module/*/_meta/config.yml")
+	shortConfigs, err := FindFiles(args.InputGlobs...)
 	if err != nil {
 		return err
 	}

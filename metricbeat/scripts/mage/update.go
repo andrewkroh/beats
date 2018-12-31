@@ -18,6 +18,8 @@
 package mage
 
 import (
+	"os"
+
 	"github.com/magefile/mage/mg"
 	"github.com/pkg/errors"
 
@@ -72,5 +74,10 @@ func includeList() error {
 }
 
 func modulesD() error {
-	return mage.GenerateDirModulesD(mage.EnableModule("system"))
+	// Only generate modules.d if there is a module dir. Newly generated
+	// beats based on Metricbeat initially do not have a module dir.
+	if _, err := os.Stat("module"); err == nil {
+		return mage.GenerateDirModulesD(mage.EnableModule("system"))
+	}
+	return nil
 }
