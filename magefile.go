@@ -129,9 +129,13 @@ func Clean() error {
 	}
 
 	_ = projects.ForEach(any, func(proj project) error {
-		if !strings.HasSuffix(filepath.Base(proj.Dir), "beat") {
-			for _, p := range mage.DefaultCleanPaths {
-				paths = append(paths, filepath.Join(proj.Dir, p))
+		if strings.HasSuffix(filepath.Base(proj.Dir), "beat") {
+			beatName := filepath.Base(proj.Dir)
+			for _, path := range mage.DefaultCleanPaths {
+				path = mage.MustExpand(path, map[string]interface{}{
+					"BeatName": beatName,
+				})
+				paths = append(paths, filepath.Join(proj.Dir, path))
 			}
 		}
 		return nil
