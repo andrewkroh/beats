@@ -26,3 +26,7 @@ ifndef GOLINT_PRESENT
 	@go get $(GOLINT_IMPORT_PATH)
 endif
 	$(REVIEWDOG_CMD) $(REVIEWDOG_OPTIONS)
+
+# lint is an alias for reviewdog.
+.PHONY: lint
+lint: reviewdog
