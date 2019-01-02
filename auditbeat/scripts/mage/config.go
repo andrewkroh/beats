@@ -23,17 +23,14 @@ import (
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
-var SelectLogic mage.ProjectType
-
 const (
 	// configTemplateGlob matches Auditbeat modules' config file templates.
 	configTemplateGlob = "module/*/_meta/config*.yml.tmpl"
 )
 
-// Config generates short/reference/docker configs and populates the modules.d
+// config generates short/reference/docker configs and populates the modules.d
 // directory.
-func Config() error {
+func config() error {
 	args, err := configFileParams()
 	if err != nil {
 		return err

@@ -21,24 +21,18 @@ import (
 	_ "github.com/elastic/beats/dev-tools/mage/target/test"
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
-	// TODO:import - Not imported because we are skipping integTest.
-	"github.com/elastic/beats/dev-tools/mage/target/integtest"
+	// TODO: Import integtest.
+	// mage:import
+	libbeat "github.com/elastic/beats/libbeat/scripts/mage"
 )
 
 func init() {
-	integtest.RegisterGoTestDeps(Fields)
-	integtest.RegisterPythonTestDeps(Fields)
+	libbeat.SelectLogic = mage.OSSProject
 }
 
-// Check checks that source code is formatted, vetted, and up-to-date.
-func Check() {
-	mg.SerialDeps(mage.Format, mage.Check)
-}
-
-// Fields generates a fields.yml for the Beat.
-func Fields() error {
-	return mage.GenerateFieldsYAML(mage.OSSBeatDir("processors"))
-}
+// Update is an alias for update:all. This is a workaround for
+// https://github.com/magefile/mage/issues/217.
+func Update() { mg.Deps(libbeat.Update.All) }
 
 func IntegTest() {
 	fmt.Println(">> integTest: Skipped due to https://github.com/elastic/beats/issues/9597.")

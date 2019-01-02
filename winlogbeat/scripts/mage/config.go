@@ -21,11 +21,9 @@ import (
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
-var SelectLogic mage.ProjectType
-
-// Config generates short/reference/docker configs.
-func Config() error {
+// config generates short/reference configs.
+func config() error {
+	// NOTE: No Docker config.
 	return mage.Config(mage.ShortConfigType|mage.ReferenceConfigType, configFileParams(), ".")
 }
 

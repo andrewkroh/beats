@@ -29,7 +29,7 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
 	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
+	_ "github.com/elastic/beats/dev-tools/mage/target/dashboards"
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
 	// mage:import

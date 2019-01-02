@@ -18,21 +18,15 @@
 package mage
 
 import (
-	"github.com/pkg/errors"
-
 	"github.com/elastic/beats/dev-tools/mage"
 )
-
-// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
-var SelectLogic mage.ProjectType
 
 const (
 	modulesConfigYml = "build/config.modules.yml"
 )
 
-// Config generates short/reference/docker configs and populates the modules.d
-// directory.
-func Config() error {
+// config generates short/reference/docker configs.
+func config() error {
 	var args mage.ConfigFileParams
 	switch SelectLogic {
 	case mage.OSSProject:
@@ -40,7 +34,7 @@ func Config() error {
 	case mage.XPackProject:
 		args = configFileParams(mage.OSSBeatDir("module"), "module")
 	default:
-		panic(errors.Errorf("invalid SelectLogic value"))
+		panic(mage.ErrUnknownProjectType)
 	}
 	return mage.Config(mage.AllConfigTypes, args, ".")
 }

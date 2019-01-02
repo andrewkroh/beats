@@ -77,9 +77,9 @@ func KibanaDashboards(moduleDirs ...string) error {
 	}
 
 	// Sanity check that fields.yml exists.
-	const fieldsYML = "fields.yml"
+	const fieldsYML = "build/fields/fields.yml"
 	if _, err := os.Stat(fieldsYML); err != nil {
-		return errors.Wrap(err, "failed checking if fields.yml exists")
+		return errors.Wrapf(err, "failed checking if %v exists", fieldsYML)
 	}
 
 	// Generate Kibana index pattern files from fields.yml.

@@ -55,7 +55,7 @@ func Package() {
 	mage.PackageKibanaDashboardsFromBuildDir()
 	customizePackaging()
 
-	mg.Deps(updateWithoutDocs)
+	mg.Deps(Update.All)
 	mg.Deps(build.CrossBuild, build.CrossBuildGoDaemon)
 	mg.SerialDeps(mage.Package, pkg.PackageTest)
 }
@@ -125,7 +125,7 @@ func prepareModulePackaging() error {
 // build/package/modules.d directories for use in packaging.
 func _prepareModulePackaging(files ...struct{ Src, Dst string }) error {
 	// This depends on the modules.d directory being up-to-date.
-	mg.Deps(modulesD)
+	mg.Deps(Update.ModulesD)
 
 	// Clean any existing generated directories.
 	if err := mage.Clean([]string{dirModuleGenerated, dirModulesDGenerated}); err != nil {

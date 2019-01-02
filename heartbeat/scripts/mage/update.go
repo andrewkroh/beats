@@ -22,37 +22,52 @@ import (
 
 	"github.com/elastic/beats/dev-tools/mage"
 	"github.com/elastic/beats/dev-tools/mage/target/build"
+	"github.com/elastic/beats/dev-tools/mage/target/common"
+	"github.com/elastic/beats/dev-tools/mage/target/dashboards"
+	"github.com/elastic/beats/dev-tools/mage/target/integtest"
+	"github.com/elastic/beats/dev-tools/mage/target/unittest"
 )
 
-// Check runs fmt and update then returns an error if any modifications are found.
-func Check() {
-	mg.SerialDeps(mage.Format, Update, mage.Check)
+func init() {
+	common.RegisterCheckDeps(Update.All)
+
+	dashboards.RegisterImportDeps(build.Build, Update.Dashboards)
+
+	unittest.RegisterGoTestDeps(Update.Fields)
+	unittest.RegisterPythonTestDeps(Update.Fields)
+
+	integtest.RegisterPythonTestDeps(Update.Fields)
+}
+
+var (
+	// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+	SelectLogic mage.ProjectType
+)
+
+type Update mg.Namespace
+
+// Update is an alias for running fields, dashboards, config, includes.
+func (Update) All() {
+	mg.Deps(Update.Fields, Update.Dashboards, Update.Config, Update.Includes)
+}
+
+func (Update) Config() error {
+	return config()
 }
 
 // Dashboards collects all the dashboards and generates index patterns.
-func Dashboards() error {
-	mg.Deps(fieldsYML)
+func (Update) Dashboards() error {
+	mg.Deps(fb.FieldsYML)
 	return mage.KibanaDashboards(mage.OSSBeatDir("monitors/active"))
 }
 
-// DashboardsImport imports all dashboards to Kibana.
-//
-// Optional environment variables:
-// - KIBANA_URL: URL of Kibana
-func DashboardsImport() error {
-	return mage.ImportDashboards(build.Build, Dashboards)
+func (Update) Fields() {
+	mg.Deps(fb.All)
 }
 
-// Update is an alias for running fields, dashboards, config, includes.
-func Update() {
-	mg.SerialDeps(Fields, Dashboards, Config)
-	if SelectLogic == mage.OSSProject {
-		mg.Deps(includeList)
+func (Update) Includes() error {
+	if SelectLogic != mage.OSSProject {
+		return nil
 	}
-}
-
-func includeList() error {
 	return mage.GenerateIncludeListGo([]string{"monitors/active/*"}, nil)
 }
-
-// TODO: update:docs

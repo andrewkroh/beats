@@ -14,8 +14,8 @@ test: prepare-test
 	export PATH=$${GOPATH}/bin:${PATH}; \
 	cd ${BEAT_PATH} ; \
 	$(MAKE) copy-vendor || exit 1  ; \
-	${PREPARE_COMMAND} \
 	$(MAKE) git-init || exit 1 ; \
+	${PREPARE_COMMAND} \
 	$(MAKE) update || exit 1 ; \
 	git config user.email "beats-jenkins@test.com" || exit 1 ; \
 	git config user.name "beats-jenkins" || exit 1 ; \

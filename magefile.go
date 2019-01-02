@@ -180,7 +180,6 @@ var commonBeatTargets = []string{
 	"check",
 	"clean",
 	"dumpVariables",
-	"fields",
 	"fmt",
 	"build",
 	"buildGoDaemon",
@@ -188,6 +187,7 @@ var commonBeatTargets = []string{
 	"crossBuildGoDaemon",
 	"crossBuildGoDaemon",
 	"golangCrossBuild",
+	"update:fields",
 }
 
 func (Check) Targets() error {
@@ -214,13 +214,13 @@ func (Check) Targets() error {
 			expectedTargets = append(expectedTargets, "build")
 		}
 		if proj.HasAttribute(fields) {
-			expectedTargets = append(expectedTargets, "fields")
+			expectedTargets = append(expectedTargets, "update:fields")
 		}
 		if proj.HasAttribute(update) {
 			expectedTargets = append(expectedTargets, "update")
 		}
 		if proj.HasAttribute(dashboards) {
-			expectedTargets = append(expectedTargets, "dashboards", "dashboardsImport", "dashboardExport")
+			expectedTargets = append(expectedTargets, "update:dashboards", "dashboards:import", "dashboards:export")
 		}
 		if proj.HasAttribute(docs) {
 			expectedTargets = append(expectedTargets, "docs")
@@ -307,7 +307,7 @@ func (Update) Fields() error {
 func (Update) Dashboards() error {
 	return projects.ForEach(dashboards, func(proj project) error {
 		fmt.Println("> update:dashboards:", proj.Dir)
-		return errors.Wrapf(mage.Mage(proj.Dir, "dashboards"), "failed updating project %v", proj.Dir)
+		return errors.Wrapf(mage.Mage(proj.Dir, "update:dashboards"), "failed updating project %v", proj.Dir)
 	})
 }
 
@@ -501,14 +501,7 @@ func (Test) All() error {
 
 	return projects.ForEach(any, func(proj project) error {
 		fmt.Println("> test:all:", proj.Dir)
-		var targets []string
-		if proj.HasAttribute(unitTest) {
-			targets = append(targets, "unitTest")
-		}
-		if proj.HasAttribute(integTest) {
-			targets = append(targets, "integTest")
-		}
-		if len(targets) == 0 {
+		if !proj.HasAttribute(unitTest) && !proj.HasAttribute(integTest) {
 			return nil
 		}
 		return errors.Wrapf(mage.Mage(proj.Dir, "test"), "failed testing project %v", proj.Dir)
@@ -534,6 +527,3 @@ func (Test) Integ() error {
 		return errors.Wrapf(mage.Mage(proj.Dir, "integTest"), "failed testing project %v", proj.Dir)
 	})
 }
-
-// TODO: Add targets for
-// - check:misspell

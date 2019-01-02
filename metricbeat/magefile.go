@@ -20,6 +20,8 @@
 package main
 
 import (
+	"github.com/magefile/mage/mg"
+
 	"github.com/elastic/beats/dev-tools/mage"
 
 	// mage:import
@@ -29,7 +31,7 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/pkg"
 	// mage:import
-	_ "github.com/elastic/beats/dev-tools/mage/target/dashboard"
+	_ "github.com/elastic/beats/dev-tools/mage/target/dashboards"
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/docs"
 	// mage:import
@@ -45,3 +47,7 @@ import (
 func init() {
 	metricbeat.SelectLogic = mage.OSSProject
 }
+
+// Update is an alias for update:all. This is a workaround for
+// https://github.com/magefile/mage/issues/217.
+func Update() { mg.Deps(metricbeat.Update.All) }

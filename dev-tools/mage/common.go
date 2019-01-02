@@ -51,6 +51,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var ErrUnknownProjectType = fmt.Errorf("unknown ProjectType")
+
 // ProjectType specifies the type of project (OSS vs X-Pack).
 type ProjectType uint8
 

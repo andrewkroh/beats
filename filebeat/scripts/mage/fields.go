@@ -18,46 +18,84 @@
 package mage
 
 import (
+	"os"
+
 	"github.com/magefile/mage/mg"
+	"go.uber.org/multierr"
 
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// Fields generates fields.yml and fields.go files for the Beat.
-func Fields() {
+var fb fieldsBuilder
+
+var _ mage.FieldsBuilder = fb
+
+type fieldsBuilder struct{}
+
+func (b fieldsBuilder) All() {
+	mg.Deps(b.FieldsGo, b.FieldsYML, b.FieldsAllYML)
+}
+
+func (b fieldsBuilder) FieldsGo() error {
 	switch SelectLogic {
 	case mage.OSSProject:
-		mg.Deps(libbeatAndBeatCommonFieldsGo, moduleFieldsGo)
-		mg.Deps(ossFieldsYML)
+		return multierr.Combine(
+			b.commonFieldsGo(),
+			b.moduleFieldsGo(),
+		)
 	case mage.XPackProject:
-		mg.Deps(xpackFieldsYML, moduleFieldsGo, inputFieldsGo)
+		return multierr.Combine(
+			b.inputFieldsGo(),
+			b.moduleFieldsGo(),
+		)
+	default:
+		panic(mage.ErrUnknownProjectType)
 	}
 }
 
-// libbeatAndBeatCommonFieldsGo generates a fields.go containing both
-// libbeat and Auditbeat's common fields.
-func libbeatAndBeatCommonFieldsGo() error {
-	if err := mage.GenerateFieldsYAML(); err != nil {
+func (b fieldsBuilder) FieldsYML() error {
+	var modules []string
+	switch SelectLogic {
+	case mage.OSSProject:
+		modules = append(modules, mage.OSSBeatDir("module"))
+	case mage.XPackProject:
+		modules = append(modules,
+			mage.OSSBeatDir("module"),
+			mage.XPackBeatDir("module"),
+			mage.XPackBeatDir("input"),
+		)
+	default:
+		panic(mage.ErrUnknownProjectType)
+	}
+
+	if err := mage.GenerateFieldsYAMLTo(mage.FieldsYML, modules...); err != nil {
 		return err
 	}
-	return mage.GenerateAllInOneFieldsGo()
+	return mage.Copy(mage.FieldsYML, mage.FieldsYMLRoot)
 }
 
-// ossFieldsYML generates the fields.yml file containing all fields.
-func ossFieldsYML() error {
-	return mage.GenerateFieldsYAML("module")
+func (b fieldsBuilder) FieldsAllYML() error {
+	return mage.GenerateFieldsYAMLTo(mage.FieldsAllYML,
+		mage.OSSBeatDir("module"),
+		mage.XPackBeatDir("module"),
+		mage.XPackBeatDir("input"),
+	)
 }
 
-// fieldsYML generates the fields.yml file containing all fields.
-func xpackFieldsYML() error {
-	return mage.GenerateFieldsYAML(mage.OSSBeatDir("module"), "module", "input")
+func (b fieldsBuilder) commonFieldsGo() error {
+	const file = "build/fields/fields.common.yml"
+	if err := mage.GenerateFieldsYAMLTo(file); err != nil {
+		return err
+	}
+	defer os.Remove(file)
+	return mage.GenerateFieldsGo(file, "include/fields.go")
 }
 
-// moduleFieldsGo generates a fields.go for each module.
-func moduleFieldsGo() error {
+func (b fieldsBuilder) moduleFieldsGo() error {
 	return mage.GenerateModuleFieldsGo("module")
 }
 
-func inputFieldsGo() error {
+// inputFieldsGo generates a fields.go for each Filebeat input type.
+func (b fieldsBuilder) inputFieldsGo() error {
 	return mage.GenerateModuleFieldsGo("input")
 }

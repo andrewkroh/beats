@@ -6,8 +6,8 @@ package mage
 
 import "github.com/elastic/beats/dev-tools/mage"
 
-// Config generates short/reference configs.
-func Config() error {
+// config generates short/reference configs.
+func config() error {
 	return mage.Config(mage.ShortConfigType|mage.ReferenceConfigType, configFileParams(), ".")
 }
 

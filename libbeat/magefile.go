@@ -33,24 +33,17 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/dev-tools/mage/target/test"
 	// mage:import
-	"github.com/elastic/beats/dev-tools/mage/target/unittest"
+	_ "github.com/elastic/beats/dev-tools/mage/target/unittest"
 	// mage:import
-	"github.com/elastic/beats/dev-tools/mage/target/integtest"
+	_ "github.com/elastic/beats/dev-tools/mage/target/integtest"
+	// mage:import
+	libbeat "github.com/elastic/beats/libbeat/scripts/mage"
 )
 
 func init() {
-	unittest.RegisterPythonTestDeps(Fields)
-
-	integtest.RegisterGoTestDeps(Fields)
-	integtest.RegisterPythonTestDeps(Fields)
+	libbeat.SelectLogic = mage.OSSProject
 }
 
-// Check checks that source code is formatted, vetted, and up-to-date.
-func Check() {
-	mg.SerialDeps(mage.Format, mage.Check)
-}
-
-// Fields generates a fields.yml file. This file is needed by tests only.
-func Fields() error {
-	return mage.GenerateFieldsYAML(mage.OSSBeatDir("processors"))
-}
+// Update is an alias for update:all. This is a workaround for
+// https://github.com/magefile/mage/issues/217.
+func Update() { mg.Deps(libbeat.Update.All) }

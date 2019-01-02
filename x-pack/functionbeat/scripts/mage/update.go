@@ -7,35 +7,50 @@ package mage
 import (
 	"github.com/magefile/mage/mg"
 
+	"github.com/elastic/beats/dev-tools/mage/target/common"
+	"github.com/elastic/beats/dev-tools/mage/target/dashboards"
+	"github.com/elastic/beats/dev-tools/mage/target/docs"
+
 	"github.com/elastic/beats/dev-tools/mage/target/build"
 
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// Check runs fmt and update then returns an error if any modifications are found.
-func Check() {
-	mg.SerialDeps(mage.Format, Update, mage.Check)
+func init() {
+	common.RegisterCheckDeps(Update.All)
+
+	dashboards.RegisterImportDeps(build.Build, Update.Dashboards)
+
+	docs.RegisterDeps(Update.FieldDocs)
+}
+
+var (
+	// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+	SelectLogic mage.ProjectType
+)
+
+type Update mg.Namespace
+
+// All updates all generated content.
+func (Update) All() {
+	mg.Deps(Update.Fields, Update.Dashboards, Update.Config, Update.FieldDocs)
+}
+
+func (Update) Config() error {
+	return config()
 }
 
 // Dashboards collects all the dashboards and generates index patterns.
-func Dashboards() error {
-	mg.Deps(Fields)
+func (Update) Dashboards() error {
+	mg.Deps(fb.FieldsYML)
 	return mage.KibanaDashboards()
 }
 
-// DashboardsImport imports all dashboards to Kibana.
-//
-// Optional environment variables:
-// - KIBANA_URL: URL of Kibana
-func DashboardsImport() error {
-	return mage.ImportDashboards(build.Build, Dashboards)
+func (Update) Fields() {
+	mg.Deps(fb.All)
 }
 
-// Update is an alias for running fields, dashboards, config, includes, docs.
-func Update() {
-	mg.SerialDeps(Fields, Dashboards, Config)
-}
-
-func includeList() error {
-	return mage.GenerateIncludeListGo(nil, nil)
+func (Update) FieldDocs() error {
+	mg.Deps(fb.FieldsAllYML)
+	return mage.Docs.FieldDocs(mage.FieldsAllYML)
 }

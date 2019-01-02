@@ -50,7 +50,7 @@ func Package() {
 	mage.PackageKibanaDashboardsFromBuildDir()
 	customizePackaging()
 
-	mg.SerialDeps(Fields, Dashboards, Config, mage.GenerateModuleIncludeListGo)
+	mg.SerialDeps(Update.All)
 	mg.Deps(build.CrossBuild, build.CrossBuildGoDaemon)
 	mg.SerialDeps(mage.Package, pkg.PackageTest)
 }

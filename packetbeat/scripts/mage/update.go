@@ -20,42 +20,61 @@ package mage
 import (
 	"github.com/magefile/mage/mg"
 
-	"github.com/elastic/beats/dev-tools/mage/target/build"
-
 	"github.com/elastic/beats/dev-tools/mage"
+	"github.com/elastic/beats/dev-tools/mage/target/build"
+	"github.com/elastic/beats/dev-tools/mage/target/common"
+	"github.com/elastic/beats/dev-tools/mage/target/dashboards"
+	"github.com/elastic/beats/dev-tools/mage/target/docs"
+	"github.com/elastic/beats/dev-tools/mage/target/unittest"
 )
 
-// Check runs fmt and update then returns an error if any modifications are found.
-func Check() {
-	mg.SerialDeps(mage.Format, Update, mage.Check)
+func init() {
+	common.RegisterCheckDeps(Update.All)
+
+	dashboards.RegisterImportDeps(build.Build, Update.Dashboards)
+
+	docs.RegisterDeps(Update.FieldDocs)
+
+	unittest.RegisterPythonTestDeps(Update.Fields)
+}
+
+var (
+	// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+	SelectLogic mage.ProjectType
+)
+
+type Update mg.Namespace
+
+// Update is an alias for running fields, dashboards, config, includes.
+func (Update) All() {
+	mg.Deps(Update.Fields, Update.Dashboards, Update.Config,
+		Update.Includes, Update.FieldDocs)
+}
+
+func (Update) Config() error {
+	return config()
 }
 
 // Dashboards collects all the dashboards and generates index patterns.
-func Dashboards() error {
-	mg.Deps(fieldsYML)
+func (Update) Dashboards() error {
+	mg.Deps(fb.FieldsYML)
 	return mage.KibanaDashboards()
 }
 
-// DashboardsImport imports all dashboards to Kibana.
-//
-// Optional environment variables:
-// - KIBANA_URL: URL of Kibana
-func DashboardsImport() error {
-	return mage.ImportDashboards(build.Build, Dashboards)
+func (Update) Fields() {
+	mg.Deps(fb.All)
 }
 
-// Update is an alias for running fields, dashboards, config, includes, docs.
-func Update() {
-	mg.SerialDeps(Fields, Dashboards, Config)
-	if SelectLogic == mage.OSSProject {
-		mg.SerialDeps(includeList, fieldDocs)
+func (Update) FieldDocs() error {
+	mg.Deps(fb.FieldsAllYML)
+	return mage.Docs.FieldDocs(mage.FieldsAllYML)
+}
+
+func (Update) Includes() error {
+	if SelectLogic != mage.OSSProject {
+		// Only OSS has protocols.
+		return nil
 	}
-}
-
-func includeList() error {
+	mg.Deps(fb.FieldsGo)
 	return mage.GenerateIncludeListGo([]string{"protos/*"}, nil)
-}
-
-func fieldDocs() error {
-	return mage.Docs.FieldDocs("fields.yml")
 }

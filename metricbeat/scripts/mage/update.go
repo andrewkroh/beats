@@ -18,66 +18,125 @@
 package mage
 
 import (
+	"log"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/magefile/mage/mg"
-	"github.com/pkg/errors"
-
-	"github.com/elastic/beats/dev-tools/mage/target/docs"
 
 	"github.com/elastic/beats/dev-tools/mage"
 	"github.com/elastic/beats/dev-tools/mage/target/build"
+	"github.com/elastic/beats/dev-tools/mage/target/common"
+	"github.com/elastic/beats/dev-tools/mage/target/dashboards"
+	"github.com/elastic/beats/dev-tools/mage/target/docs"
+	"github.com/elastic/beats/dev-tools/mage/target/integtest"
+	"github.com/elastic/beats/dev-tools/mage/target/unittest"
 )
 
 func init() {
-	docs.RegisterDeps(updateDocs)
+	common.RegisterCheckDeps(Update.All)
+
+	dashboards.RegisterImportDeps(build.Build, Update.Dashboards)
+
+	docs.RegisterDeps(Update.FieldDocs, Update.ModuleDocs)
+
+	unittest.RegisterPythonTestDeps(Update.Fields)
+
+	integtest.RegisterPythonTestDeps(Update.Fields, Update.Dashboards)
 }
 
-// Check runs fmt and update then returns an error if any modifications are found.
-func Check() {
-	mg.SerialDeps(mage.Format, Update, mage.Check)
+var (
+	// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+	SelectLogic mage.ProjectType
+)
+
+type Update mg.Namespace
+
+func (Update) All() {
+	mg.Deps(Update.Fields, Update.Config, Update.Dashboards,
+		Update.Includes, Update.ModulesD)
+}
+
+func (Update) Config() error {
+	return config()
 }
 
 // Dashboards collects all the dashboards and generates index patterns.
-func Dashboards() error {
+func (Update) Dashboards() error {
+	mg.Deps(fb.FieldsYML)
 	switch SelectLogic {
 	case mage.OSSProject:
-		mg.Deps(ossFieldsYML)
-		return mage.KibanaDashboards("module")
+		return mage.KibanaDashboards(mage.OSSBeatDir("module"))
 	case mage.XPackProject:
-		mg.Deps(xpackFieldsYML)
-		return mage.KibanaDashboards(mage.OSSBeatDir("module"), "module")
+		return mage.KibanaDashboards(mage.OSSBeatDir("module"),
+			mage.XPackBeatDir("module"))
 	default:
-		panic(errors.Errorf("invalid SelectLogic value"))
+		panic(mage.ErrUnknownProjectType)
 	}
 }
 
-// DashboardsImport imports all dashboards to Kibana.
-//
-// Optional environment variables:
-// - KIBANA_URL: URL of Kibana
-func DashboardsImport() error {
-	return mage.ImportDashboards(build.Build, Dashboards)
+func (Update) Fields() {
+	mg.Deps(fb.All)
 }
 
-// Update is an alias for running fields, dashboards, config, includes, docs.
-func Update() {
-	mg.SerialDeps(updateWithoutDocs, updateDocs)
-}
-
-func updateWithoutDocs() {
-	mg.SerialDeps(Fields, Dashboards, Config, includeList, modulesD)
-}
-
-func includeList() error {
+func (Update) Includes() error {
+	mg.Deps(Update.Fields)
 	return mage.GenerateIncludeListGo(nil, []string{"module"})
 }
 
-func modulesD() error {
+func (Update) ModulesD() error {
 	// Only generate modules.d if there is a module dir. Newly generated
 	// beats based on Metricbeat initially do not have a module dir.
 	if _, err := os.Stat("module"); err == nil {
 		return mage.GenerateDirModulesD(mage.EnableModule("system"))
 	}
 	return nil
+}
+
+// FieldDocs generates docs/fields.asciidoc containing all fields (including x-pack).
+func (Update) FieldDocs() error {
+	mg.Deps(fb.FieldsAllYML)
+	return mage.Docs.FieldDocs(mage.FieldsAllYML)
+}
+
+// ModuleDocs collects documentation from modules (both OSS and X-Pack).
+func (Update) ModuleDocs() error {
+	ve, err := mage.PythonVirtualenv()
+	if err != nil {
+		return err
+	}
+
+	python, err := mage.LookVirtualenvPath(ve, "python")
+	if err != nil {
+		return err
+	}
+
+	if err = os.RemoveAll(mage.OSSBeatDir("docs/modules")); err != nil {
+		return err
+	}
+	if err = os.MkdirAll(mage.OSSBeatDir("docs/modules"), 0755); err != nil {
+		return err
+	}
+
+	// TODO: Port this script to Go.
+
+	// Warning: This script does NOT work outside of the OSS filebeat directory
+	// because it was not written in a portable manner.
+	return runIn(mage.OSSBeatDir(), python,
+		mage.OSSBeatDir("scripts/docs_collector.py"),
+		"--beat", mage.BeatName)
+}
+
+func runIn(dir, cmd string, args ...string) error {
+	c := exec.Command(cmd, args...)
+	c.Dir = dir
+	c.Env = os.Environ()
+	c.Stderr = os.Stderr
+	if mg.Verbose() {
+		c.Stdout = os.Stdout
+	}
+	c.Stdin = os.Stdin
+	log.Printf("exec: (pwd=%v) %v %v", dir, cmd, strings.Join(args, " "))
+	return c.Run()
 }

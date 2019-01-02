@@ -21,16 +21,13 @@ import (
 	"github.com/elastic/beats/dev-tools/mage"
 )
 
-// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
-var SelectLogic mage.ProjectType
-
 const (
 	// configTemplateGlob matches Packetbeat protocol config file templates.
 	configTemplateGlob = "protos/*/_meta/config*.yml.tmpl"
 )
 
 // Config generates the config files.
-func Config() error {
+func config() error {
 	return mage.Config(mage.AllConfigTypes, configFileParams(), ".")
 }
 

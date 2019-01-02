@@ -18,39 +18,43 @@
 package mage
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/magefile/mage/mg"
 
 	"github.com/elastic/beats/dev-tools/mage"
-	"github.com/elastic/beats/dev-tools/mage/target/build"
-	"github.com/elastic/beats/dev-tools/mage/target/pkg"
 )
 
-func init() {
-	mage.BeatDescription = "Journalbeat ships systemd journal entries to Elasticsearch or Logstash."
+var fb fieldsBuilder
 
-	mage.Platforms = mage.Platforms.Filter("linux !linux/ppc64 !linux/mips64")
+var _ mage.FieldsBuilder = fb
+
+type fieldsBuilder struct{}
+
+func (b fieldsBuilder) All() {
+	mg.Deps(b.FieldsGo, b.FieldsYML, b.FieldsAllYML)
 }
 
-// Package packages the Beat for distribution.
-// Use SNAPSHOT=true to build snapshots.
-// Use PLATFORMS to control the target platforms.
-// Use VERSION_QUALIFIER to control the version qualifier.
-func Package() {
-	start := time.Now()
-	defer func() { fmt.Println("package ran for", time.Since(start)) }()
+func (fieldsBuilder) FieldsGo() error {
+	// TODO: Currently libbeat does not have any fields.go files because each
+	// Beat is incorporating this into its include/fields.go file.
+	return nil
+}
 
+func (fieldsBuilder) FieldsYML() error {
+	var modules []string
 	switch SelectLogic {
-	case mage.OSSProject:
-		mage.UseElasticBeatOSSPackaging()
-	case mage.XPackProject:
-		mage.UseElasticBeatXPackPackaging()
+	case mage.OSSProject, mage.XPackProject:
+		modules = append(modules, mage.OSSBeatDir("processors"))
+	default:
+		panic(mage.ErrUnknownProjectType)
 	}
-	mage.PackageKibanaDashboardsFromBuildDir()
 
-	mg.Deps(Update.All)
-	mg.Deps(build.CrossBuild, build.CrossBuildGoDaemon)
-	mg.SerialDeps(mage.Package, pkg.PackageTest)
+	if err := mage.GenerateFieldsYAMLTo(mage.FieldsYML, modules...); err != nil {
+		return err
+	}
+	return mage.Copy(mage.FieldsYML, mage.FieldsYMLRoot)
+}
+
+func (fieldsBuilder) FieldsAllYML() error {
+	// This isn't used because we don't generate any fields docs for libbeat.
+	return nil
 }

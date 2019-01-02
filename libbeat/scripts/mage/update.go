@@ -15,18 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package dashboard
+package mage
 
 import (
+	"github.com/magefile/mage/mg"
+
 	"github.com/elastic/beats/dev-tools/mage"
+	"github.com/elastic/beats/dev-tools/mage/target/integtest"
+	"github.com/elastic/beats/dev-tools/mage/target/unittest"
 )
 
-// DashboardExport exports a dashboard from Kibana and writes it into the correct
-// directory.
-//
-// Required environment variables:
-// - MODULE: Name of the module
-// - ID:     Dashboard ID
-func DashboardExport() error {
-	return mage.ExportDashboard()
+func init() {
+	unittest.RegisterGoTestDeps(Update.Fields)
+	unittest.RegisterPythonTestDeps(Update.Fields)
+
+	integtest.RegisterPythonTestDeps(Update.Fields)
+}
+
+var (
+	// SelectLogic configures the types of project logic to use (OSS vs X-Pack).
+	SelectLogic mage.ProjectType
+)
+
+type Update mg.Namespace
+
+func (Update) All() {
+	mg.Deps(Update.Fields)
+}
+
+func (Update) Fields() {
+	mg.Deps(fb.All)
 }

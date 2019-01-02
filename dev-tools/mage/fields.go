@@ -25,6 +25,28 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+const (
+	FieldsYMLRoot = "fields.yml"
+	FieldsYML     = "build/fields/fields.yml"
+	FieldsAllYML  = "build/fields/fields.all.yml"
+)
+
+type FieldsBuilder interface {
+	// Generate all fields.go files.
+	FieldsGo() error
+
+	// Generate build/fields/fields.yml containing fields for the Beat. This
+	// file may need be copied to fields.yml if tests depend on it, but those
+	// tests should be updated.
+	FieldsYML() error
+
+	// Generate build/fields/fields.all.yml containing all possible fields
+	// for all license types. (Used for field documentation.)
+	FieldsAllYML() error
+
+	All() // Build everything.
+}
+
 // GenerateFieldsYAML generates a fields.yml file for a Beat. This will include
 // the common fields specified by libbeat, the common fields for the Beat,
 // and any additional fields.yml files you specify.
@@ -54,7 +76,7 @@ func generateFieldsYAML(baseDir, output string, moduleDirs ...string) error {
 		filepath.Join(beatsDir, globalFieldsCmdPath),
 		"-es_beats_path", beatsDir,
 		"-beat_path", baseDir,
-		"-out", output,
+		"-out", CreateDir(output),
 	)
 
 	return globalFieldsCmd(moduleDirs...)

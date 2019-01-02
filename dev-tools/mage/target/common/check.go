@@ -15,12 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package mage
+package common
 
 import (
-	"github.com/elastic/beats/dev-tools/mage/target/unittest"
+	"github.com/magefile/mage/mg"
+
+	"github.com/elastic/beats/dev-tools/mage"
 )
 
-func init() {
-	unittest.RegisterPythonTestDeps(Fields)
+var checkDeps []interface{}
+
+func RegisterCheckDeps(deps ...interface{}) {
+	checkDeps = append(checkDeps, deps...)
+}
+
+// Check runs fmt and update then returns an error if any modifications are found.
+func Check() {
+	deps := make([]interface{}, 0, len(checkDeps)+2)
+	deps = append(deps, mage.Format)
+	deps = append(deps, checkDeps...)
+	deps = append(deps, mage.Check)
+	mg.SerialDeps(deps)
 }
