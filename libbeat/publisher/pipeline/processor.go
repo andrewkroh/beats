@@ -123,8 +123,10 @@ func newProcessorPipeline(
 	processors.add(localProcessors)
 
 	// setup 6: add beats and host metadata
-	if meta := global.builtinMeta; len(meta) > 0 {
-		processors.add(actions.NewAddFields(meta, needsCopy))
+	if !config.SkipBuiltInMetadata {
+		if meta := global.builtinMeta; len(meta) > 0 {
+			processors.add(actions.NewAddFields(meta, needsCopy))
+		}
 	}
 
 	// setup 7: add agent metadata
