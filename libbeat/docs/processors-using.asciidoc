@@ -354,13 +354,22 @@ network:
     source.ip: private
 ----
 
-And this condition returns true if the `destination.ip` value is within the
+This condition returns true if the `destination.ip` value is within the
 IPv4 range of `192.168.1.0` - `192.168.1.255`.
 
 [source,yaml]
 ----
 network:
     destination.ip: '192.168.1.0/24'
+----
+
+And this condition returns true when `destination.ip` is within either of the
+given subnets.
+
+[source,yaml]
+----
+network:
+    destination.ip: ['192.168.1.0/24', '10.0.0.0/8', loopback]
 ----
 
 [float]

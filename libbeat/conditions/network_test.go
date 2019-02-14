@@ -43,6 +43,7 @@ func TestNetworkCreate(t *testing.T) {
 				"multicast_ip":                 "multicast",
 				"unspecified_ip":               "unspecified",
 				"private_ip":                   "private",
+				"public_ip":                    "public",
 			}},
 		})
 		if assert.NoError(t, err) {
@@ -129,6 +130,14 @@ func TestNetworkCheck(t *testing.T) {
 			}},
 		})
 	})
+
+	t.Run("multiple values match", func(t *testing.T) {
+		testConfig(t, true, httpResponseTestEvent, &Config{
+			Network: &Fields{fields: map[string]interface{}{
+				"client_ip": []string{"public", "loopback"},
+			}},
+		})
+	})
 }
 
 func TestNetworkPrivate(t *testing.T) {
@@ -163,6 +172,23 @@ func TestNetworkPrivate(t *testing.T) {
 		isNotPrivate("192.0.2.1")
 		isNotPrivate("2001:db8:ffff:ffff:ffff:ffff:ffff:1")
 	})
+}
+
+func TestNetworkContains(t *testing.T) {
+	ip := net.ParseIP("192.168.0.1")
+
+	contains, err := NetworkContains(ip, "192.168.1.0/24", "192.168.0.0/24")
+	assert.NoError(t, err)
+	assert.True(t, contains)
+
+	contains, err = NetworkContains(ip, "192.168.1.1", "192.168.0.0/24")
+	assert.Error(t, err)
+	assert.False(t, contains)
+
+	// The second network is invalid but we don't validate them upfront.
+	contains, err = NetworkContains(ip, "192.168.0.0/24", "192.168.1.1")
+	assert.NoError(t, err)
+	assert.True(t, contains)
 }
 
 func BenchmarkNetworkCondition(b *testing.B) {

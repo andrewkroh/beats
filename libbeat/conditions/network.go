@@ -40,6 +40,19 @@ var (
 		IP:   net.IP{0xfd, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		Mask: net.IPMask{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	}
+
+	namedNetworks = map[string]netContainsFunc{
+		"loopback":                  func(ip net.IP) bool { return ip.IsLoopback() },
+		"global_unicast":            func(ip net.IP) bool { return ip.IsGlobalUnicast() },
+		"unicast":                   func(ip net.IP) bool { return ip.IsGlobalUnicast() },
+		"link_local_unicast":        func(ip net.IP) bool { return ip.IsLinkLocalUnicast() },
+		"interface_local_multicast": func(ip net.IP) bool { return ip.IsInterfaceLocalMulticast() },
+		"link_local_multicast":      func(ip net.IP) bool { return ip.IsLinkLocalMulticast() },
+		"multicast":                 func(ip net.IP) bool { return ip.IsMulticast() },
+		"unspecified":               func(ip net.IP) bool { return ip.IsUnspecified() },
+		"private":                   isPrivateNetwork,
+		"public":                    func(ip net.IP) bool { return !isLocalOrPrivate(ip) },
+	}
 )
 
 // Network is a condition that tests if an IP address is in a network range.
@@ -48,17 +61,38 @@ type Network struct {
 	log    *logp.Logger
 }
 
-type networkMatcher struct {
-	name     string
-	contains func(ip net.IP) bool
+type networkMatcher interface {
+	Contains(net.IP) bool
+	String() string
 }
 
-func (n networkMatcher) Contains(ip net.IP) bool {
-	return n.contains(ip)
+type netContainsFunc func(net.IP) bool
+
+type singleNetworkMatcher struct {
+	name string
+	netContainsFunc
 }
 
-func (n networkMatcher) String() string {
-	return n.name
+func (m singleNetworkMatcher) Contains(ip net.IP) bool { return m.netContainsFunc(ip) }
+func (m singleNetworkMatcher) String() string          { return m.name }
+
+type multiNetworkMatcher []networkMatcher
+
+func (m multiNetworkMatcher) Contains(ip net.IP) bool {
+	for _, network := range m {
+		if network.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m multiNetworkMatcher) String() string {
+	var names []string
+	for _, network := range m {
+		names = append(names, network.String())
+	}
+	return strings.Join(names, " OR ")
 }
 
 // NewNetworkCondition builds a new Network using the given configuration.
@@ -68,71 +102,44 @@ func NewNetworkCondition(fields map[string]interface{}) (*Network, error) {
 		log:    logp.NewLogger(logName),
 	}
 
+	makeMatcher := func(name, network string) (networkMatcher, error) {
+		m := singleNetworkMatcher{name: name, netContainsFunc: namedNetworks[network]}
+		if m.netContainsFunc == nil {
+			subnet, err := parseCIDR(network)
+			if err != nil {
+				return nil, err
+			}
+			m.netContainsFunc = subnet.Contains
+		}
+		return m, nil
+	}
+
 	for field, value := range fields {
-		sValue, err := ExtractString(value)
-		if err != nil {
+		switch v := value.(type) {
+		case string:
+			m, err := makeMatcher(field, v)
+			if err != nil {
+				return nil, err
+			}
+			cond.fields[field] = m
+		case []string:
+			var matchers multiNetworkMatcher
+			for _, network := range v {
+				m, err := makeMatcher(field, network)
+				if err != nil {
+					return nil, err
+				}
+				matchers = append(matchers, m)
+			}
+			cond.fields[field] = matchers
+		default:
 			return nil, fmt.Errorf("condition attempted to set '%v' -> '%v' "+
 				"and encountered unexpected type '%T', only strings are "+
 				"allowed", field, value, value)
 		}
-
-		// Parse keywords.
-		nv := networkMatcher{name: sValue}
-		switch sValue {
-		case "loopback":
-			nv.contains = func(ip net.IP) bool { return ip.IsLoopback() }
-		case "global_unicast", "unicast":
-			nv.contains = func(ip net.IP) bool { return ip.IsGlobalUnicast() }
-		case "link_local_unicast":
-			nv.contains = func(ip net.IP) bool { return ip.IsLinkLocalUnicast() }
-		case "interface_local_multicast":
-			nv.contains = func(ip net.IP) bool { return ip.IsInterfaceLocalMulticast() }
-		case "link_local_multicast":
-			nv.contains = func(ip net.IP) bool { return ip.IsLinkLocalMulticast() }
-		case "multicast":
-			nv.contains = func(ip net.IP) bool { return ip.IsMulticast() }
-		case "unspecified":
-			nv.contains = func(ip net.IP) bool { return ip.IsUnspecified() }
-		case "private":
-			nv.contains = isPrivateNetwork
-		case "public":
-			nv.contains = func(ip net.IP) bool { return !isLocalOrPrivate(ip) }
-
-		// Parse Network.
-		default:
-			subnet, err := extractCIDR(sValue)
-			if err != nil {
-				return nil, err
-			}
-			nv.name = subnet.String()
-			nv.contains = subnet.Contains
-		}
-
-		cond.fields[field] = nv
 	}
 
 	return cond, nil
-}
-
-// extractCIDR extracts a Network from an unknown type.
-func extractCIDR(value string) (*net.IPNet, error) {
-	_, mask, err := net.ParseCIDR(value)
-	return mask, errors.Wrap(err, "failed to parse CIDR, values must be "+
-		"an IP address and prefix length, like '192.0.2.0/24' or "+
-		"'2001:db8::/32', as defined in RFC 4632 and RFC 4291.")
-}
-
-// extractIP return an IP address if unk is an IP address string or a net.IP.
-// Otherwise it returns nil.
-func extractIP(unk interface{}) net.IP {
-	switch v := unk.(type) {
-	case string:
-		return net.ParseIP(v)
-	case net.IP:
-		return v
-	default:
-		return nil
-	}
 }
 
 // Check determines whether the given event matches this condition.
@@ -175,6 +182,27 @@ func (c *Network) String() string {
 	return sb.String()
 }
 
+// parseCIDR parses a network CIDR.
+func parseCIDR(value string) (*net.IPNet, error) {
+	_, mask, err := net.ParseCIDR(value)
+	return mask, errors.Wrap(err, "failed to parse CIDR, values must be "+
+		"an IP address and prefix length, like '192.0.2.0/24' or "+
+		"'2001:db8::/32', as defined in RFC 4632 and RFC 4291.")
+}
+
+// extractIP return an IP address if unk is an IP address string or a net.IP.
+// Otherwise it returns nil.
+func extractIP(unk interface{}) net.IP {
+	switch v := unk.(type) {
+	case string:
+		return net.ParseIP(v)
+	case net.IP:
+		return v
+	default:
+		return nil
+	}
+}
+
 func isPrivateNetwork(ip net.IP) bool {
 	for _, net := range privateIPv4 {
 		if net.Contains(ip) {
@@ -193,4 +221,34 @@ func isLocalOrPrivate(ip net.IP) bool {
 		ip.IsLinkLocalUnicast() ||
 		ip.IsLinkLocalMulticast() ||
 		ip.IsInterfaceLocalMulticast()
+}
+
+// NetworkContains returns true if the given IP is contained by any of the
+// networks. networks can a CIDR or any of these named networks:
+//   - loopback
+//   - global_unicast
+//   - unicast
+//   - link_local_unicast
+//   - interface_local_multicast
+//   - link_local_multicast
+//   - multicast
+//   - unspecified
+//   - private
+//   - public
+func NetworkContains(ip net.IP, networks ...string) (bool, error) {
+	for _, net := range networks {
+		contains, found := namedNetworks[net]
+		if !found {
+			subnet, err := parseCIDR(net)
+			if err != nil {
+				return false, err
+			}
+			contains = subnet.Contains
+		}
+
+		if contains(ip) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
