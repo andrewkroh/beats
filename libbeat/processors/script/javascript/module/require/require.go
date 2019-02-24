@@ -15,14 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package javascript
+package require
 
-var sessionHooks = map[string]SessionHook{}
+import (
+	"io/ioutil"
 
-// SessionHook is a function that get invoked when each new Session is created.
-type SessionHook func(s Session)
+	"github.com/dop251/goja_nodejs/require"
 
-// AddSessionHook registers a SessionHook that gets invoked for each new Session.
-func AddSessionHook(name string, mod SessionHook) {
-	sessionHooks[name] = mod
+	"github.com/elastic/beats/libbeat/common"
+	"github.com/elastic/beats/libbeat/paths"
+	"github.com/elastic/beats/libbeat/processors/script/javascript"
+)
+
+func init() {
+	javascript.AddSessionHook("require", func(s javascript.Session) {
+		reg := require.NewRegistryWithLoader(loadSource)
+		reg.Enable(s.Runtime())
+	})
+}
+
+// loadSource checks the file's permissions and resolves the path to the config
+// path if it is relative.
+func loadSource(path string) ([]byte, error) {
+	path = paths.Resolve(paths.Config, path)
+
+	if err := common.OwnerHasExclusiveWritePerms(path); err != nil {
+		return nil, err
+	}
+
+	return ioutil.ReadFile(path)
 }

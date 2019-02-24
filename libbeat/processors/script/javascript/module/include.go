@@ -15,14 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package javascript
+package module
 
-var sessionHooks = map[string]SessionHook{}
-
-// SessionHook is a function that get invoked when each new Session is created.
-type SessionHook func(s Session)
-
-// AddSessionHook registers a SessionHook that gets invoked for each new Session.
-func AddSessionHook(name string, mod SessionHook) {
-	sessionHooks[name] = mod
-}
+import (
+	_ "github.com/elastic/beats/libbeat/processors/script/javascript/module/console"
+	_ "github.com/elastic/beats/libbeat/processors/script/javascript/module/path"
+	_ "github.com/elastic/beats/libbeat/processors/script/javascript/module/processor"
+	_ "github.com/elastic/beats/libbeat/processors/script/javascript/module/require"
+)
