@@ -1,0 +1,24 @@
+# Module: Google Cloud
+# Docs: https://www.elastic.co/guide/en/beats/filebeat/master/filebeat-module-cisco.html
+
+- module: googlecloud
+  vpcflow:
+    enabled: true
+    var:
+      project_id: elastic-beats
+      topic: siem-vpc-flow-logs
+      subscription_name: pubsub-flow-reader-demo
+      credentials_file: /Users/akroh/Downloads/elastic-beats-bda84f78b21d.json
+
+#- module: googlecloud
+#  vpcflow:
+#    enabled: false
+#
+#    # Set which input to use between syslog (default) or file.
+#    var.input: file
+#
+#    # Set custom paths for the log files. If left empty,
+#    # Filebeat will choose the paths depending on your OS.
+#    var.paths:
+#      #- module/googlecloud/vpcflow/test/*.json
+#      - /Users/akroh/go/src/github.com/andrewkroh/go-examples/pubsub/vpc-flows3.json
