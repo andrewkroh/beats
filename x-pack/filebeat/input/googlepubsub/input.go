@@ -119,6 +119,8 @@ func (in *pubsubInput) Run() {
 	}
 	defer client.Close()
 
+	// TODO: Add option to create subscription if not exists.
+
 	// Pub/Sub message IDs are unique within a topic so add bytes derived from
 	// project+topic to make the ID more unique.
 	h := sha256.New()
@@ -127,16 +129,22 @@ func (in *pubsubInput) Run() {
 	prefix := hex.EncodeToString(h.Sum(nil))
 	prefix = prefix[:10]
 
-	sub := client.Subscription(in.Subscription)
-	sub.ReceiveSettings.NumGoroutines = runtime.GOMAXPROCS(0)
-	sub.ReceiveSettings.MaxOutstandingMessages = 50
+	// TODO: Add option to configure subscription settings.
+	sub := client.Subscription(in.Subscription.Name)
+	sub.ReceiveSettings.NumGoroutines = in.Subscription.NumGoroutines
+	sub.ReceiveSettings.MaxOutstandingMessages = in.Subscription.MaxOutstandingMessages
 
 	err = sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		id := prefix + "-" + msg.ID
+
 		event := beat.Event{
+			Meta: common.MapStr{
+				"id": id,
+			},
 			Timestamp: msg.PublishTime.UTC(),
 			Fields: common.MapStr{
 				"event": common.MapStr{
-					"id":      prefix + "-" + msg.ID,
+					"id":      id,
 					"created": time.Now().UTC(),
 				},
 				"message": string(msg.Data),
