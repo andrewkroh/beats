@@ -1,8 +1,5 @@
-module sigs.k8s.io/yaml
+module github.com/kubernetes-sigs/yaml
 
 go 1.12
 
-require (
-	github.com/davecgh/go-spew v1.1.1
-	gopkg.in/yaml.v2 v2.2.2
-)
+require gopkg.in/yaml.v2 v2.2.2
