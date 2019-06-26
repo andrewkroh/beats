@@ -68,7 +68,7 @@ func newFromConfig(c config) (*processor, error) {
 		p.log = p.log.With("instance_id", c.ID)
 	}
 
-	// Execute built-in tests.
+	// Execute user provided built-in tests.
 	for _, test := range c.TestTimestamps {
 		ts, err := p.parseString(test)
 		if err != nil {
