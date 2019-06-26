@@ -132,8 +132,8 @@ func (p *processor) tryToTime(value interface{}) (time.Time, error) {
 func (p *processor) parseString(v string) (time.Time, error) {
 	detailedErr := &parseError{}
 
-	for _, pattern := range p.Patterns {
-		ts, err := time.ParseInLocation(pattern, v, p.tz)
+	for _, layout := range p.Layouts {
+		ts, err := time.ParseInLocation(layout, v, p.tz)
 		if err == nil {
 			// Use current year if no year is zero.
 			if ts.Year() == 0 {

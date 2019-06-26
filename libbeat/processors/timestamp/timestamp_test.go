@@ -35,7 +35,7 @@ func TestParsePatterns(t *testing.T) {
 
 	c := defaultConfig()
 	c.Field = "ts"
-	c.Patterns = append(c.Patterns, time.ANSIC, time.RFC3339Nano, time.RFC3339)
+	c.Layouts = append(c.Layouts, time.ANSIC, time.RFC3339Nano, time.RFC3339)
 
 	p, err := newFromConfig(c)
 	if err != nil {
@@ -66,7 +66,7 @@ func TestParsePatterns(t *testing.T) {
 func TestParseNoYear(t *testing.T) {
 	c := defaultConfig()
 	c.Field = "ts"
-	c.Patterns = append(c.Patterns, time.StampMilli)
+	c.Layouts = append(c.Layouts, time.StampMilli)
 	c.Timezone = "EST"
 
 	p, err := newFromConfig(c)
@@ -95,7 +95,7 @@ func TestParseNoYear(t *testing.T) {
 func TestIgnoreMissing(t *testing.T) {
 	c := defaultConfig()
 	c.Field = "ts"
-	c.Patterns = append(c.Patterns, time.RFC3339)
+	c.Layouts = append(c.Layouts, time.RFC3339)
 
 	p, err := newFromConfig(c)
 	if err != nil {
@@ -117,7 +117,7 @@ func TestIgnoreMissing(t *testing.T) {
 func TestIgnoreFailure(t *testing.T) {
 	c := defaultConfig()
 	c.Field = "ts"
-	c.Patterns = append(c.Patterns, time.RFC3339)
+	c.Layouts = append(c.Layouts, time.RFC3339)
 
 	p, err := newFromConfig(c)
 	if err != nil {
@@ -140,7 +140,7 @@ func TestIgnoreFailure(t *testing.T) {
 func TestBuiltInTest(t *testing.T) {
 	c := defaultConfig()
 	c.Field = "ts"
-	c.Patterns = append(c.Patterns, "2006-01-89T15:04:05Z07:00") // Bad format.
+	c.Layouts = append(c.Layouts, "2006-01-89T15:04:05Z07:00") // Bad format.
 	c.TestTimestamps = []string{
 		"2015-03-07T11:06:39Z",
 	}

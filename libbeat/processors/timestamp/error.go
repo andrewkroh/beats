@@ -65,6 +65,6 @@ func (e *parseErrorCause) Error() string {
 		return e.Message
 	}
 
-	return "failed using pattern [" + e.Layout + "] " +
+	return "failed using layout [" + e.Layout + "] " +
 		"cannot parse [" + e.ValueElem + "] as [" + e.LayoutElem + "]"
 }

@@ -104,7 +104,7 @@ var ciscoIOS = (function() {
         .Timestamp({
             field: "_tmp.timestamp",
             target_field: "@timestamp",
-            patterns: [
+            layouts: [
                 'Jan _2 15:04:05.999',
                 'Jan _2 15:04:05.999 MST',
             ],

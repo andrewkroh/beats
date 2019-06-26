@@ -18,14 +18,14 @@
 package timestamp
 
 type config struct {
-	Field          string   `config:"field" validate:"required"`
-	TargetField    string   `config:"target_field"`
-	Patterns       []string `config:"patterns" validate:"required"`
-	Timezone       string   `config:"timezone"`
-	IgnoreMissing  bool     `config:"ignore_missing"`
-	IgnoreFailure  bool     `config:"ignore_failure"`
-	TestTimestamps []string `config:"test"`
-	ID             string   `config:"id"`
+	Field          string   `config:"field" validate:"required"`   // Source field containing time to be parsed.
+	TargetField    string   `config:"target_field"`                // Target field for the parsed time value. Defaults to @timestamp.
+	Layouts        []string `config:"layouts" validate:"required"` // Timestamp layouts that define the expected time value format.
+	Timezone       string   `config:"timezone"`                    // Timezone to use when parsing the date (e.g. America/New_York).
+	IgnoreMissing  bool     `config:"ignore_missing"`              // Ignore errors when the source field is missing.
+	IgnoreFailure  bool     `config:"ignore_failure"`              // Ignore errors when parsing the timestamp.
+	TestTimestamps []string `config:"test"`                        // A list of timestamps that must parse successfully when loading the processor.
+	ID             string   `config:"id"`                          // An identifier for this processor. Useful for debugging.
 }
 
 func defaultConfig() config {
