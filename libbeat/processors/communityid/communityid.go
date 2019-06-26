@@ -132,9 +132,12 @@ func (p *processor) buildFlow(event *beat.Event) *flowhash.Flow {
 	}
 
 	// protocol
-	v, err = event.GetValue(p.Fields.TransportProtocol)
+	v, err = event.GetValue("network.iana_number")
 	if err != nil {
-		return nil
+		v, err = event.GetValue(p.Fields.TransportProtocol)
+		if err != nil {
+			return nil
+		}
 	}
 	flow.Protocol, ok = tryToIANATransportProtocol(v)
 	if !ok {
