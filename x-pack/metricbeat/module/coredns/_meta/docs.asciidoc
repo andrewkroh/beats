@@ -1,2 +1,15 @@
-This is the coredns module.
+This is a module for collecting metrics exposed by https://coredns.io[CoreDNS]
+from its https://coredns.io/plugins/metrics/[prometheus metrics plugin]. With
+the plugin enabled in your CoreDNS Corefile the metrics will be exposed via
+HTTP at the specified address (localhost:9153 in this example).
 
+[source,sh]
+-------
+.:53 {
+    prometheus localhost:9153
+}
+-------
+
+This is the overview dashboard that is included with the module.
+
+image::./images/metricbeat_coredns_overview.png[]

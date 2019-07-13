@@ -7,8 +7,19 @@ This file is generated! See scripts/docs_collector.py
 
 beta[]
 
-This is the coredns module.
+This is a module for collecting metrics exposed by https://coredns.io[CoreDNS]
+from its https://coredns.io/plugins/metrics/[prometheus metrics plugin]. With
+the plugin enabled in your CoreDNS Corefile the metrics will be exposed via
+HTTP at the specified address (localhost:9153 in this example).
 
+[source,sh]
+-------
+.:53 {
+    prometheus localhost:9153
+}
+-------
+
+image::./images/metricbeat_coredns_overview.png[]
 
 
 [float]

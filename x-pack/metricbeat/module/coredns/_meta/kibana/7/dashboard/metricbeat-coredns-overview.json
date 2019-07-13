@@ -1,0 +1,930 @@
+{
+  "objects": [
+    {
+      "attributes": {
+        "description": "",
+        "hits": 0,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": {
+            "filter": [],
+            "query": {
+              "language": "kuery",
+              "query": ""
+            }
+          }
+        },
+        "optionsJSON": {
+          "hidePanelTitles": false,
+          "useMargins": true
+        },
+        "panelsJSON": [
+          {
+            "embeddableConfig": {},
+            "gridData": {
+              "h": 8,
+              "i": "1",
+              "w": 24,
+              "x": 0,
+              "y": 13
+            },
+            "panelIndex": "1",
+            "panelRefName": "panel_0",
+            "title": "DNS Cache Hits / Misses",
+            "version": "7.2.0"
+          },
+          {
+            "embeddableConfig": {},
+            "gridData": {
+              "h": 7,
+              "i": "2",
+              "w": 24,
+              "x": 0,
+              "y": 6
+            },
+            "panelIndex": "2",
+            "panelRefName": "panel_1",
+            "title": "DNS Response Codes",
+            "version": "7.2.0"
+          },
+          {
+            "embeddableConfig": {},
+            "gridData": {
+              "h": 6,
+              "i": "3",
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "panelIndex": "3",
+            "panelRefName": "panel_2",
+            "title": "DNS Request Count",
+            "version": "7.2.0"
+          },
+          {
+            "embeddableConfig": {},
+            "gridData": {
+              "h": 7,
+              "i": "4",
+              "w": 24,
+              "x": 0,
+              "y": 21
+            },
+            "panelIndex": "4",
+            "panelRefName": "panel_3",
+            "title": "DNS Request / Response Size",
+            "version": "7.2.0"
+          },
+          {
+            "embeddableConfig": {},
+            "gridData": {
+              "h": 22,
+              "i": "5",
+              "w": 24,
+              "x": 24,
+              "y": 6
+            },
+            "panelIndex": "5",
+            "panelRefName": "panel_4",
+            "title": "DNS Servers (cumulative metrics since reboot)",
+            "version": "7.2.0"
+          },
+          {
+            "embeddableConfig": {},
+            "gridData": {
+              "h": 6,
+              "i": "6",
+              "w": 10,
+              "x": 38,
+              "y": 0
+            },
+            "panelIndex": "6",
+            "panelRefName": "panel_5",
+            "title": "",
+            "version": "7.2.0"
+          },
+          {
+            "embeddableConfig": {},
+            "gridData": {
+              "h": 6,
+              "i": "7",
+              "w": 14,
+              "x": 24,
+              "y": 0
+            },
+            "panelIndex": "7",
+            "panelRefName": "panel_6",
+            "title": "",
+            "version": "7.2.0"
+          }
+        ],
+        "timeRestore": false,
+        "title": "[Metricbeat CoreDNS] Overview",
+        "version": 1
+      },
+      "id": "23008880-a4ee-11e9-9e54-4f53df562771",
+      "migrationVersion": {
+        "dashboard": "7.0.0"
+      },
+      "references": [
+        {
+          "id": "dc807000-a4ed-11e9-9e54-4f53df562771",
+          "name": "panel_0",
+          "type": "visualization"
+        },
+        {
+          "id": "e4557bd0-a4ee-11e9-9e54-4f53df562771",
+          "name": "panel_1",
+          "type": "visualization"
+        },
+        {
+          "id": "fcc13410-a4ef-11e9-9e54-4f53df562771",
+          "name": "panel_2",
+          "type": "visualization"
+        },
+        {
+          "id": "0a216210-a4fa-11e9-9e54-4f53df562771",
+          "name": "panel_3",
+          "type": "visualization"
+        },
+        {
+          "id": "6f6c7210-a4fd-11e9-9e54-4f53df562771",
+          "name": "panel_4",
+          "type": "visualization"
+        },
+        {
+          "id": "844ca6b0-a50b-11e9-9e54-4f53df562771",
+          "name": "panel_5",
+          "type": "visualization"
+        },
+        {
+          "id": "cc6e6bd0-a50c-11e9-9e54-4f53df562771",
+          "name": "panel_6",
+          "type": "visualization"
+        }
+      ],
+      "type": "dashboard",
+      "updated_at": "2019-07-13T02:10:03.559Z",
+      "version": "WzgwNSwxXQ=="
+    },
+    {
+      "attributes": {
+        "description": "",
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": {
+            "filter": [],
+            "query": {
+              "language": "kuery",
+              "query": ""
+            }
+          }
+        },
+        "title": "DNS Cache Hits / Misses [Metricbeat CoreDNS]",
+        "uiStateJSON": {},
+        "version": 1,
+        "visState": {
+          "aggs": [],
+          "params": {
+            "annotations": [],
+            "axis_formatter": "number",
+            "axis_position": "left",
+            "axis_scale": "normal",
+            "default_index_pattern": "auditbeat-*",
+            "default_timefield": "@timestamp",
+            "filter": "event.dataset:coredns.stats",
+            "id": "61ca57f0-469d-11e7-af02-69e470af7417",
+            "index_pattern": "metricbeat-*",
+            "interval": "",
+            "series": [
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "#68BC00",
+                "fill": 0.5,
+                "formatter": "number",
+                "id": "61ca57f1-469d-11e7-af02-69e470af7417",
+                "label": "Cache Hits",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.cache.hits.count",
+                    "id": "61ca57f2-469d-11e7-af02-69e470af7417",
+                    "type": "max"
+                  },
+                  {
+                    "field": "61ca57f2-469d-11e7-af02-69e470af7417",
+                    "id": "44a88510-a4ed-11e9-9930-bfd8831d24c7",
+                    "lag": "",
+                    "type": "serial_diff"
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "terms",
+                "stacked": "none",
+                "terms_field": "agent.hostname",
+                "value_template": "{{value}} hits"
+              },
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "rgba(211,49,21,1)",
+                "fill": 0.5,
+                "formatter": "number",
+                "id": "70e17920-a4ed-11e9-9930-bfd8831d24c7",
+                "label": "Cache Misses",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.cache.misses.count",
+                    "id": "70e17921-a4ed-11e9-9930-bfd8831d24c7",
+                    "type": "max"
+                  },
+                  {
+                    "field": "70e17921-a4ed-11e9-9930-bfd8831d24c7",
+                    "id": "70e17922-a4ed-11e9-9930-bfd8831d24c7",
+                    "lag": "",
+                    "type": "serial_diff"
+                  },
+                  {
+                    "id": "8cc1b420-a4ed-11e9-9930-bfd8831d24c7",
+                    "script": "-1*params.misses",
+                    "type": "math",
+                    "variables": [
+                      {
+                        "field": "70e17922-a4ed-11e9-9930-bfd8831d24c7",
+                        "id": "96908990-a4ed-11e9-9930-bfd8831d24c7",
+                        "name": "misses"
+                      }
+                    ]
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "terms",
+                "stacked": "none",
+                "terms_field": "agent.hostname",
+                "value_template": "{{value}} misses"
+              }
+            ],
+            "show_grid": 1,
+            "show_legend": 1,
+            "time_field": "",
+            "type": "timeseries"
+          },
+          "title": "DNS Cache Hits / Misses [Metricbeat CoreDNS]",
+          "type": "metrics"
+        }
+      },
+      "id": "dc807000-a4ed-11e9-9e54-4f53df562771",
+      "migrationVersion": {
+        "visualization": "7.2.0"
+      },
+      "references": [],
+      "type": "visualization",
+      "updated_at": "2019-07-13T02:03:30.055Z",
+      "version": "Wzc5OSwxXQ=="
+    },
+    {
+      "attributes": {
+        "description": "",
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": {
+            "filter": [],
+            "query": {
+              "language": "kuery",
+              "query": ""
+            }
+          }
+        },
+        "title": "DNS Response Codes [Metricbeat CoreDNS]",
+        "uiStateJSON": {},
+        "version": 1,
+        "visState": {
+          "aggs": [],
+          "params": {
+            "axis_formatter": "number",
+            "axis_position": "left",
+            "axis_scale": "normal",
+            "default_index_pattern": "auditbeat-*",
+            "default_timefield": "@timestamp",
+            "filter": "event.dataset:coredns.stats",
+            "id": "61ca57f0-469d-11e7-af02-69e470af7417",
+            "index_pattern": "metricbeat-*",
+            "interval": "",
+            "series": [
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "#68BC00",
+                "fill": 0.5,
+                "formatter": "number",
+                "id": "61ca57f1-469d-11e7-af02-69e470af7417",
+                "label": "Response Codes",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.response.rcode.count",
+                    "id": "61ca57f2-469d-11e7-af02-69e470af7417",
+                    "type": "max"
+                  },
+                  {
+                    "field": "61ca57f2-469d-11e7-af02-69e470af7417",
+                    "id": "b9ba3230-a4ee-11e9-9930-bfd8831d24c7",
+                    "lag": "",
+                    "type": "serial_diff"
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "terms",
+                "stacked": "none",
+                "terms_field": "coredns.stats.rcode"
+              }
+            ],
+            "show_grid": 1,
+            "show_legend": 1,
+            "time_field": "",
+            "type": "timeseries"
+          },
+          "title": "DNS Response Codes [Metricbeat CoreDNS]",
+          "type": "metrics"
+        }
+      },
+      "id": "e4557bd0-a4ee-11e9-9e54-4f53df562771",
+      "migrationVersion": {
+        "visualization": "7.2.0"
+      },
+      "references": [],
+      "type": "visualization",
+      "updated_at": "2019-07-12T21:49:15.149Z",
+      "version": "Wzc3MSwxXQ=="
+    },
+    {
+      "attributes": {
+        "description": "",
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": {
+            "filter": [],
+            "query": {
+              "language": "kuery",
+              "query": ""
+            }
+          }
+        },
+        "title": "DNS Request Count [Metricbeat CoreDNS]",
+        "uiStateJSON": {},
+        "version": 1,
+        "visState": {
+          "aggs": [],
+          "params": {
+            "axis_formatter": "number",
+            "axis_position": "left",
+            "axis_scale": "normal",
+            "default_index_pattern": "auditbeat-*",
+            "default_timefield": "@timestamp",
+            "filter": "event.dataset:coredns.stats",
+            "id": "61ca57f0-469d-11e7-af02-69e470af7417",
+            "index_pattern": "metricbeat-*",
+            "interval": "",
+            "series": [
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "rgba(77,77,77,1)",
+                "fill": "0",
+                "formatter": "number",
+                "hidden": false,
+                "id": "1f40fd90-a4f0-11e9-9930-bfd8831d24c7",
+                "label": "Request Count",
+                "line_width": "2",
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.request.duration.ns.count",
+                    "id": "1f40fd91-a4f0-11e9-9930-bfd8831d24c7",
+                    "type": "max"
+                  },
+                  {
+                    "field": "1f40fd91-a4f0-11e9-9930-bfd8831d24c7",
+                    "id": "3476ad90-a4f0-11e9-9930-bfd8831d24c7",
+                    "lag": "",
+                    "type": "serial_diff"
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 1,
+                "split_mode": "everything",
+                "stacked": "none",
+                "steps": 0,
+                "terms_field": null,
+                "value_template": "{{value}}"
+              }
+            ],
+            "show_grid": 1,
+            "show_legend": 1,
+            "time_field": "",
+            "type": "timeseries"
+          },
+          "title": "DNS Request Count [Metricbeat CoreDNS]",
+          "type": "metrics"
+        }
+      },
+      "id": "fcc13410-a4ef-11e9-9e54-4f53df562771",
+      "migrationVersion": {
+        "visualization": "7.2.0"
+      },
+      "references": [],
+      "type": "visualization",
+      "updated_at": "2019-07-13T01:31:32.068Z",
+      "version": "Wzc5MiwxXQ=="
+    },
+    {
+      "attributes": {
+        "description": "",
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": {
+            "filter": [],
+            "query": {
+              "language": "kuery",
+              "query": ""
+            }
+          }
+        },
+        "title": "DNS Request / Response Size [Metricbeat CoreDNS]",
+        "uiStateJSON": {},
+        "version": 1,
+        "visState": {
+          "aggs": [],
+          "params": {
+            "axis_formatter": "number",
+            "axis_position": "left",
+            "axis_scale": "normal",
+            "default_index_pattern": "auditbeat-*",
+            "default_timefield": "@timestamp",
+            "filter": "event.dataset:coredns.stats",
+            "id": "61ca57f0-469d-11e7-af02-69e470af7417",
+            "index_pattern": "metricbeat-*",
+            "interval": "",
+            "series": [
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "rgba(104,188,0,1)",
+                "fill": 0.5,
+                "formatter": "bytes",
+                "id": "61ca57f1-469d-11e7-af02-69e470af7417",
+                "label": "Response Size",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.response.size.bytes.sum",
+                    "id": "61ca57f2-469d-11e7-af02-69e470af7417",
+                    "type": "max"
+                  },
+                  {
+                    "field": "61ca57f2-469d-11e7-af02-69e470af7417",
+                    "id": "3efada30-a4f9-11e9-ab06-a1782da4c757",
+                    "lag": "",
+                    "type": "serial_diff"
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "everything",
+                "stacked": "none",
+                "value_template": "{{value}} "
+              },
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "rgba(251,158,0,1)",
+                "fill": 0.5,
+                "formatter": "bytes",
+                "id": "6c9b2670-a4f9-11e9-ab06-a1782da4c757",
+                "label": "Request Size",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.request.size.bytes.sum",
+                    "id": "6c9b2671-a4f9-11e9-ab06-a1782da4c757",
+                    "type": "max"
+                  },
+                  {
+                    "field": "6c9b2671-a4f9-11e9-ab06-a1782da4c757",
+                    "id": "6c9b2672-a4f9-11e9-ab06-a1782da4c757",
+                    "lag": "",
+                    "type": "serial_diff"
+                  },
+                  {
+                    "id": "c2a73220-a4f9-11e9-ab06-a1782da4c757",
+                    "script": "-1 * params.bytes",
+                    "type": "math",
+                    "variables": [
+                      {
+                        "field": "6c9b2672-a4f9-11e9-ab06-a1782da4c757",
+                        "id": "c64d08a0-a4f9-11e9-ab06-a1782da4c757",
+                        "name": "bytes"
+                      }
+                    ]
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "everything",
+                "stacked": "none",
+                "value_template": "{{value}} "
+              }
+            ],
+            "show_grid": 1,
+            "show_legend": 1,
+            "time_field": "",
+            "type": "timeseries"
+          },
+          "title": "DNS Request / Response Size [Metricbeat CoreDNS]",
+          "type": "metrics"
+        }
+      },
+      "id": "0a216210-a4fa-11e9-9e54-4f53df562771",
+      "migrationVersion": {
+        "visualization": "7.2.0"
+      },
+      "references": [],
+      "type": "visualization",
+      "updated_at": "2019-07-13T02:06:40.143Z",
+      "version": "WzgwMywxXQ=="
+    },
+    {
+      "attributes": {
+        "description": "",
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": {
+            "filter": [],
+            "query": {
+              "language": "kuery",
+              "query": ""
+            }
+          }
+        },
+        "title": "DNS Servers [Metricbeat CoreDNS]",
+        "uiStateJSON": {},
+        "version": 1,
+        "visState": {
+          "aggs": [],
+          "params": {
+            "axis_formatter": "number",
+            "axis_position": "left",
+            "axis_scale": "normal",
+            "background_color_rules": [
+              {
+                "id": "aa529970-a4fa-11e9-ab06-a1782da4c757"
+              }
+            ],
+            "bar_color_rules": [
+              {
+                "id": "59ecaba0-a4fb-11e9-ab06-a1782da4c757"
+              }
+            ],
+            "default_index_pattern": "auditbeat-*",
+            "default_timefield": "@timestamp",
+            "filter": "event.dataset:coredns.stats",
+            "id": "61ca57f0-469d-11e7-af02-69e470af7417",
+            "index_pattern": "metricbeat-*",
+            "interval": "",
+            "pivot_id": "agent.hostname",
+            "pivot_label": "DNS Server",
+            "pivot_type": "string",
+            "series": [
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "#68BC00",
+                "fill": 0.5,
+                "formatter": "number",
+                "id": "a5b3d210-a4fc-11e9-ab06-a1782da4c757",
+                "label": "Requests",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.request.count",
+                    "id": "a5b3d211-a4fc-11e9-ab06-a1782da4c757",
+                    "type": "max"
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "everything",
+                "stacked": "none"
+              },
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "#68BC00",
+                "fill": 0.5,
+                "formatter": "bytes",
+                "id": "61ca57f1-469d-11e7-af02-69e470af7417",
+                "label": "Request Bytes",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.request.size.bytes.sum",
+                    "id": "61ca57f2-469d-11e7-af02-69e470af7417",
+                    "type": "max"
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "terms",
+                "stacked": "none",
+                "terms_field": "agent.hostname"
+              },
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "rgba(251,158,0,1)",
+                "fill": 0.5,
+                "formatter": "bytes",
+                "id": "727fb770-a4fb-11e9-ab06-a1782da4c757",
+                "label": "Response Bytes",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.response.size.bytes.sum",
+                    "id": "727fb771-a4fb-11e9-ab06-a1782da4c757",
+                    "type": "max"
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "terms",
+                "stacked": "none",
+                "terms_field": "agent.hostname"
+              },
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "rgba(115,216,255,1)",
+                "fill": 0.5,
+                "formatter": "ns,ms,2",
+                "id": "85051480-a4fb-11e9-ab06-a1782da4c757",
+                "label": "Avg Response Time",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.request.duration.ns.count",
+                    "id": "85051481-a4fb-11e9-ab06-a1782da4c757",
+                    "type": "max"
+                  },
+                  {
+                    "field": "coredns.stats.dns.request.duration.ns.sum",
+                    "id": "8f498f20-a4fb-11e9-ab06-a1782da4c757",
+                    "type": "max"
+                  },
+                  {
+                    "id": "b626bf50-a4fb-11e9-ab06-a1782da4c757",
+                    "script": "params.sum / params.count",
+                    "type": "math",
+                    "variables": [
+                      {
+                        "field": "85051481-a4fb-11e9-ab06-a1782da4c757",
+                        "id": "bb3ffbf0-a4fb-11e9-ab06-a1782da4c757",
+                        "name": "count"
+                      },
+                      {
+                        "field": "8f498f20-a4fb-11e9-ab06-a1782da4c757",
+                        "id": "becd4160-a4fb-11e9-ab06-a1782da4c757",
+                        "name": "sum"
+                      }
+                    ]
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "terms",
+                "stacked": "none",
+                "terms_field": "agent.hostname",
+                "value_template": "{{value}}ms"
+              },
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "#68BC00",
+                "color_rules": [
+                  {
+                    "id": "0dc869b0-a4fd-11e9-ab06-a1782da4c757"
+                  }
+                ],
+                "fill": 0.5,
+                "formatter": "percent",
+                "id": "c4a2d3b0-a4fc-11e9-ab06-a1782da4c757",
+                "label": "Cache Hit Rate",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.dns.cache.hits.count",
+                    "id": "c4a2d3b1-a4fc-11e9-ab06-a1782da4c757",
+                    "type": "max"
+                  },
+                  {
+                    "field": "coredns.stats.dns.cache.misses.count",
+                    "id": "cfafce70-a4fc-11e9-ab06-a1782da4c757",
+                    "type": "max"
+                  },
+                  {
+                    "id": "d6ec1220-a4fc-11e9-ab06-a1782da4c757",
+                    "script": "params.hits / sum(params.hits, params.misses)",
+                    "type": "math",
+                    "variables": [
+                      {
+                        "field": "c4a2d3b1-a4fc-11e9-ab06-a1782da4c757",
+                        "id": "e3449fb0-a4fc-11e9-ab06-a1782da4c757",
+                        "name": "hits"
+                      },
+                      {
+                        "field": "cfafce70-a4fc-11e9-ab06-a1782da4c757",
+                        "id": "e85d4010-a4fc-11e9-ab06-a1782da4c757",
+                        "name": "misses"
+                      }
+                    ]
+                  }
+                ],
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "everything",
+                "stacked": "none"
+              },
+              {
+                "axis_position": "right",
+                "chart_type": "line",
+                "color": "#68BC00",
+                "color_rules": [
+                  {
+                    "id": "36d47810-a50e-11e9-ab06-a1782da4c757",
+                    "operator": "gt",
+                    "text": "rgba(211,49,21,1)",
+                    "value": 0
+                  }
+                ],
+                "fill": 0.5,
+                "formatter": "number",
+                "id": "326a1910-a50e-11e9-ab06-a1782da4c757",
+                "label": "Panics",
+                "line_width": 1,
+                "metrics": [
+                  {
+                    "field": "coredns.stats.panic.count",
+                    "id": "326a1911-a50e-11e9-ab06-a1782da4c757",
+                    "type": "max"
+                  }
+                ],
+                "offset_time": "",
+                "point_size": 1,
+                "separate_axis": 0,
+                "split_mode": "everything",
+                "stacked": "none",
+                "value_template": ""
+              }
+            ],
+            "show_grid": 1,
+            "show_legend": 1,
+            "time_field": "",
+            "type": "table"
+          },
+          "title": "DNS Servers [Metricbeat CoreDNS]",
+          "type": "metrics"
+        }
+      },
+      "id": "6f6c7210-a4fd-11e9-9e54-4f53df562771",
+      "migrationVersion": {
+        "visualization": "7.2.0"
+      },
+      "references": [],
+      "type": "visualization",
+      "updated_at": "2019-07-13T02:04:21.248Z",
+      "version": "WzgwMSwxXQ=="
+    },
+    {
+      "attributes": {
+        "description": "",
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": {
+            "filter": [],
+            "query": {
+              "language": "kuery",
+              "query": ""
+            }
+          }
+        },
+        "title": "CoreDNS Logo [Metricbeat CoreDNS]",
+        "uiStateJSON": {},
+        "version": 1,
+        "visState": {
+          "aggs": [],
+          "params": {
+            "fontSize": 11,
+            "markdown": "[![CoreDNS Logo](data:image/png;base64,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)](https://coredns.io/)",
+            "openLinksInNewTab": false
+          },
+          "title": "CoreDNS Logo [Metricbeat CoreDNS]",
+          "type": "markdown"
+        }
+      },
+      "id": "844ca6b0-a50b-11e9-9e54-4f53df562771",
+      "migrationVersion": {
+        "visualization": "7.2.0"
+      },
+      "references": [],
+      "type": "visualization",
+      "updated_at": "2019-07-13T01:14:09.435Z",
+      "version": "Wzc4NSwxXQ=="
+    },
+    {
+      "attributes": {
+        "description": "",
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": {
+            "filter": [
+              {
+                "$state": {
+                  "store": "appState"
+                },
+                "meta": {
+                  "alias": null,
+                  "disabled": false,
+                  "indexRefName": "kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index",
+                  "key": "event.dataset",
+                  "negate": false,
+                  "params": {
+                    "query": "coredns.stats"
+                  },
+                  "type": "phrase",
+                  "value": "coredns.stats"
+                },
+                "query": {
+                  "match": {
+                    "event.dataset": {
+                      "query": "coredns.stats",
+                      "type": "phrase"
+                    }
+                  }
+                }
+              }
+            ],
+            "query": {
+              "language": "kuery",
+              "query": ""
+            }
+          }
+        },
+        "title": "Server Selector [Metricbeat CoreDNS]",
+        "uiStateJSON": {},
+        "version": 1,
+        "visState": {
+          "aggs": [],
+          "params": {
+            "controls": [
+              {
+                "fieldName": "agent.hostname",
+                "id": "1562980735297",
+                "indexPatternRefName": "control_0_index_pattern",
+                "label": "Filter Servers",
+                "options": {
+                  "dynamicOptions": true,
+                  "multiselect": true,
+                  "order": "desc",
+                  "size": 5,
+                  "type": "terms"
+                },
+                "parent": "",
+                "type": "list"
+              }
+            ],
+            "pinFilters": false,
+            "updateFiltersOnChange": false,
+            "useTimeFilter": false
+          },
+          "title": "Server Selector [Metricbeat CoreDNS]",
+          "type": "input_control_vis"
+        }
+      },
+      "id": "cc6e6bd0-a50c-11e9-9e54-4f53df562771",
+      "migrationVersion": {
+        "visualization": "7.2.0"
+      },
+      "references": [
+        {
+          "id": "auditbeat-*",
+          "name": "kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index",
+          "type": "index-pattern"
+        },
+        {
+          "id": "metricbeat-*",
+          "name": "control_0_index_pattern",
+          "type": "index-pattern"
+        }
+      ],
+      "type": "visualization",
+      "updated_at": "2019-07-13T01:29:51.748Z",
+      "version": "Wzc5MCwxXQ=="
+    }
+  ],
+  "version": "7.2.0"
+}
