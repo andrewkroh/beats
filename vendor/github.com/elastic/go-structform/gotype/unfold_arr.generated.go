@@ -21,7 +21,7 @@ package gotype
 import (
 	"unsafe"
 
-	structform "github.com/elastic/go-structform"
+	"github.com/elastic/go-structform"
 )
 
 var (
@@ -2310,5 +2310,6 @@ func makeArrayPtr(ctx *unfoldCtx, l int, bt structform.BaseType) (interface{}, u
 
 	default:
 		panic("invalid type code")
+		return nil, nil, nil
 	}
 }

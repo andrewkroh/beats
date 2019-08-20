@@ -64,10 +64,16 @@ func (s GetBucketNotificationConfigurationInput) MarshalFields(e protocol.FieldE
 type GetBucketNotificationConfigurationOutput struct {
 	_ struct{} `type:"structure"`
 
+	// Describes the AWS Lambda functions to invoke and the events for which to
+	// invoke them.
 	LambdaFunctionConfigurations []LambdaFunctionConfiguration `locationName:"CloudFunctionConfiguration" type:"list" flattened:"true"`
 
+	// The Amazon Simple Queue Service queues to publish messages to and the events
+	// for which to publish messages.
 	QueueConfigurations []QueueConfiguration `locationName:"QueueConfiguration" type:"list" flattened:"true"`
 
+	// The topic to which notifications are sent and the events for which notifications
+	// are generated.
 	TopicConfigurations []TopicConfiguration `locationName:"TopicConfiguration" type:"list" flattened:"true"`
 }
 
@@ -78,7 +84,7 @@ func (s GetBucketNotificationConfigurationOutput) String() string {
 
 // MarshalFields encodes the AWS API shape using the passed in protocol encoder.
 func (s GetBucketNotificationConfigurationOutput) MarshalFields(e protocol.FieldEncoder) error {
-	if len(s.LambdaFunctionConfigurations) > 0 {
+	if s.LambdaFunctionConfigurations != nil {
 		v := s.LambdaFunctionConfigurations
 
 		metadata := protocol.Metadata{Flatten: true}
@@ -90,7 +96,7 @@ func (s GetBucketNotificationConfigurationOutput) MarshalFields(e protocol.Field
 		ls0.End()
 
 	}
-	if len(s.QueueConfigurations) > 0 {
+	if s.QueueConfigurations != nil {
 		v := s.QueueConfigurations
 
 		metadata := protocol.Metadata{Flatten: true}
@@ -102,7 +108,7 @@ func (s GetBucketNotificationConfigurationOutput) MarshalFields(e protocol.Field
 		ls0.End()
 
 	}
-	if len(s.TopicConfigurations) > 0 {
+	if s.TopicConfigurations != nil {
 		v := s.TopicConfigurations
 
 		metadata := protocol.Metadata{Flatten: true}

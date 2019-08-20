@@ -21,8 +21,10 @@ package goracle
 */
 import "C"
 import (
+	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"unsafe"
 
 	"github.com/pkg/errors"
@@ -53,22 +55,21 @@ func (O *Object) GetAttribute(data *Data, name string) error {
 	}
 
 	data.reset()
+	if data.dpiData == nil {
+		data.dpiData = &C.dpiData{isNull: 0}
+	}
 	data.NativeTypeNum = attr.NativeTypeNum
 	data.ObjectType = attr.ObjectType
-	wasNull := data.dpiData == nil
 	// the maximum length of that buffer must be supplied
 	// in the value.asBytes.length attribute before calling this function.
 	if attr.NativeTypeNum == C.DPI_NATIVE_TYPE_BYTES && attr.OracleTypeNum == C.DPI_ORACLE_TYPE_NUMBER {
-		var a [22]byte
-		C.dpiData_setBytes(data.dpiData, (*C.char)(unsafe.Pointer(&a[0])), 22)
+		var a [39]byte
+		C.dpiData_setBytes(data.dpiData, (*C.char)(unsafe.Pointer(&a[0])), C.uint32_t(len(a)))
 	}
+
 	//fmt.Printf("getAttributeValue(%p, %p, %d, %+v)\n", O.dpiObject, attr.dpiObjectAttr, data.NativeTypeNum, data.dpiData)
 	if C.dpiObject_getAttributeValue(O.dpiObject, attr.dpiObjectAttr, data.NativeTypeNum, data.dpiData) == C.DPI_FAILURE {
-		if wasNull {
-			C.free(unsafe.Pointer(data.dpiData))
-			data.dpiData = nil
-		}
-		return errors.Wrapf(O.getError(), "getAttributeValue(obj=%+v, attr=%+v, typ=%d)", O, attr.dpiObjectAttr, data.NativeTypeNum)
+		return errors.Wrapf(O.getError(), "getAttributeValue(%q, obj=%+v, attr=%+v, typ=%d)", name, O, attr.dpiObjectAttr, data.NativeTypeNum)
 	}
 	//fmt.Printf("getAttributeValue(%p, %q=%p, %d, %+v)\n", O.dpiObject, attr.Name, attr.dpiObjectAttr, data.NativeTypeNum, data.dpiData)
 	return nil
@@ -95,8 +96,8 @@ func (O *Object) ResetAttributes() error {
 		data.NativeTypeNum = attr.NativeTypeNum
 		data.ObjectType = attr.ObjectType
 		if attr.NativeTypeNum == C.DPI_NATIVE_TYPE_BYTES && attr.OracleTypeNum == C.DPI_ORACLE_TYPE_NUMBER {
-			var a [22]byte
-			C.dpiData_setBytes(data.dpiData, (*C.char)(unsafe.Pointer(&a[0])), 22)
+			a := make([]byte, attr.Precision)
+			C.dpiData_setBytes(data.dpiData, (*C.char)(unsafe.Pointer(&a[0])), C.uint32_t(attr.Precision))
 		}
 		if C.dpiObject_setAttributeValue(O.dpiObject, attr.dpiObjectAttr, data.NativeTypeNum, data.dpiData) == C.DPI_FAILURE {
 			return O.getError()
@@ -129,6 +130,15 @@ func (O *Object) Get(name string) (interface{}, error) {
 // ObjectRef implements userType interface.
 func (O *Object) ObjectRef() *Object {
 	return O
+}
+
+// Collection returns &ObjectCollection{Object: O} iff the Object is a collection.
+// Otherwise it returns nil.
+func (O *Object) Collection() *ObjectCollection {
+	if O.ObjectType.CollectionOf == nil {
+		return nil
+	}
+	return &ObjectCollection{Object: O}
 }
 
 // Close releases a reference to the object.
@@ -190,6 +200,17 @@ func (O *ObjectCollection) Append(data *Data) error {
 		return errors.Wrapf(O.getError(), "append(%d)", data.NativeTypeNum)
 	}
 	return nil
+}
+
+// AppendObject adds an Object to the collection.
+func (O *ObjectCollection) AppendObject(obj *Object) error {
+	data := Data{
+		ObjectType:    obj.ObjectType,
+		NativeTypeNum: C.DPI_NATIVE_TYPE_OBJECT,
+		dpiData:       &C.dpiData{isNull: 1},
+	}
+	data.SetObject(obj)
+	return O.Append(&data)
 }
 
 // Delete i-th element of the collection.
@@ -312,7 +333,13 @@ func (t ObjectType) FullName() string {
 }
 
 // GetObjectType returns the ObjectType of a name.
+//
+// The name is uppercased! Because here Oracle seems to be case-sensitive.
+// To leave it as is, enclose it in "-s!
 func (c *conn) GetObjectType(name string) (ObjectType, error) {
+	if !strings.Contains(name, "\"") {
+		name = strings.ToUpper(name)
+	}
 	cName := C.CString(name)
 	defer func() { C.free(unsafe.Pointer(cName)) }()
 	objType := (*C.dpiObjectType)(C.malloc(C.sizeof_void))
@@ -332,6 +359,19 @@ func (t ObjectType) NewObject() (*Object, error) {
 		return nil, t.getError()
 	}
 	return &Object{ObjectType: t, dpiObject: obj}, nil
+}
+
+// NewCollection returns a new Collection object with ObjectType type.
+// If the ObjectType is not a Collection, it returns ErrNotCollection error.
+func (t ObjectType) NewCollection() (*ObjectCollection, error) {
+	if t.CollectionOf == nil {
+		return nil, ErrNotCollection
+	}
+	O, err := t.NewObject()
+	if err != nil {
+		return nil, err
+	}
+	return &ObjectCollection{Object: O}, nil
 }
 
 // Close releases a reference to the object type.
@@ -481,8 +521,8 @@ func (A ObjectAttribute) Close() error {
 }
 
 // GetObjectType returns the ObjectType for the name.
-func GetObjectType(ex Execer, typeName string) (ObjectType, error) {
-	c, err := getConn(ex)
+func GetObjectType(ctx context.Context, ex Execer, typeName string) (ObjectType, error) {
+	c, err := getConn(ctx, ex)
 	if err != nil {
 		return ObjectType{}, errors.WithMessage(err, "getConn for "+typeName)
 	}

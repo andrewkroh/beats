@@ -64,6 +64,8 @@ type GetBucketWebsiteOutput struct {
 
 	IndexDocument *IndexDocument `type:"structure"`
 
+	// Specifies the redirect behavior of all requests to a website endpoint of
+	// an Amazon S3 bucket.
 	RedirectAllRequestsTo *RedirectAllRequestsTo `type:"structure"`
 
 	RoutingRules []RoutingRule `locationNameList:"RoutingRule" type:"list"`
@@ -94,7 +96,7 @@ func (s GetBucketWebsiteOutput) MarshalFields(e protocol.FieldEncoder) error {
 		metadata := protocol.Metadata{}
 		e.SetFields(protocol.BodyTarget, "RedirectAllRequestsTo", v, metadata)
 	}
-	if len(s.RoutingRules) > 0 {
+	if s.RoutingRules != nil {
 		v := s.RoutingRules
 
 		metadata := protocol.Metadata{ListLocationName: "RoutingRule"}

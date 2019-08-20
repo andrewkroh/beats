@@ -3,18 +3,18 @@ module github.com/elastic/beats
 go 1.12
 
 require (
-	cloud.google.com/go v0.38.0 // indirect
-	github.com/DataDog/zstd v0.0.0-20160706220725-2bf71ec48360 // indirect
+	4d63.com/tz v0.0.0-20190311034157-bd6cee76f731
+	cloud.google.com/go v0.44.3
+	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/Microsoft/go-winio v0.4.2 // indirect
 	github.com/OneOfOne/xxhash v1.2.3
-	github.com/Shopify/sarama v1.20.1
-	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
+	github.com/Shopify/sarama v1.23.1
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6
 	github.com/aerospike/aerospike-client-go v0.0.0-20170612174108-0f3b54da6bdc
 	github.com/andrewkroh/sys v0.0.0-20151128191922-287798fe3e43
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/aws/aws-lambda-go v1.6.0
-	github.com/aws/aws-sdk-go-v2 v0.5.0
+	github.com/aws/aws-sdk-go-v2 v0.10.0
 	github.com/awslabs/goformation v0.0.0-20180916202949-d42502ef32a8
 	github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb
 	github.com/bsm/sarama-cluster v0.0.0-20180625083203-7e67d87a6b3f
@@ -36,9 +36,7 @@ require (
 	github.com/dop251/goja v0.0.0-00010101000000-000000000000
 	github.com/dop251/goja_nodejs v0.0.0-20171011081505-adff31b136e6
 	github.com/dustin/go-humanize v1.0.0
-	github.com/eapache/go-resiliency v0.0.0-20160104191539-b86b1ec0dd42 // indirect
-	github.com/eapache/go-xerial-snappy v0.0.0-20160609142408-bb955e01b934 // indirect
-	github.com/eapache/queue v1.1.0 // indirect
+	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/elastic/ecs v1.0.1
 	github.com/elastic/go-libaudit v0.4.0
 	github.com/elastic/go-lookslike v0.2.0
@@ -49,24 +47,26 @@ require (
 	github.com/elastic/go-txfile v0.0.6
 	github.com/elastic/go-ucfg v0.7.0
 	github.com/elastic/gosigar v0.10.3
-	github.com/ericchiang/k8s v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsevents v0.0.0-00010101000000-000000000000
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/garyburd/redigo v0.0.0-20160525165706-b8dc90050f24
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.2+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gocarina/gocsv v0.0.0-20170324095351-ffef3ffc77be
 	github.com/gofrs/uuid v3.2.0+incompatible
-	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/golang/protobuf v1.3.1
-	github.com/golang/snappy v0.0.0-20170215233205-553a64147049
+	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6 // indirect
+	github.com/golang/protobuf v1.3.2
+	github.com/golang/snappy v0.0.1
 	github.com/google/flatbuffers v0.0.0-20170925184458-7a6b2bf521e9
+	github.com/google/go-cmp v0.3.1 // indirect
+	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorhill/cronexpr v0.0.0-20161205141322-d520615e531a
+	github.com/hashicorp/golang-lru v0.5.3 // indirect
+	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/insomniacslk/dhcp v0.0.0-20180716145214-633285ba52b2
-	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
+	github.com/jcmturner/gofork v1.0.0 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901
 	github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024
 	github.com/klauspost/compress v1.4.1 // indirect
@@ -79,21 +79,25 @@ require (
 	github.com/miekg/dns v1.0.8
 	github.com/mitchellh/hashstructure v0.0.0-20170116052023-ab25296c0f51
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/onsi/ginkgo v1.9.0 // indirect
+	github.com/onsi/gomega v1.6.0 // indirect
 	github.com/opencontainers/go-digest v0.0.0-20170510163354-eaa60544f31c // indirect
 	github.com/opencontainers/image-spec v0.0.0-20170525204040-4038d4391fe9 // indirect
-	github.com/pierrec/lz4 v0.0.0-20170226142621-90290f74b1b4 // indirect
+	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pierrec/xxHash v0.0.0-20160112165351-5a004441f897 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/pmezard/go-difflib v1.0.0
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 	github.com/prometheus/common v0.6.0
 	github.com/prometheus/procfs v0.0.2
-	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
+	github.com/rcrowley/go-metrics v0.0.0-20190706150252-9beb055b7962
 	github.com/samuel/go-parser v0.0.0-20130731160455-ca8abbf65d0e // indirect
 	github.com/samuel/go-thrift v0.0.0-20140522043831-2187045faa54
 	github.com/shirou/gopsutil v2.18.11+incompatible
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/objx v0.2.0 // indirect
+	github.com/stretchr/testify v1.4.0
 	github.com/tsg/gopacket v0.0.0-20190320122513-dd3d0e41124a
 	github.com/vmware/govmomi v0.20.2
 	github.com/yuin/gopher-lua v0.0.0-20170403160031-b402f3114ec7 // indirect
@@ -101,18 +105,26 @@ require (
 	go.uber.org/atomic v1.4.0
 	go.uber.org/multierr v1.1.0
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20190618222545-ea8f1a30c443
-	golang.org/x/net v0.0.0-20190619014844-b5b0513f8c1b
-	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f
+	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
+	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190619202714-22e91af008f2
-	google.golang.org/appengine v1.5.0 // indirect
-	gopkg.in/inf.v0 v0.9.0
+	golang.org/x/tools v0.0.0-20190820033707-85edb9ef3283
+	google.golang.org/api v0.8.0
+	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
+	google.golang.org/grpc v1.23.0 // indirect
+	gopkg.in/goracle.v2 v2.19.0
+	gopkg.in/inf.v0 v0.9.1
+	gopkg.in/jcmturner/gokrb5.v7 v7.3.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528
 	gopkg.in/yaml.v2 v2.2.2
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb
-	k8s.io/apimachinery v0.0.0-20190719140911-bfcf53abc9f8
+	k8s.io/api v0.0.0-20190820101039-d651a1528133
+	k8s.io/apimachinery v0.0.0-20190820100751-ac02f8882ef6
+	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
+	k8s.io/utils v0.0.0-20190809000727-6c36bc71fc4a // indirect
 )
 
 replace github.com/dop251/goja => github.com/andrewkroh/goja v0.0.0-20190128172624-dd2ac4456e20
