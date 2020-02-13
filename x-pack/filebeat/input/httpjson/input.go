@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 
 	"github.com/elastic/beats/filebeat/channel"
@@ -103,6 +104,8 @@ func NewInput(
 	}
 
 	in.log.Info("Initialized httpjson input.")
+	// TODO: For testing. Remove later.
+	in.log.Infof("Configuration: %#v", spew.Sdump(conf))
 	return in, nil
 }
 
@@ -154,20 +157,30 @@ func (in *httpjsonInput) processHTTPRequest(ctx context.Context, client *http.Cl
 	for {
 		req, err := in.createHTTPRequest(ctx, ri)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed building http request")
 		}
 		msg, err := client.Do(req)
 		if err != nil {
-			return errors.New("failed to do http request. Stopping input worker - ")
+			return errors.Wrapf(err, "failed executing http request")
 		}
+		// TODO (andrewkroh 2020-02-13): There should be a 'defer msg.Body.Close()'
+		// but we cannot correctly use a defer statement within a for loop
+		// (causes leaks). So instead we'll close the body along each possible
+		// code path until the loop can be refactored.
+
 		if msg.StatusCode != http.StatusOK {
-			return errors.Errorf("return HTTP status is %s - ", msg.Status)
+			responseData, _ := ioutil.ReadAll(msg.Body)
+			msg.Body.Close()
+			in.log.Debugw("HTTP request failed", "http.response.status_code", msg.StatusCode, "http.response.bytes", string(responseData))
+			return errors.Errorf("http request was unsuccessful (status code %d)", msg.StatusCode)
 		}
 		responseData, err := ioutil.ReadAll(msg.Body)
-		defer msg.Body.Close()
 		if err != nil {
+			msg.Body.Close()
 			return err
 		}
+		msg.Body.Close()
+
 		var m, v interface{}
 		err = json.Unmarshal(responseData, &m)
 		if err != nil {
