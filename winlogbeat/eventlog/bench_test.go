@@ -36,7 +36,7 @@ import (
 
 var (
 	benchTest    = flag.Bool("benchtest", false, "Run benchmarks for the eventlog package")
-	injectAmount = flag.Int("inject", 50000, "Number of events to inject before running benchmarks")
+	injectAmount = flag.Int("inject", 500000, "Number of events to inject before running benchmarks")
 )
 
 // TestBenchmarkBatchReadSize tests the performance of different

@@ -41,6 +41,7 @@ type Event struct {
 	LevelRaw        uint8           `xml:"System>Level"`
 	TaskRaw         uint16          `xml:"System>Task"`
 	OpcodeRaw       uint8           `xml:"System>Opcode"`
+	KeywordsRaw     int64           `xml:"System>Keywords"`
 	TimeCreated     TimeCreated     `xml:"System>TimeCreated"`
 	RecordID        uint64          `xml:"System>EventRecordID"`
 	Correlation     Correlation     `xml:"System>Correlation"`
@@ -65,7 +66,7 @@ type Event struct {
 	RenderErr               []string
 }
 
-// Provider identifies the provider that logged the event. The Name and GUID
+// Provider identifies the provider that logged the event. The Name and PublisherGUID
 // attributes are included if the provider used an instrumentation manifest to
 // define its events; otherwise, the EventSourceName attribute is included if a
 // legacy event provider (using the Event Logging API) logged the event.

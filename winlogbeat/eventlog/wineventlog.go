@@ -130,6 +130,7 @@ type winEventLog struct {
 	maxRead      int                      // Maximum number returned in one Read.
 	lastRead     checkpoint.EventLogState // Record number of the last read event.
 
+	renderer  *win.Renderer
 	render    func(event win.EvtHandle, out io.Writer) error // Function for rendering the event to XML.
 	renderBuf []byte                                         // Buffer used for rendering event.
 	outputBuf *sys.ByteBuffer                                // Buffer for receiving XML
@@ -246,22 +247,22 @@ func (l *winEventLog) Read() ([]Record, error) {
 
 	var records []Record
 	for _, h := range handles {
-		l.outputBuf.Reset()
-		err := l.render(h, l.outputBuf)
-		if bufErr, ok := err.(sys.InsufficientBufferError); ok {
-			detailf("%s Increasing render buffer size to %d", l.logPrefix,
-				bufErr.RequiredSize)
-			l.renderBuf = make([]byte, bufErr.RequiredSize)
-			l.outputBuf.Reset()
-			err = l.render(h, l.outputBuf)
-		}
-		if err != nil && l.outputBuf.Len() == 0 {
+		evt, err := l.renderer.Render(h)
+		if err != nil {
 			logp.Err("%s Dropping event with rendering error. %v", l.logPrefix, err)
 			incrementMetric(dropReasons, err)
 			continue
 		}
 
-		r, _ := l.buildRecordFromXML(l.outputBuf.Bytes(), err)
+		r := Record{
+			API:   winEventLogAPIName,
+			Event: *evt,
+		}
+
+		if l.file {
+			r.File = l.channelName
+		}
+
 		r.Offset = checkpoint.EventLogState{
 			Name:         l.channelName,
 			RecordNumber: r.RecordID,
@@ -401,12 +402,18 @@ func newWinEventLog(options *common.Config) (EventLog, error) {
 		c.Name = filepath.Clean(c.Name)
 	}
 
+	renderer, err := win.NewRenderer()
+	if err != nil {
+		return nil, err
+	}
+
 	l := &winEventLog{
 		config:      c,
 		query:       query,
 		channelName: c.Name,
 		file:        filepath.IsAbs(c.Name),
 		maxRead:     c.BatchReadSize,
+		renderer:    renderer,
 		renderBuf:   make([]byte, renderBufferSize),
 		outputBuf:   sys.NewByteBuffer(renderBufferSize),
 		cache:       newMessageFilesCache(c.Name, eventMetadataHandle, freeHandle),

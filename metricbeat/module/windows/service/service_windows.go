@@ -518,7 +518,7 @@ func (reader *ServiceReader) Read() ([]common.MapStr, error) {
 }
 
 // getServiceID returns a unique ID for the service that is derived from the
-// machine's GUID and the service's name.
+// machine's PublisherGUID and the service's name.
 func (reader *ServiceReader) getServiceID(name string) string {
 	// hash returns a base64 encoded sha256 hash that is truncated to 10 chars.
 	hash := func(v string) string {
@@ -557,7 +557,7 @@ func (e ServiceErrno) Error() string {
 	return string(utf16.Decode(b[:n]))
 }
 
-// getMachineGUID returns the machine's GUID value which is unique to a Windows
+// getMachineGUID returns the machine's PublisherGUID value which is unique to a Windows
 // installation.
 func getMachineGUID() (string, error) {
 	const key = registry.LOCAL_MACHINE
