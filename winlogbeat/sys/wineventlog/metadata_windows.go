@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package wineventlog
 
 import (
@@ -5,7 +22,10 @@ import (
 	"syscall"
 
 	"github.com/pkg/errors"
+	"go.uber.org/multierr"
 	"golang.org/x/sys/windows"
+
+	"github.com/elastic/beats/winlogbeat/sys"
 )
 
 type PublisherMetadata struct {
@@ -14,7 +34,7 @@ type PublisherMetadata struct {
 }
 
 func (m *PublisherMetadata) Close() error {
-	return _EvtClose(m.Handle)
+	return m.Handle.Close()
 }
 
 func NewPublisherMetadata(session EvtHandle, name string) (*PublisherMetadata, error) {
@@ -96,6 +116,17 @@ func (m *PublisherMetadata) PublisherMessageID() (uint32, error) {
 	return v.(uint32), nil
 }
 
+func (m *PublisherMetadata) PublisherMessage() (string, error) {
+	messageID, err := m.PublisherMessageID()
+	if err != nil {
+		return "", err
+	}
+	if int32(messageID) == -1 {
+		return "", nil
+	}
+	return getMessageString(m, messageID)
+}
+
 func (m *PublisherMetadata) Keywords() ([]MetadataKeyword, error) {
 	return NewMetadataKeywords(m.Handle)
 }
@@ -114,6 +145,10 @@ func (m *PublisherMetadata) Tasks() ([]MetadataTask, error) {
 
 func (m *PublisherMetadata) Channels() ([]MetadataChannel, error) {
 	return NewMetadataChannels(m.Handle)
+}
+
+func (m *PublisherMetadata) EventMetadataIterator() (*EventMetadataIterator, error) {
+	return NewEventMetadataIterator(m)
 }
 
 type MetadataKeyword struct {
@@ -481,4 +516,147 @@ func NewMetadataChannel(publisherMetadataHandle EvtHandle, arrayHandle EvtObject
 		MessageID: messageID,
 		Message:   message,
 	}, nil
+}
+
+type EventMetadataIterator struct {
+	Publisher               *PublisherMetadata
+	eventMetadataEnumHandle EvtHandle
+	currentEvent            EvtHandle
+	lastErr                 error
+}
+
+func NewEventMetadataIterator(publisher *PublisherMetadata) (*EventMetadataIterator, error) {
+	eventMetadataEnumHandle, err := _EvtOpenEventMetadataEnum(publisher.Handle, 0)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open event metadata enumerator with EvtOpenEventMetadataEnum")
+	}
+	return &EventMetadataIterator{
+		Publisher:               publisher,
+		eventMetadataEnumHandle: eventMetadataEnumHandle,
+	}, nil
+}
+
+func (itr *EventMetadataIterator) Close() error {
+	return multierr.Combine(
+		_EvtClose(itr.eventMetadataEnumHandle),
+		_EvtClose(itr.currentEvent),
+	)
+}
+
+// Next advances to the next event handle. It returns windows.ERROR_NO_MORE_ITEMS
+// when done.
+func (itr *EventMetadataIterator) Next() bool {
+	// Close existing handle.
+	itr.currentEvent.Close()
+
+	var err error
+	itr.currentEvent, err = _EvtNextEventMetadata(itr.eventMetadataEnumHandle, 0)
+	if err != nil {
+		if err != windows.ERROR_NO_MORE_ITEMS {
+			itr.lastErr = errors.Wrap(err, "failed advancing to next event metadata handle")
+		}
+		return false
+	}
+	return true
+}
+
+func (itr *EventMetadataIterator) Err() error {
+	return itr.lastErr
+}
+
+func (itr *EventMetadataIterator) uint32Property(propertyID EvtEventMetadataPropertyID) (uint32, error) {
+	v, err := GetEventMetadataProperty(itr.currentEvent, propertyID)
+	if err != nil {
+		return 0, err
+	}
+	return v.(uint32), nil
+}
+
+func (itr *EventMetadataIterator) uint64Property(propertyID EvtEventMetadataPropertyID) (uint64, error) {
+	v, err := GetEventMetadataProperty(itr.currentEvent, propertyID)
+	if err != nil {
+		return 0, err
+	}
+	return v.(uint64), nil
+}
+
+func (itr *EventMetadataIterator) stringProperty(propertyID EvtEventMetadataPropertyID) (string, error) {
+	v, err := GetEventMetadataProperty(itr.currentEvent, propertyID)
+	if err != nil {
+		return "", err
+	}
+	return v.(string), nil
+}
+
+func (itr *EventMetadataIterator) EventID() (uint32, error) {
+	return itr.uint32Property(EventMetadataEventID)
+}
+
+func (itr *EventMetadataIterator) Version() (uint32, error) {
+	return itr.uint32Property(EventMetadataEventVersion)
+}
+
+func (itr *EventMetadataIterator) Channel() (uint32, error) {
+	return itr.uint32Property(EventMetadataEventVersion)
+}
+
+func (itr *EventMetadataIterator) Level() (uint32, error) {
+	return itr.uint32Property(EventMetadataEventLevel)
+}
+
+func (itr *EventMetadataIterator) Opcode() (uint32, error) {
+	return itr.uint32Property(EventMetadataEventOpcode)
+}
+
+func (itr *EventMetadataIterator) Task() (uint32, error) {
+	return itr.uint32Property(EventMetadataEventTask)
+}
+
+func (itr *EventMetadataIterator) Keyword() (uint64, error) {
+	return itr.uint64Property(EventMetadataEventKeyword)
+}
+
+func (itr *EventMetadataIterator) MessageID() (uint32, error) {
+	return itr.uint32Property(EventMetadataEventMessageID)
+}
+
+func (itr *EventMetadataIterator) Template() (string, error) {
+	return itr.stringProperty(EventMetadataEventTemplate)
+}
+
+// Message returns the raw event description without doing any substitutions
+// (e.g. the message will contain %1, %2, etc. as parameter placeholders).
+func (itr *EventMetadataIterator) Message() (string, error) {
+	messageID, err := itr.MessageID()
+	if err != nil {
+		return "", err
+	}
+	// If the event definition does not specify a message, the value is –1.
+	if int32(messageID) == -1 {
+		return "", nil
+	}
+
+	return getMessageString(itr.Publisher, messageID)
+}
+
+func getMessageString(metadata *PublisherMetadata, messageID uint32) (string, error) {
+	var bufferUsed uint32
+	err := _EvtFormatMessage(metadata.Handle, NilHandle, messageID, 0, 0, EvtFormatMessageId, 0, nil, &bufferUsed)
+	if err != ERROR_INSUFFICIENT_BUFFER {
+		return "", errors.Errorf("expected ERROR_INSUFFICIENT_BUFFER but got: %v", err)
+	}
+
+	buf := make([]byte, bufferUsed*2)
+	err = _EvtFormatMessage(metadata.Handle, NilHandle, messageID, 0, 0, EvtFormatMessageId, uint32(len(buf)/2), &buf[0], &bufferUsed)
+	if err != nil {
+		switch err {
+		case windows.ERROR_EVT_UNRESOLVED_VALUE_INSERT:
+		case windows.ERROR_EVT_UNRESOLVED_PARAMETER_INSERT:
+		case windows.ERROR_EVT_MAX_INSERTS_REACHED:
+		default:
+			return "", err
+		}
+	}
+	s, _, err := sys.UTF16BytesToString(buf)
+	return s, err
 }

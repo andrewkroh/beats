@@ -18,14 +18,10 @@
 package wineventlog
 
 import (
-	"strconv"
-	"strings"
 	"syscall"
-	"text/template"
 	"time"
 	"unsafe"
 
-	"github.com/elastic/beats/libbeat/logp"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/windows"
 
@@ -34,6 +30,10 @@ import (
 
 // EvtHandle is a handle to the event log.
 type EvtHandle uintptr
+
+func (h EvtHandle) Close() error {
+	return _EvtClose(h)
+}
 
 const NilHandle EvtHandle = 0
 
@@ -431,7 +431,7 @@ func (v EvtVariant) Data(buf []byte) (interface{}, error) {
 		return copy, nil
 	case EvtVarTypeFileTime:
 		ft := (*windows.Filetime)(unsafe.Pointer(&v.Value))
-		return time.Unix(0, ft.Nanoseconds()), nil
+		return time.Unix(0, ft.Nanoseconds()).UTC(), nil
 	case EvtVarTypeSid:
 		addr := unsafe.Pointer(&buf[0])
 		offset := v.Value - uintptr(addr)
@@ -517,8 +517,6 @@ func EvtGetPublisherMetadataProperty(publisherMetadataHandle EvtHandle, property
 	default:
 		return v, nil
 	}
-
-	return nil, err
 }
 
 func EvtGetObjectArrayProperty(arrayHandle EvtObjectArrayPropertyHandle, propertyID EvtPublisherMetadataPropertyID, index uint32) (interface{}, error) {
@@ -556,191 +554,6 @@ func EvtGetObjectArraySize(handle EvtObjectArrayPropertyHandle) (uint32, error) 
 	return arrayLen, nil
 }
 
-func EvtOpenPublisherMetadata(publisher string) (EvtHandle, error) {
-	providerPtr, _ := syscall.UTF16FromString(publisher)
-	publisherMetadataHandle, err := _EvtOpenPublisherMetadata(0, &providerPtr[0], nil, 0, 0)
-	if err != nil {
-		return 0, errors.Wrap(err, "EvtOpenPublisherMetadata")
-	}
-	return publisherMetadataHandle, nil
-}
-
-func DumpEventMetadata(provider string) (*PublisherEventMetadata, error) {
-	publisherMetadata, err := NewPublisherMetadata(NilHandle, provider)
-	if err != nil {
-		return nil, errors.Wrap(err, "_EvtOpenPublisherMetadata")
-	}
-	defer publisherMetadata.Close()
-
-	eventMetadataHandle, err := _EvtOpenEventMetadataEnum(publisherMetadata.Handle, 0)
-	if err != nil {
-		return nil, errors.Wrap(err, "_EvtOpenEventMetadataEnum")
-	}
-	defer _EvtClose(eventMetadataHandle)
-
-	pubMetaStore := NewPublisherEventMetadata(provider)
-	for {
-		logp.L().Warn("NEXT EVENT")
-		if err = NextEventMetadata(eventMetadataHandle, pubMetaStore); err != nil {
-			if errors.Cause(err) == ERROR_NO_MORE_ITEMS {
-				break
-			}
-			return nil, errors.Wrap(err, "failed enumerating metatdata for events")
-		}
-	}
-
-	pubMetaStore.Keywords, err = publisherMetadata.Keywords()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get keywords")
-	}
-
-	return pubMetaStore, nil
-}
-
-func NextEventMetadata(enumerator EvtHandle, pubMetaStore *PublisherEventMetadata) error {
-	metadataHandle, err := _EvtNextEventMetadata(enumerator, 0)
-	if err != nil {
-		return errors.Wrap(err, "_EvtNextEventMetadata")
-	}
-	defer _EvtClose(metadataHandle)
-
-	eventID, err := GetEventMetadataProperty(metadataHandle, EventMetadataEventID)
-	if err != nil {
-		return errors.Wrap(err, "GetEventMetadataProperty EventMetadataEventID")
-	}
-
-	templateXMLIfc, err := GetEventMetadataProperty(metadataHandle, EventMetadataEventTemplate)
-	if err != nil {
-		return errors.Wrap(err, "GetEventMetadataProperty EventMetadataEventTemplate")
-	}
-
-	val, err := GetEventMetadataProperty(metadataHandle, EventMetadataEventMessageID)
-	if err != nil {
-		return errors.Wrap(err, "GetEventMetadataProperty EventMetadataEventMessageID")
-	}
-	messageID := val.(uint32)
-
-	val, err = GetEventMetadataProperty(metadataHandle, EventMetadataEventKeyword)
-	if err != nil {
-		return errors.Wrap(err, "GetEventMetadataProperty EventMetadataEventMessageID")
-	}
-	keyword := val.(uint64)
-
-	isClassic := keyword&KeywordEventLogClassic > 0
-	logp.L().Infow("Classic log?", "isClassic", isClassic, "keyword", keyword)
-	messageTemplate, err := GetClassicEventMessageTemplate(pubMetaStore.Publisher, messageID)
-	if err != nil {
-		return errors.Wrap(err, "GetClassicEventMessageTemplate")
-	}
-	logp.L().Infof("Classic template: %v", messageTemplate)
-	return nil
-
-	templateXMLStr, _ := templateXMLIfc.(string)
-	//logp.L().Named("metadata").Infof("template for event id %d: %v", eventID, templateXMLStr)
-
-	var eventDataParams []string
-	if templateXMLStr != "" {
-		eventTemplate := &EventTemplate{}
-		err = eventTemplate.Unmarshal([]byte(templateXMLStr))
-		if err != nil {
-			return errors.Wrapf(err, "failed to unmarshal event metadata template of '%s'", templateXMLStr)
-		}
-
-		for _, x := range eventTemplate.Data {
-			eventDataParams = append(eventDataParams, x.Name)
-		}
-		pubMetaStore.EventData[eventID.(uint32)] = eventDataParams
-	}
-
-	messageTemplate, err = GetEventMessageTemplate(metadataHandle, pubMetaStore.Publisher, messageID, eventDataParams)
-	if err != nil {
-		return errors.Wrap(err, "failed to get message template")
-	}
-
-	//logp.L().Debugf("message template event_id=%d, template=%s", eventID, messageTemplate)
-
-	t, err := template.New(pubMetaStore.Publisher + "/" + strconv.Itoa(int(eventID.(uint32)))).Parse(messageTemplate)
-	if err != nil {
-		return errors.Wrap(err, "template parse")
-	}
-	pubMetaStore.Messages[eventID.(uint32)] = t
-
-	return nil
-}
-
-var eventDataNameTransform = strings.NewReplacer(" ", "_")
-
-func GetEventMessageTemplate(metadataHandle EvtHandle, provider string, messageID uint32, eventDataNames []string) (string, error) {
-	providerPtr, _ := syscall.UTF16FromString(provider)
-	publisherMetadataHandle, err := _EvtOpenPublisherMetadata(0, &providerPtr[0], nil, 0, 0)
-	if err != nil {
-		return "", errors.Wrap(err, "_EvtOpenPublisherMetadata")
-	}
-	defer _EvtClose(publisherMetadataHandle)
-
-	type StringEvtVariant struct {
-		StringVal *uint16
-		Count     uint32
-		Type      EvtVariantType
-	}
-
-	values := make([]StringEvtVariant, len(eventDataNames))
-	for i, name := range eventDataNames {
-		name = eventDataNameTransform.Replace(name)
-		strData, _ := syscall.UTF16FromString("{{." + name + "}}")
-		values[i].StringVal = &strData[0]
-		values[i].Count = uint32(len(strData))
-		values[i].Type = EvtVarTypeString
-	}
-
-	var valuesPtr uintptr
-	if len(values) > 0 {
-		valuesPtr = uintptr(unsafe.Pointer(&values[0]))
-	}
-
-	var bufferUsed uint32
-	err = _EvtFormatMessage(publisherMetadataHandle, 0, messageID, uint32(len(values)), valuesPtr, EvtFormatMessageId, 0, nil, &bufferUsed)
-	if err != ERROR_INSUFFICIENT_BUFFER {
-		return "", errors.Errorf("expected ERROR_INSUFFICIENT_BUFFER but got %v", err)
-	}
-
-	buf := make([]byte, bufferUsed*2)
-	err = _EvtFormatMessage(publisherMetadataHandle, 0, messageID, uint32(len(values)), valuesPtr, EvtFormatMessageId, uint32(len(buf)/2), &buf[0], &bufferUsed)
-	if err != nil {
-		return "", errors.Wrapf(err, "_EvtFormatMessage failed")
-	}
-
-	s, _, err := sys.UTF16BytesToString(buf)
-	return s, err
-}
-
-func GetClassicEventMessageTemplate(provider string, messageID uint32) (string, error) {
-	providerPtr, _ := syscall.UTF16FromString(provider)
-	publisherMetadataHandle, err := _EvtOpenPublisherMetadata(0, &providerPtr[0], nil, 0, 0)
-	if err != nil {
-		return "", errors.Wrap(err, "_EvtOpenPublisherMetadata")
-	}
-	defer _EvtClose(publisherMetadataHandle)
-
-	var bufferUsed uint32
-	err = _EvtFormatMessage(publisherMetadataHandle, NilHandle, messageID, 0, 0, EvtFormatMessageId, 0, nil, &bufferUsed)
-	if err != ERROR_INSUFFICIENT_BUFFER {
-		return "", errors.Errorf("expected ERROR_INSUFFICIENT_BUFFER but got %v", err)
-	}
-
-	buf := make([]byte, bufferUsed*2)
-	err = _EvtFormatMessage(publisherMetadataHandle, NilHandle, messageID, 0, 0, EvtFormatMessageId, uint32(len(buf)/2), &buf[0], &bufferUsed)
-	if err != nil {
-		switch err {
-		case windows.ERROR_EVT_UNRESOLVED_VALUE_INSERT, windows.ERROR_EVT_UNRESOLVED_PARAMETER_INSERT, windows.ERROR_EVT_MAX_INSERTS_REACHED:
-		default:
-			return "", err
-		}
-	}
-	s, _, err := sys.UTF16BytesToString(buf)
-	return s, err
-}
-
 func EvtFormatMessageID(publisherMetadataHandle EvtHandle, messageID uint32) (string, error) {
 	var bufferUsed uint32
 	err := _EvtFormatMessage(publisherMetadataHandle, 0, messageID, 0, 0, EvtFormatMessageId, 0, nil, &bufferUsed)
@@ -773,33 +586,6 @@ func GetEventMetadataProperty(metadataHandle EvtHandle, propertyID EvtEventMetad
 	}
 
 	return pEvtVariant.Data(buf)
-}
-
-type PublisherEventMetadata struct {
-	Publisher string
-	EventData map[uint32][]string // Map of event ID to list of event data parameter names.
-	Messages  map[uint32]*template.Template
-	Keywords  []MetadataKeyword
-}
-
-func NewPublisherEventMetadata(name string) *PublisherEventMetadata {
-	return &PublisherEventMetadata{
-		Publisher: name,
-		EventData: map[uint32][]string{},
-		Messages:  map[uint32]*template.Template{},
-	}
-}
-
-func (md *PublisherEventMetadata) LookupParam(eventID uint32, index int) (string, error) {
-	params, found := md.EventData[eventID]
-	if !found {
-		return "", errors.New("event ID not found")
-	}
-
-	if index < len(params) {
-		return params[index], nil
-	}
-	return "unknown", errors.New("param index of out range")
 }
 
 // Add -trace to enable debug prints around syscalls.
