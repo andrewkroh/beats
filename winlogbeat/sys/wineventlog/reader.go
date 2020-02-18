@@ -20,7 +20,6 @@ package wineventlog
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -44,9 +43,9 @@ const (
 var (
 	eventDataNameTransform = strings.NewReplacer(" ", "_")
 
-	// TODO: This does not handle escape sequences.
-	// https://docs.microsoft.com/en-us/windows/win32/eventlog/message-text-files
-	messageParamRegex = regexp.MustCompile(`%(\d+)`)
+	eventMessageTemplateFuncs = template.FuncMap{
+		"eventParam": eventParam,
+	}
 )
 
 type publisherMetadataStore struct {
@@ -206,28 +205,18 @@ func eventParam(items []interface{}, paramNumber int) (interface{}, error) {
 	return "%" + strconv.Itoa(paramNumber), nil
 }
 
-var eventMessageTemplateFuncs = template.FuncMap{
-	"eventParam": eventParam,
-}
-
 func (s *publisherMetadataStore) readEventMessage(itr *EventMetadataIterator, evt *eventMetadataStore) error {
-	msg, err := itr.Message()
+	messageID, err := itr.MessageID()
 	if err != nil {
 		return err
 	}
 
-	// Replace all [^%]%n values with parameters.
-	replaced := messageParamRegex.ReplaceAllString(msg, `{{ eventParam $ $1 }}`)
-
-	if replaced == msg {
-		evt.MsgStatic = sys.RemoveWindowsLineEndings(msg)
-		return nil
+	msg, err := getMessageString(s.Metadata, NilHandle, messageID, insertStrings.EvtVariants[:])
+	if err != nil {
+		return err
 	}
 
-	replaced = sys.RemoveWindowsLineEndings(replaced)
-	id := s.Metadata.Name + "/" + strconv.Itoa(int(evt.EventID))
-	evt.MsgTemplate, err = template.New(id).Funcs(eventMessageTemplateFuncs).Parse(replaced)
-	return err
+	return evt.addMessage(s.Metadata.Name, msg)
 }
 
 func (evt *eventMetadataStore) addMessage(provider, msg string) error {
@@ -362,7 +351,7 @@ func (r *Renderer) renderSystem(handle EvtHandle, event *sys.Event) error {
 		case EvtSystemOpcode:
 			event.OpcodeRaw = data.(uint8)
 		case EvtSystemKeywords:
-			event.KeywordsRaw = data.(int64)
+			event.KeywordsRaw = int64(data.(hexInt64))
 		case EvtSystemTimeCreated:
 			event.TimeCreated.SystemTime = data.(time.Time)
 		case EvtSystemEventRecordId:
@@ -380,7 +369,11 @@ func (r *Renderer) renderSystem(handle EvtHandle, event *sys.Event) error {
 		case EvtSystemComputer:
 			event.Computer = data.(string)
 		case EvtSystemUserID:
-			event.User.Identifier = data.(string)
+			sid := data.(*windows.SID)
+			var accountType uint32
+			event.User.Name, event.User.Domain, accountType, _ = sid.LookupAccount("")
+			event.User.Type = sys.SIDType(accountType)
+			event.User.Identifier, _ = sid.String()
 		case EvtSystemVersion:
 			event.Version = sys.Version(data.(uint8))
 		}
@@ -409,6 +402,7 @@ func (r *Renderer) renderUser(handle EvtHandle, event *sys.Event) ([]interface{}
 				"event_id", event.EventIdentifier.ID,
 				"parameter_index", i,
 				"parameter_type", evtVar.Type.String(),
+				"error", err,
 			)
 		}
 	}
@@ -451,10 +445,13 @@ func (r *Renderer) addEventData(publisherMeta *publisherMetadataStore, values []
 	eventMetadata := publisherMeta.Events[eventID]
 
 	if eventMetadata == nil {
-		r.log.Warnw("Event metadata not found.", "event_id", eventID)
+		r.log.Warnw("Event metadata not found.",
+			"provider", publisherMeta.Metadata.Name,
+			"event_id", eventID)
 	} else if len(values) != len(eventMetadata.EventData) {
 		r.log.Warnw("The number of event data parameters doesn't match the number "+
 			"of parameters in the template.",
+			"provider", publisherMeta.Metadata.Name,
 			"event_id", eventID,
 			"event_parameter_count", len(values),
 			"template_parameter_count", len(eventMetadata.EventData),
@@ -475,10 +472,16 @@ func (r *Renderer) addEventData(publisherMeta *publisherMetadataStore, values []
 	}
 
 	for i, v := range values {
-		strVal, ok := v.(string)
-		if !ok {
+		var strVal string
+		switch t := v.(type) {
+		case string:
+			strVal = t
+		case *windows.SID:
+			strVal, _ = t.String()
+		default:
 			strVal = fmt.Sprintf("%v", v)
 		}
+
 		event.EventData.Pairs = append(event.EventData.Pairs, sys.KeyValue{
 			Key:   paramName(i),
 			Value: strVal,
@@ -554,17 +557,20 @@ func (r *Renderer) evtFormatMessage(metadata *PublisherMetadata, eventHandle Evt
 // task. The search order is defined in the EvtFormatMessage documentation.
 func (r *Renderer) enrichRawValuesWithNames(publisherMeta *publisherMetadataStore, event *sys.Event) {
 	// Keywords. Each bit in the value can represent a keyword.
+	rawKeyword := event.KeywordsRaw
+	isClassic := keywordClassic&rawKeyword > 0
 	for mask, keyword := range winMeta.Keywords {
-		if event.KeywordsRaw&mask > 0 {
+		if rawKeyword&mask > 0 {
 			event.Keywords = append(event.Keywords, keyword)
+			rawKeyword -= mask
 		}
 	}
 	for mask, keyword := range publisherMeta.Keywords {
-		if event.KeywordsRaw&mask > 0 {
+		if rawKeyword&mask > 0 {
 			event.Keywords = append(event.Keywords, keyword)
+			rawKeyword -= mask
 		}
 	}
-	isClassic := keywordClassic&event.KeywordsRaw > 0
 
 	// Opcode (search in winmeta first).
 	var found bool
@@ -627,18 +633,33 @@ var winMeta = &publisherMetadataStore{
 }
 
 func getMessageStringFromHandle(metadata *PublisherMetadata, eventHandle EvtHandle) (string, error) {
-	const flags = EvtFormatMessageEvent
-	var valuesCount = insertStrings.ValuesCount
-	var values = insertStrings.ValuesPtr
+	return getMessageString(metadata, eventHandle, 0, insertStrings.EvtVariants[:])
+}
+
+func getMessageString(metadata *PublisherMetadata, eventHandle EvtHandle, messageID uint32, values []EvtVariant) (string, error) {
+	var flags EvtFormatMessageFlag
+	if eventHandle > 0 {
+		flags = EvtFormatMessageEvent
+	} else if messageID > 0 {
+		flags = EvtFormatMessageId
+	}
+
+	var (
+		valuesCount = uint32(len(values))
+		valuesPtr   uintptr
+	)
+	if len(values) > 0 {
+		valuesPtr = uintptr(unsafe.Pointer(&values[0]))
+	}
 
 	var bufferUsed uint32
-	err := _EvtFormatMessage(metadata.Handle, eventHandle, 0, valuesCount, values, flags, 0, nil, &bufferUsed)
+	err := _EvtFormatMessage(metadata.Handle, eventHandle, messageID, valuesCount, valuesPtr, flags, 0, nil, &bufferUsed)
 	if err != ERROR_INSUFFICIENT_BUFFER {
 		return "", errors.Errorf("expected ERROR_INSUFFICIENT_BUFFER but got: %v", err)
 	}
 
 	buf := make([]byte, bufferUsed*2)
-	err = _EvtFormatMessage(metadata.Handle, eventHandle, 0, valuesCount, values, flags, uint32(len(buf)/2), &buf[0], &bufferUsed)
+	err = _EvtFormatMessage(metadata.Handle, eventHandle, messageID, valuesCount, valuesPtr, flags, uint32(len(buf)/2), &buf[0], &bufferUsed)
 	if err != nil {
 		switch err {
 		case windows.ERROR_EVT_UNRESOLVED_VALUE_INSERT:

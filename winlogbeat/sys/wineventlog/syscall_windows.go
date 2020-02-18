@@ -18,6 +18,7 @@
 package wineventlog
 
 import (
+	"strconv"
 	"syscall"
 	"time"
 	"unsafe"
@@ -393,6 +394,18 @@ type EvtVariant struct {
 
 var sizeofEvtVariant = unsafe.Sizeof(EvtVariant{})
 
+type hexInt32 int32
+
+func (n hexInt32) String() string {
+	return "0x" + strconv.FormatUint(uint64(n), 16)
+}
+
+type hexInt64 int64
+
+func (n hexInt64) String() string {
+	return "0x" + strconv.FormatUint(uint64(n), 16)
+}
+
 func (v EvtVariant) Data(buf []byte) (interface{}, error) {
 	typ := v.Type.Mask()
 	switch typ {
@@ -409,10 +422,14 @@ func (v EvtVariant) Data(buf []byte) (interface{}, error) {
 		return uint8(v.Value), nil
 	case EvtVarTypeInt16:
 		return int16(v.Value), nil
-	case EvtVarTypeInt32, EvtVarTypeHexInt32:
+	case EvtVarTypeInt32:
 		return int32(v.Value), nil
-	case EvtVarTypeInt64, EvtVarTypeHexInt64:
+	case EvtVarTypeHexInt32:
+		return hexInt32(v.Value), nil
+	case EvtVarTypeInt64:
 		return int64(v.Value), nil
+	case EvtVarTypeHexInt64:
+		return hexInt64(v.Value), nil
 	case EvtVarTypeUInt16:
 		return uint16(v.Value), nil
 	case EvtVarTypeUInt32:
@@ -423,6 +440,11 @@ func (v EvtVariant) Data(buf []byte) (interface{}, error) {
 		return float32(v.Value), nil
 	case EvtVarTypeDouble:
 		return float64(v.Value), nil
+	case EvtVarTypeBoolean:
+		if v.Value == 0 {
+			return false, nil
+		}
+		return true, nil
 	case EvtVarTypeGuid:
 		addr := unsafe.Pointer(&buf[0])
 		offset := v.Value - uintptr(addr)
@@ -436,7 +458,7 @@ func (v EvtVariant) Data(buf []byte) (interface{}, error) {
 		addr := unsafe.Pointer(&buf[0])
 		offset := v.Value - uintptr(addr)
 		sidPtr := (*windows.SID)(unsafe.Pointer(&buf[offset]))
-		return sidPtr.String()
+		return sidPtr.Copy()
 	case EvtVarTypeEvtHandle:
 		return EvtHandle(v.Value), nil
 	default:

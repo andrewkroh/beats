@@ -24,8 +24,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
 	"golang.org/x/sys/windows"
-
-	"github.com/elastic/beats/winlogbeat/sys"
 )
 
 type PublisherMetadata struct {
@@ -124,7 +122,7 @@ func (m *PublisherMetadata) PublisherMessage() (string, error) {
 	if int32(messageID) == -1 {
 		return "", nil
 	}
-	return getMessageString(m, messageID)
+	return getMessageStringFromMessageID(m, messageID)
 }
 
 func (m *PublisherMetadata) Keywords() ([]MetadataKeyword, error) {
@@ -636,27 +634,9 @@ func (itr *EventMetadataIterator) Message() (string, error) {
 		return "", nil
 	}
 
-	return getMessageString(itr.Publisher, messageID)
+	return getMessageStringFromMessageID(itr.Publisher, messageID)
 }
 
-func getMessageString(metadata *PublisherMetadata, messageID uint32) (string, error) {
-	var bufferUsed uint32
-	err := _EvtFormatMessage(metadata.Handle, NilHandle, messageID, 0, 0, EvtFormatMessageId, 0, nil, &bufferUsed)
-	if err != ERROR_INSUFFICIENT_BUFFER {
-		return "", errors.Errorf("expected ERROR_INSUFFICIENT_BUFFER but got: %v", err)
-	}
-
-	buf := make([]byte, bufferUsed*2)
-	err = _EvtFormatMessage(metadata.Handle, NilHandle, messageID, 0, 0, EvtFormatMessageId, uint32(len(buf)/2), &buf[0], &bufferUsed)
-	if err != nil {
-		switch err {
-		case windows.ERROR_EVT_UNRESOLVED_VALUE_INSERT:
-		case windows.ERROR_EVT_UNRESOLVED_PARAMETER_INSERT:
-		case windows.ERROR_EVT_MAX_INSERTS_REACHED:
-		default:
-			return "", err
-		}
-	}
-	s, _, err := sys.UTF16BytesToString(buf)
-	return s, err
+func getMessageStringFromMessageID(metadata *PublisherMetadata, messageID uint32) (string, error) {
+	return getMessageString(metadata, NilHandle, messageID, nil)
 }
