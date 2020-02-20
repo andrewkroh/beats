@@ -636,7 +636,3 @@ func (itr *EventMetadataIterator) Message() (string, error) {
 
 	return getMessageStringFromMessageID(itr.Publisher, messageID)
 }
-
-func getMessageStringFromMessageID(metadata *PublisherMetadata, messageID uint32) (string, error) {
-	return getMessageString(metadata, NilHandle, messageID, nil)
-}

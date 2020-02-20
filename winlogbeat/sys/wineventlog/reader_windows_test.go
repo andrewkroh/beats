@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"text/template"
@@ -31,59 +30,6 @@ import (
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/winlogbeat/sys"
 )
-
-func TestReadMessage(t *testing.T) {
-	logp.TestingSetup(logp.WithLevel(logp.DebugLevel))
-
-	r, err := NewRenderer()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer r.Close()
-
-	//evtx, err := filepath.Abs("../../../x-pack/winlogbeat/module/security/test/testdata/4752.evtx")
-	evtx, err := filepath.Abs("../../../x-pack/winlogbeat/module/sysmon/test/testdata/sysmon-9.01.evtx")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = os.Lstat(evtx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Open .evtx file.
-	logHandle, err := EvtQuery(0, evtx, "", EvtQueryFilePath|EvtQueryReverseDirection)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer Close(logHandle)
-
-	for {
-		handles, err := EventHandles(logHandle, 50)
-		if err != nil {
-			if err == ERROR_NO_MORE_ITEMS {
-				return
-			}
-			t.Fatal(err)
-		}
-
-		for _, h := range handles {
-			evt, err := r.Render(h)
-			h.Close()
-			if err != nil {
-				t.Fatalf("Render failed: %+v", err)
-			}
-
-			data, err := json.MarshalIndent(evt, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-			_ = data
-			t.Logf("%s", string(data))
-		}
-	}
-}
 
 func TestTemplateFunc(t *testing.T) {
 	tmpl := template.Must(template.New("").
@@ -106,6 +52,27 @@ func TestTemplateNodes(t *testing.T) {
 
 	t.Log(len(tmpl.Root.Nodes))
 	t.Log(tmpl.Root.Nodes[0].String())
+}
+
+func TestRenderSysmon9(t *testing.T) {
+	logp.TestingSetup()
+
+	logHandle := openLog(t, "../../../x-pack/winlogbeat/module/sysmon/test/testdata/sysmon-9.01.evtx")
+
+	defer logHandle.Close()
+
+	r, err := NewRenderer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+
+	events := readEvents(t, logHandle, r)
+	assert.NotEmpty(t, events)
+
+	if t.Failed() {
+		logEventsAsJSON(t, events)
+	}
 }
 
 func TestRenderSecurityEventID4752(t *testing.T) {

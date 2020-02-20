@@ -97,7 +97,7 @@ type Execution struct {
 	ProcessorTime uint32 `xml:"ProcessorTime,attr"`
 }
 
-// EventIdentifier is the identifer that the provider uses to identify a
+// EventIdentifier is the identifier that the provider uses to identify a
 // specific event type.
 type EventIdentifier struct {
 	Qualifiers uint16 `xml:"Qualifiers,attr"`

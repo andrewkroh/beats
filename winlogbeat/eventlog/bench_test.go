@@ -22,6 +22,7 @@ package eventlog
 import (
 	"bytes"
 	"flag"
+	"io"
 	"math/rand"
 	"os/exec"
 	"strconv"
@@ -84,7 +85,11 @@ func TestBenchmarkBatchReadSize(t *testing.T) {
 			// Each iteration reads one batch.
 			for i := 0; i < b.N; i++ {
 				_, err = eventlog.Read()
+				if err == io.EOF {
+					return
+				}
 				if err != nil {
+					b.Fatal(err)
 					return
 				}
 			}

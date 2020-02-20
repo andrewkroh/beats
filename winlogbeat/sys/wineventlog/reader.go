@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 	"unsafe"
@@ -54,13 +55,14 @@ type publisherMetadataStore struct {
 	Opcodes  map[uint8]string
 	Levels   map[uint8]string
 	Tasks    map[uint16]string
-	Events   map[uint32]*eventMetadataStore
+	Events   map[uint16]*eventMetadataStore
 
 	log *logp.Logger
 }
 
 type eventMetadataStore struct {
-	EventID     uint32
+	EventID     uint16
+	Version     uint8              // Event format version.
 	MsgStatic   string             // Used when the message has no parameters.
 	MsgTemplate *template.Template // Template that expects an array of values as its data.
 	EventData   []EventData        // Names of parameters from XML template.
@@ -147,11 +149,12 @@ func (s *publisherMetadataStore) initEvents() error {
 	}
 	defer itr.Close()
 
-	s.Events = map[uint32]*eventMetadataStore{}
+	s.Events = map[uint16]*eventMetadataStore{}
 	for itr.Next() {
 		var evt eventMetadataStore
 		err = multierr.Combine(
 			s.readEventID(itr, &evt),
+			s.readVersion(itr, &evt),
 			s.readEventDataTemplate(itr, &evt),
 			s.readEventMessage(itr, &evt),
 		)
@@ -167,9 +170,22 @@ func (s *publisherMetadataStore) initEvents() error {
 }
 
 func (s *publisherMetadataStore) readEventID(itr *EventMetadataIterator, evt *eventMetadataStore) error {
-	var err error
-	evt.EventID, err = itr.EventID()
-	return err
+	id, err := itr.EventID()
+	if err != nil {
+		return err
+	}
+	// The upper 16 bits are the qualifier and lower 16 are the ID.
+	evt.EventID = uint16(0xFFFF & id)
+	return nil
+}
+
+func (s *publisherMetadataStore) readVersion(itr *EventMetadataIterator, evt *eventMetadataStore) error {
+	version, err := itr.Version()
+	if err != nil {
+		return err
+	}
+	evt.Version = uint8(version)
+	return nil
 }
 
 func (*publisherMetadataStore) readEventDataTemplate(itr *EventMetadataIterator, evt *eventMetadataStore) error {
@@ -318,19 +334,18 @@ func (r *Renderer) getPublisherMetadata(publisher string) (*publisherMetadataSto
 }
 
 func (r *Renderer) renderSystem(handle EvtHandle, event *sys.Event) error {
-	buf, propertyCount, err := r.render(r.systemContext, handle)
+	bb, propertyCount, err := r.render(r.systemContext, handle)
 	if err != nil {
 		return errors.Wrap(err, "failed to get system values")
 	}
+	defer bb.free()
 
 	for i := 0; i < int(propertyCount); i++ {
 		property := EvtSystemPropertyID(i)
 		offset := i * int(sizeofEvtVariant)
-		evtVar := (*EvtVariant)(unsafe.Pointer(&buf[offset]))
+		evtVar := (*EvtVariant)(unsafe.Pointer(&bb.buf[offset]))
 
-		data, err := evtVar.Data(buf)
-		r.log.Debugf("name=%v, type=%v, is_array=%v, data=%v, data_error=%v",
-			property, evtVar.Type, evtVar.Type.IsArray(), data, err)
+		data, err := evtVar.Data(bb.buf)
 		if err != nil || data == nil {
 			continue
 		}
@@ -382,10 +397,11 @@ func (r *Renderer) renderSystem(handle EvtHandle, event *sys.Event) error {
 }
 
 func (r *Renderer) renderUser(handle EvtHandle, event *sys.Event) ([]interface{}, error) {
-	buf, propertyCount, err := r.render(r.userContext, handle)
+	bb, propertyCount, err := r.render(r.userContext, handle)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get user values")
 	}
+	defer bb.free()
 	if propertyCount == 0 {
 		return nil, nil
 	}
@@ -393,9 +409,9 @@ func (r *Renderer) renderUser(handle EvtHandle, event *sys.Event) ([]interface{}
 	parameters := make([]interface{}, propertyCount)
 	for i := 0; i < propertyCount; i++ {
 		offset := i * int(sizeofEvtVariant)
-		evtVar := (*EvtVariant)(unsafe.Pointer(&buf[offset]))
+		evtVar := (*EvtVariant)(unsafe.Pointer(&bb.buf[offset]))
 
-		parameters[i], err = evtVar.Data(buf)
+		parameters[i], err = evtVar.Data(bb.buf)
 		if err != nil {
 			r.log.Warnw("Failed to read event parameter.",
 				"provider", event.Provider.Name,
@@ -409,7 +425,7 @@ func (r *Renderer) renderUser(handle EvtHandle, event *sys.Event) ([]interface{}
 	return parameters, nil
 }
 
-func (r *Renderer) render(context EvtHandle, eventHandle EvtHandle) ([]byte, int, error) {
+func (r *Renderer) render(context EvtHandle, eventHandle EvtHandle) (*byteBuffer, int, error) {
 	var bufferUsed, propertyCount uint32
 	err := _EvtRender(context, eventHandle, EvtRenderEventValues, 0, nil, &bufferUsed, &propertyCount)
 	if err != nil && err != ERROR_INSUFFICIENT_BUFFER {
@@ -419,21 +435,14 @@ func (r *Renderer) render(context EvtHandle, eventHandle EvtHandle) ([]byte, int
 		return nil, 0, nil
 	}
 
-	buf := r.getBuf(bufferUsed)
-	err = _EvtRender(context, eventHandle, EvtRenderEventValues, bufferUsed, &buf[0], &bufferUsed, &propertyCount)
+	bb := newByteBuffer(bufferUsed)
+	err = _EvtRender(context, eventHandle, EvtRenderEventValues, uint32(len(bb.buf)), &bb.buf[0], &bufferUsed, &propertyCount)
 	if err != nil {
+		bb.free()
 		return nil, 0, errors.Wrap(err, "failed to get values")
 	}
 
-	return buf, int(propertyCount), nil
-}
-
-func (r *Renderer) getBuf(length uint32) []byte {
-	if cap(r.buf) < int(length) {
-		r.buf = make([]byte, length)
-	}
-	r.buf = r.buf[0:length]
-	return r.buf
+	return bb, int(propertyCount), nil
 }
 
 func (r *Renderer) addEventData(publisherMeta *publisherMetadataStore, values []interface{}, event *sys.Event) error {
@@ -441,7 +450,7 @@ func (r *Renderer) addEventData(publisherMeta *publisherMetadataStore, values []
 		return nil
 	}
 
-	eventID := event.EventIdentifier.ID
+	eventID := uint16(event.EventIdentifier.ID)
 	eventMetadata := publisherMeta.Events[eventID]
 
 	if eventMetadata == nil {
@@ -455,6 +464,7 @@ func (r *Renderer) addEventData(publisherMeta *publisherMetadataStore, values []
 			"event_id", eventID,
 			"event_parameter_count", len(values),
 			"template_parameter_count", len(eventMetadata.EventData),
+			"template_version", eventMetadata.Version,
 			"event_version", event.Version)
 	}
 
@@ -492,7 +502,8 @@ func (r *Renderer) addEventData(publisherMeta *publisherMetadataStore, values []
 }
 
 func (r *Renderer) formatMessage(publisherMeta *publisherMetadataStore, eventHandle EvtHandle, event *sys.Event, values []interface{}) (string, error) {
-	data := publisherMeta.Events[event.EventIdentifier.ID]
+	eventID := uint16(event.EventIdentifier.ID)
+	data := publisherMeta.Events[eventID]
 
 	if data == nil {
 		// Try to get the raw message string using the event handle.
@@ -501,16 +512,18 @@ func (r *Renderer) formatMessage(publisherMeta *publisherMetadataStore, eventHan
 			return "", err
 		}
 		eventMetadata := &eventMetadataStore{
-			EventID: event.EventIdentifier.ID,
+			EventID: eventID,
 		}
 		if err = eventMetadata.addMessage(event.Provider.Name, msg); err != nil {
 			return "", err
 		}
-		publisherMeta.Events[event.EventIdentifier.ID] = eventMetadata
+		publisherMeta.Events[eventID] = eventMetadata
 		data = eventMetadata
 
-		// TODO: Parse msg into a template
-		r.log.Debugw("Got previously unknown message template.", "message", msg)
+		r.log.Debugw("Got previously unknown message template.",
+			"provider", publisherMeta.Metadata.Name,
+			"event_id", eventID,
+			"message", msg)
 	}
 
 	if data != nil {
@@ -523,7 +536,7 @@ func (r *Renderer) formatMessage(publisherMeta *publisherMetadataStore, eventHan
 
 	// Fallback to the traditional EvtFormatMessage mechanism.
 	r.log.Debugf("Falling back to EvtFormatMessage for event ID %d.", event.EventIdentifier.ID)
-	return r.evtFormatMessage(publisherMeta.Metadata, eventHandle, EvtFormatMessageEvent)
+	return getMessageString(publisherMeta.Metadata, eventHandle, 0, nil)
 }
 
 func (r *Renderer) formatMessageFromTemplate(msgTmpl *template.Template, values []interface{}) (string, error) {
@@ -533,23 +546,6 @@ func (r *Renderer) formatMessageFromTemplate(msgTmpl *template.Template, values 
 		return "", errors.Wrapf(err, "failed to execute template with data=%v template=%v", spew.Sdump(values), msgTmpl.Root.String())
 	}
 	return buf.String(), nil
-}
-
-func (r *Renderer) evtFormatMessage(metadata *PublisherMetadata, eventHandle EvtHandle, messageFlag EvtFormatMessageFlag) (string, error) {
-	var bufferUsed uint32
-	err := _EvtFormatMessage(metadata.Handle, eventHandle, 0, 0, 0, messageFlag, 0, nil, &bufferUsed)
-	if err != ERROR_INSUFFICIENT_BUFFER {
-		return "", errors.Errorf("expected ERROR_INSUFFICIENT_BUFFER but got: %v", err)
-	}
-
-	buf := r.getBuf(bufferUsed * 2)
-	err = _EvtFormatMessage(metadata.Handle, eventHandle, 0, 0, 0, messageFlag, uint32(len(buf)/2), &buf[0], &bufferUsed)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed in EvtFormatMessage")
-	}
-
-	s, _, err := sys.UTF16BytesToString(buf)
-	return s, err
 }
 
 // enrichRawValuesWithNames adds the names associated with the raw system
@@ -636,6 +632,10 @@ func getMessageStringFromHandle(metadata *PublisherMetadata, eventHandle EvtHand
 	return getMessageString(metadata, eventHandle, 0, insertStrings.EvtVariants[:])
 }
 
+func getMessageStringFromMessageID(metadata *PublisherMetadata, messageID uint32) (string, error) {
+	return getMessageString(metadata, NilHandle, messageID, nil)
+}
+
 func getMessageString(metadata *PublisherMetadata, eventHandle EvtHandle, messageID uint32, values []EvtVariant) (string, error) {
 	var flags EvtFormatMessageFlag
 	if eventHandle > 0 {
@@ -644,6 +644,72 @@ func getMessageString(metadata *PublisherMetadata, eventHandle EvtHandle, messag
 		flags = EvtFormatMessageId
 	}
 
+	return evtFormatMessage(metadata.Handle, eventHandle, messageID, values, flags)
+}
+
+func getEventXML(metadata *PublisherMetadata, eventHandle EvtHandle) (string, error) {
+	return evtFormatMessage(metadata.Handle, eventHandle, 0, nil, EvtFormatMessageXml)
+}
+
+var bbPool = sync.Pool{
+	New: func() interface{} { return new(byteBuffer) },
+}
+
+type byteBuffer struct {
+	buf []byte
+}
+
+func newByteBuffer(size uint32) *byteBuffer {
+	bb := bbPool.Get().(*byteBuffer)
+	bb.grow(size)
+	return bb
+}
+
+func (bb *byteBuffer) grow(n uint32) {
+	if cap(bb.buf) < int(n) {
+		bb.buf = make([]byte, n)
+	}
+	bb.buf = bb.buf[:n]
+}
+
+func (bb *byteBuffer) free() {
+	if bb == nil {
+		return
+	}
+	bb.buf = bb.buf[:0]
+	bbPool.Put(bb)
+}
+
+var utf16ConverterPool = sync.Pool{
+	New: func() interface{} {
+		return &utf16Converter{
+			buf: sys.NewByteBuffer(1024),
+		}
+	},
+}
+
+type utf16Converter struct {
+	buf *sys.ByteBuffer
+}
+
+func (c *utf16Converter) UTF16BytesToString(b []byte) (string, error) {
+	c.buf.Reset()
+	err := sys.UTF16ToUTF8Bytes(b, c.buf)
+	if err != nil {
+		return "", err
+	}
+	return string(c.buf.Bytes()), nil
+}
+
+func newUTF16Converter() *utf16Converter {
+	return utf16ConverterPool.Get().(*utf16Converter)
+}
+
+func (c *utf16Converter) free() {
+	utf16ConverterPool.Put(c)
+}
+
+func evtFormatMessage(metadataHandle EvtHandle, eventHandle EvtHandle, messageID uint32, values []EvtVariant, messageFlag EvtFormatMessageFlag) (string, error) {
 	var (
 		valuesCount = uint32(len(values))
 		valuesPtr   uintptr
@@ -653,22 +719,27 @@ func getMessageString(metadata *PublisherMetadata, eventHandle EvtHandle, messag
 	}
 
 	var bufferUsed uint32
-	err := _EvtFormatMessage(metadata.Handle, eventHandle, messageID, valuesCount, valuesPtr, flags, 0, nil, &bufferUsed)
+	err := _EvtFormatMessage(metadataHandle, eventHandle, messageID, valuesCount, valuesPtr, messageFlag, 0, nil, &bufferUsed)
 	if err != ERROR_INSUFFICIENT_BUFFER {
-		return "", errors.Errorf("expected ERROR_INSUFFICIENT_BUFFER but got: %v", err)
+		return "", err
 	}
 
-	buf := make([]byte, bufferUsed*2)
-	err = _EvtFormatMessage(metadata.Handle, eventHandle, messageID, valuesCount, valuesPtr, flags, uint32(len(buf)/2), &buf[0], &bufferUsed)
+	bb := newByteBuffer(bufferUsed * 2)
+	defer bb.free()
+
+	err = _EvtFormatMessage(metadataHandle, eventHandle, messageID, valuesCount, valuesPtr, messageFlag, uint32(len(bb.buf)/2), &bb.buf[0], &bufferUsed)
 	if err != nil {
 		switch err {
 		case windows.ERROR_EVT_UNRESOLVED_VALUE_INSERT:
 		case windows.ERROR_EVT_UNRESOLVED_PARAMETER_INSERT:
 		case windows.ERROR_EVT_MAX_INSERTS_REACHED:
 		default:
-			return "", err
+			return "", errors.Wrap(err, "failed in EvtFormatMessage")
 		}
 	}
-	s, _, err := sys.UTF16BytesToString(buf)
-	return s, err
+
+	c := newUTF16Converter()
+	defer c.free()
+
+	return c.UTF16BytesToString(bb.buf)
 }

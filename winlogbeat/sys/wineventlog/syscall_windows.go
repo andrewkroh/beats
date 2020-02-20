@@ -18,7 +18,7 @@
 package wineventlog
 
 import (
-	"strconv"
+	"fmt"
 	"syscall"
 	"time"
 	"unsafe"
@@ -397,13 +397,13 @@ var sizeofEvtVariant = unsafe.Sizeof(EvtVariant{})
 type hexInt32 int32
 
 func (n hexInt32) String() string {
-	return "0x" + strconv.FormatUint(uint64(n), 16)
+	return fmt.Sprintf("%#x", uint32(n))
 }
 
 type hexInt64 int64
 
 func (n hexInt64) String() string {
-	return "0x" + strconv.FormatUint(uint64(n), 16)
+	return fmt.Sprintf("%#x", uint64(n))
 }
 
 func (v EvtVariant) Data(buf []byte) (interface{}, error) {
@@ -412,9 +412,11 @@ func (v EvtVariant) Data(buf []byte) (interface{}, error) {
 	case EvtVarTypeNull:
 		return nil, nil
 	case EvtVarTypeString:
+		c := newUTF16Converter()
+		defer c.free()
 		addr := unsafe.Pointer(&buf[0])
 		offset := v.Value - uintptr(addr)
-		s, _, err := sys.UTF16BytesToString(buf[offset:])
+		s, err := c.UTF16BytesToString(buf[offset:])
 		return s, err
 	case EvtVarTypeSByte:
 		return int8(v.Value), nil
