@@ -15,14 +15,39 @@
 // specific language governing permissions and limitations
 // under the License.
 
-/*
-Package wineventlog provides access to the Windows Event Log API used in
-all versions of Windows since Vista (i.e. Windows 7+  and Windows Server 2008+).
-This is distinct from the Event Logging API that was used in Windows XP,
-Windows Server 2003, and Windows 2000.
-*/
 package wineventlog
 
-// Add -trace to enable debug prints around syscalls.
-//go:generate go get golang.org/x/sys/windows/mkwinsyscall
-//go:generate $GOPATH/bin/mkwinsyscall.exe -systemdll -output zsyscall_windows.go syscall_windows.go
+import (
+	"testing"
+
+	"github.com/davecgh/go-spew/spew"
+
+	"github.com/elastic/beats/libbeat/logp"
+)
+
+func TestPublisherMetadataStore(t *testing.T) {
+	logp.TestingSetup()
+
+	s, err := newPublisherMetadataStore(NilHandle, "Microsoft-Windows-Sysmon", logp.NewLogger("metadata"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	logHandle := openLog(t, sysmon9File, "1")
+	defer logHandle.Close()
+
+	handles, err := EventHandles(logHandle, 32)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h := handles[0]
+	defer h.Close()
+
+	em, err := newEventMetadataFromEventHandle(s.Metadata, h)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(spew.Sdump(em))
+}

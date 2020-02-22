@@ -15,14 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// +build windows
+
 package wineventlog
 
 import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
-	"sync"
 	"text/template"
 	"time"
 	"unsafe"
@@ -41,223 +41,11 @@ const (
 	keywordClassic = 0x80000000000000
 )
 
-var (
-	eventDataNameTransform = strings.NewReplacer(" ", "_")
-
-	eventMessageTemplateFuncs = template.FuncMap{
-		"eventParam": eventParam,
-	}
-)
-
-type publisherMetadataStore struct {
-	Metadata *PublisherMetadata
-	Keywords map[int64]string
-	Opcodes  map[uint8]string
-	Levels   map[uint8]string
-	Tasks    map[uint16]string
-	Events   map[uint16]*eventMetadataStore
-
-	log *logp.Logger
-}
-
-type eventMetadataStore struct {
-	EventID     uint16
-	Version     uint8              // Event format version.
-	MsgStatic   string             // Used when the message has no parameters.
-	MsgTemplate *template.Template // Template that expects an array of values as its data.
-	EventData   []EventData        // Names of parameters from XML template.
-}
-
-func newPublisherMetadataStore(session EvtHandle, provider string, log *logp.Logger) (*publisherMetadataStore, error) {
-	md, err := NewPublisherMetadata(session, provider)
-	if err != nil {
-		return nil, err
-	}
-	store := &publisherMetadataStore{Metadata: md, log: log.With("publisher", provider)}
-
-	// Query the provider metadata to build an in-memory cache of the
-	// information to optimize event reading.
-	err = multierr.Combine(
-		store.initKeywords(),
-		store.initOpcodes(),
-		store.initLevels(),
-		store.initTasks(),
-		store.initEvents(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return store, nil
-}
-
-func (s *publisherMetadataStore) initKeywords() error {
-	keywords, err := s.Metadata.Keywords()
-	if err != nil {
-		return err
-	}
-
-	s.Keywords = make(map[int64]string, len(keywords))
-	for _, keywordMeta := range keywords {
-		// TODO: Choose between Name and Message. Preference?
-		s.Keywords[int64(keywordMeta.Mask)] = keywordMeta.Name
-	}
-	return nil
-}
-
-func (s *publisherMetadataStore) initOpcodes() error {
-	opcodes, err := s.Metadata.Opcodes()
-	if err != nil {
-		return err
-	}
-	s.Opcodes = make(map[uint8]string, len(opcodes))
-	for _, opcodeMeta := range opcodes {
-		s.Opcodes[uint8(opcodeMeta.Mask)] = opcodeMeta.Message
-	}
-	return nil
-}
-
-func (s *publisherMetadataStore) initLevels() error {
-	levels, err := s.Metadata.Levels()
-	if err != nil {
-		return err
-	}
-
-	s.Levels = make(map[uint8]string, len(levels))
-	for _, levelMeta := range levels {
-		s.Levels[uint8(levelMeta.Mask)] = levelMeta.Name
-	}
-	return nil
-}
-
-func (s *publisherMetadataStore) initTasks() error {
-	tasks, err := s.Metadata.Tasks()
-	if err != nil {
-		return err
-	}
-	s.Tasks = make(map[uint16]string, len(tasks))
-	for _, taskMeta := range tasks {
-		s.Tasks[uint16(taskMeta.Mask)] = taskMeta.Message
-	}
-	return nil
-}
-
-func (s *publisherMetadataStore) initEvents() error {
-	itr, err := s.Metadata.EventMetadataIterator()
-	if err != nil {
-		return err
-	}
-	defer itr.Close()
-
-	s.Events = map[uint16]*eventMetadataStore{}
-	for itr.Next() {
-		var evt eventMetadataStore
-		err = multierr.Combine(
-			s.readEventID(itr, &evt),
-			s.readVersion(itr, &evt),
-			s.readEventDataTemplate(itr, &evt),
-			s.readEventMessage(itr, &evt),
-		)
-		// TODO: Should we accumulate errors and return them?
-		if err != nil {
-			s.log.Warn("Failed to read data for event.",
-				"error", err, "event.code", evt.EventID)
-			continue
-		}
-		s.Events[evt.EventID] = &evt
-	}
-	return itr.Err()
-}
-
-func (s *publisherMetadataStore) readEventID(itr *EventMetadataIterator, evt *eventMetadataStore) error {
-	id, err := itr.EventID()
-	if err != nil {
-		return err
-	}
-	// The upper 16 bits are the qualifier and lower 16 are the ID.
-	evt.EventID = uint16(0xFFFF & id)
-	return nil
-}
-
-func (s *publisherMetadataStore) readVersion(itr *EventMetadataIterator, evt *eventMetadataStore) error {
-	version, err := itr.Version()
-	if err != nil {
-		return err
-	}
-	evt.Version = uint8(version)
-	return nil
-}
-
-func (*publisherMetadataStore) readEventDataTemplate(itr *EventMetadataIterator, evt *eventMetadataStore) error {
-	xml, err := itr.Template()
-	if err != nil {
-		return err
-	}
-	// Some events do not have templates.
-	if xml == "" {
-		return nil
-	}
-
-	tmpl := &EventTemplate{}
-	if err = tmpl.Unmarshal([]byte(xml)); err != nil {
-		return err
-	}
-
-	for _, kv := range tmpl.Data {
-		kv.Name = eventDataNameTransform.Replace(kv.Name)
-	}
-
-	evt.EventData = tmpl.Data
-	return nil
-}
-
-func eventParam(items []interface{}, paramNumber int) (interface{}, error) {
-	index := paramNumber - 1
-	if index < len(items) {
-		return items[index], nil
-	}
-	// Windows Event Viewer leaves the original placeholder (e.g. %22) in the
-	// rendered message when no value provided.
-	return "%" + strconv.Itoa(paramNumber), nil
-}
-
-func (s *publisherMetadataStore) readEventMessage(itr *EventMetadataIterator, evt *eventMetadataStore) error {
-	messageID, err := itr.MessageID()
-	if err != nil {
-		return err
-	}
-
-	msg, err := getMessageString(s.Metadata, NilHandle, messageID, insertStrings.EvtVariants[:])
-	if err != nil {
-		return err
-	}
-
-	return evt.addMessage(s.Metadata.Name, msg)
-}
-
-func (evt *eventMetadataStore) addMessage(provider, msg string) error {
-	id := provider + "/" + strconv.Itoa(int(evt.EventID))
-	msg = sys.RemoveWindowsLineEndings(msg)
-	tmpl, err := template.New(id).Funcs(eventMessageTemplateFuncs).Parse(msg)
-	if err != nil {
-		return err
-	}
-
-	// One node means there were no parameters optimize by having a static string.
-	if len(tmpl.Root.Nodes) == 1 {
-		evt.MsgStatic = msg
-	} else {
-		evt.MsgTemplate = tmpl
-	}
-	return nil
-}
-
 type Renderer struct {
 	metadataCache map[string]*publisherMetadataStore
 	systemContext EvtHandle // Render context for system values.
 	userContext   EvtHandle // Render context for user values (event data).
 	log           *logp.Logger
-	buf           []byte
 }
 
 func NewRenderer() (*Renderer, error) {
@@ -279,58 +67,66 @@ func NewRenderer() (*Renderer, error) {
 
 func (r *Renderer) Close() error {
 	return multierr.Combine(
-		_EvtClose(r.systemContext),
-		_EvtClose(r.userContext),
+		r.systemContext.Close(),
+		r.userContext.Close(),
 	)
 }
 
 func (r *Renderer) Render(handle EvtHandle) (*sys.Event, error) {
-	var event sys.Event
+	event := &sys.Event{}
 
-	if err := r.renderSystem(handle, &event); err != nil {
+	if err := r.renderSystem(handle, event); err != nil {
 		return nil, errors.Wrap(err, "failed to render system properties")
 	}
 
-	// TODO: We might not be able to or want to read the local publisher
-	// metadata for forwarded events.
+	var errs []error
+
+	// This always returns a non-nil value (even on error).
 	md, err := r.getPublisherMetadata(event.Provider.Name)
 	if err != nil {
-		return nil, err
+		errs = append(errs, err)
 	}
 
-	// Associate numeric system properties to names (e.g. level 2 to Error).
-	r.enrichRawValuesWithNames(md, &event)
-
-	eventData, err := r.renderUser(handle, &event)
+	eventData, err := r.renderUser(handle, event)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to render event data")
+		errs = append(errs, errors.Wrap(err, "failed to render event data"))
 	}
 
-	if err = r.addEventData(md, eventData, &event); err != nil {
-		return nil, err
+	// Load cached event metadata or try to bootstrap it from the event's XML.
+	eventMetadata := md.getEventMetadata(uint16(event.EventIdentifier.ID))
+	if eventMetadata == nil {
+		eventMetadata = md.addEventMetadata(handle)
 	}
 
-	msg, err := r.formatMessage(md, handle, &event, eventData)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to render message")
-	}
-	event.Message = msg
+	// Associate raw system properties to names (e.g. level=2 to Error).
+	enrichRawValuesWithNames(md, event)
 
-	return &event, nil
+	if err = r.addEventData(eventMetadata, eventData, event); err != nil {
+		errs = append(errs, err)
+	}
+
+	if event.Message, err = r.formatMessage(md, handle, event, eventData); err != nil {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return event, multierr.Combine(errs...)
+	}
+	return event, nil
 }
 
 func (r *Renderer) getPublisherMetadata(publisher string) (*publisherMetadataStore, error) {
+	var err error
 	md, found := r.metadataCache[publisher]
 	if !found {
-		var err error
 		md, err = newPublisherMetadataStore(NilHandle, publisher, r.log)
 		if err != nil {
-			return nil, err
+			md = newEmptyPublisherMetadataStore(publisher, r.log)
 		}
 		r.metadataCache[publisher] = md
 	}
 
-	return md, nil
+	return md, err
 }
 
 func (r *Renderer) renderSystem(handle EvtHandle, event *sys.Event) error {
@@ -366,7 +162,7 @@ func (r *Renderer) renderSystem(handle EvtHandle, event *sys.Event) error {
 		case EvtSystemOpcode:
 			event.OpcodeRaw = data.(uint8)
 		case EvtSystemKeywords:
-			event.KeywordsRaw = int64(data.(hexInt64))
+			event.KeywordsRaw = sys.HexInt64(data.(hexInt64))
 		case EvtSystemTimeCreated:
 			event.TimeCreated.SystemTime = data.(time.Time)
 		case EvtSystemEventRecordId:
@@ -385,10 +181,10 @@ func (r *Renderer) renderSystem(handle EvtHandle, event *sys.Event) error {
 			event.Computer = data.(string)
 		case EvtSystemUserID:
 			sid := data.(*windows.SID)
+			event.User.Identifier, _ = sid.String()
 			var accountType uint32
 			event.User.Name, event.User.Domain, accountType, _ = sid.LookupAccount("")
 			event.User.Type = sys.SIDType(accountType)
-			event.User.Identifier, _ = sid.String()
 		case EvtSystemVersion:
 			event.Version = sys.Version(data.(uint8))
 		}
@@ -402,6 +198,7 @@ func (r *Renderer) renderUser(handle EvtHandle, event *sys.Event) ([]interface{}
 		return nil, errors.Wrap(err, "failed to get user values")
 	}
 	defer bb.free()
+
 	if propertyCount == 0 {
 		return nil, nil
 	}
@@ -435,7 +232,8 @@ func (r *Renderer) render(context EvtHandle, eventHandle EvtHandle) (*byteBuffer
 		return nil, 0, nil
 	}
 
-	bb := newByteBuffer(bufferUsed)
+	bb := newByteBuffer()
+	bb.SetLength(int(bufferUsed))
 	err = _EvtRender(context, eventHandle, EvtRenderEventValues, uint32(len(bb.buf)), &bb.buf[0], &bufferUsed, &propertyCount)
 	if err != nil {
 		bb.free()
@@ -445,26 +243,23 @@ func (r *Renderer) render(context EvtHandle, eventHandle EvtHandle) (*byteBuffer
 	return bb, int(propertyCount), nil
 }
 
-func (r *Renderer) addEventData(publisherMeta *publisherMetadataStore, values []interface{}, event *sys.Event) error {
+func (r *Renderer) addEventData(evtMeta *eventMetadata, values []interface{}, event *sys.Event) error {
 	if len(values) == 0 {
 		return nil
 	}
 
-	eventID := uint16(event.EventIdentifier.ID)
-	eventMetadata := publisherMeta.Events[eventID]
-
-	if eventMetadata == nil {
+	if evtMeta == nil {
 		r.log.Warnw("Event metadata not found.",
-			"provider", publisherMeta.Metadata.Name,
-			"event_id", eventID)
-	} else if len(values) != len(eventMetadata.EventData) {
+			"provider", event.Provider.Name,
+			"event_id", event.EventIdentifier.ID)
+	} else if len(values) != len(evtMeta.EventData) {
 		r.log.Warnw("The number of event data parameters doesn't match the number "+
 			"of parameters in the template.",
-			"provider", publisherMeta.Metadata.Name,
-			"event_id", eventID,
+			"provider", event.Provider.Name,
+			"event_id", event.EventIdentifier.ID,
 			"event_parameter_count", len(values),
-			"template_parameter_count", len(eventMetadata.EventData),
-			"template_version", eventMetadata.Version,
+			"template_parameter_count", len(evtMeta.EventData),
+			"template_version", evtMeta.Version,
 			"event_version", event.Version)
 	}
 
@@ -475,8 +270,8 @@ func (r *Renderer) addEventData(publisherMeta *publisherMetadataStore, values []
 	// updated). If software was updated it could also be that this cached
 	// template is no longer valid.
 	paramName := func(idx int) string {
-		if eventMetadata != nil && idx < len(eventMetadata.EventData) {
-			return eventMetadata.EventData[idx].Name
+		if evtMeta != nil && idx < len(evtMeta.EventData) {
+			return evtMeta.EventData[idx].Name
 		}
 		return "param" + strconv.Itoa(idx)
 	}
@@ -507,14 +302,14 @@ func (r *Renderer) formatMessage(publisherMeta *publisherMetadataStore, eventHan
 
 	if data == nil {
 		// Try to get the raw message string using the event handle.
-		msg, err := getMessageStringFromHandle(publisherMeta.Metadata, eventHandle)
+		msg, err := getMessageStringFromHandle(publisherMeta.Metadata, eventHandle, insertStrings.EvtVariants[:])
 		if err != nil {
 			return "", err
 		}
-		eventMetadata := &eventMetadataStore{
+		eventMetadata := &eventMetadata{
 			EventID: eventID,
 		}
-		if err = eventMetadata.addMessage(event.Provider.Name, msg); err != nil {
+		if err = eventMetadata.setMessage(msg); err != nil {
 			return "", err
 		}
 		publisherMeta.Events[eventID] = eventMetadata
@@ -551,9 +346,9 @@ func (r *Renderer) formatMessageFromTemplate(msgTmpl *template.Template, values 
 // enrichRawValuesWithNames adds the names associated with the raw system
 // property values. It enriches the event with keywords, opcode, level, and
 // task. The search order is defined in the EvtFormatMessage documentation.
-func (r *Renderer) enrichRawValuesWithNames(publisherMeta *publisherMetadataStore, event *sys.Event) {
+func enrichRawValuesWithNames(publisherMeta *publisherMetadataStore, event *sys.Event) {
 	// Keywords. Each bit in the value can represent a keyword.
-	rawKeyword := event.KeywordsRaw
+	rawKeyword := int64(event.KeywordsRaw)
 	isClassic := keywordClassic&rawKeyword > 0
 	for mask, keyword := range winMeta.Keywords {
 		if rawKeyword&mask > 0 {
@@ -588,158 +383,4 @@ func (r *Renderer) enrichRawValuesWithNames(publisherMeta *publisherMetadataStor
 	if !found {
 		event.Task = winMeta.Tasks[event.TaskRaw]
 	}
-}
-
-// winMeta contains the values are a common across Windows. These values are
-// from winmeta.xml inside the Windows SDK.
-var winMeta = &publisherMetadataStore{
-	Keywords: map[int64]string{
-		0:                "AnyKeyword",
-		0x1000000000000:  "Response Time",
-		0x4000000000000:  "WDI Diag",
-		0x8000000000000:  "SQM",
-		0x10000000000000: "Audit Failure",
-		0x20000000000000: "Audit Success",
-		0x40000000000000: "Correlation Hint",
-		0x80000000000000: "Classic",
-	},
-	Opcodes: map[uint8]string{
-		0: "Info",
-		1: "Start",
-		2: "Stop",
-		3: "DCStart",
-		4: "DCStop",
-		5: "Extension",
-		6: "Reply",
-		7: "Resume",
-		8: "Suspend",
-		9: "Send",
-	},
-	Levels: map[uint8]string{
-		0: "Information", // "Log Always", but Event Viewer shows Information.
-		1: "Critical",
-		2: "Error",
-		3: "Warning",
-		4: "Information",
-		5: "Verbose",
-	},
-	Tasks: map[uint16]string{
-		0: "None",
-	},
-}
-
-func getMessageStringFromHandle(metadata *PublisherMetadata, eventHandle EvtHandle) (string, error) {
-	return getMessageString(metadata, eventHandle, 0, insertStrings.EvtVariants[:])
-}
-
-func getMessageStringFromMessageID(metadata *PublisherMetadata, messageID uint32) (string, error) {
-	return getMessageString(metadata, NilHandle, messageID, nil)
-}
-
-func getMessageString(metadata *PublisherMetadata, eventHandle EvtHandle, messageID uint32, values []EvtVariant) (string, error) {
-	var flags EvtFormatMessageFlag
-	if eventHandle > 0 {
-		flags = EvtFormatMessageEvent
-	} else if messageID > 0 {
-		flags = EvtFormatMessageId
-	}
-
-	return evtFormatMessage(metadata.Handle, eventHandle, messageID, values, flags)
-}
-
-func getEventXML(metadata *PublisherMetadata, eventHandle EvtHandle) (string, error) {
-	return evtFormatMessage(metadata.Handle, eventHandle, 0, nil, EvtFormatMessageXml)
-}
-
-var bbPool = sync.Pool{
-	New: func() interface{} { return new(byteBuffer) },
-}
-
-type byteBuffer struct {
-	buf []byte
-}
-
-func newByteBuffer(size uint32) *byteBuffer {
-	bb := bbPool.Get().(*byteBuffer)
-	bb.grow(size)
-	return bb
-}
-
-func (bb *byteBuffer) grow(n uint32) {
-	if cap(bb.buf) < int(n) {
-		bb.buf = make([]byte, n)
-	}
-	bb.buf = bb.buf[:n]
-}
-
-func (bb *byteBuffer) free() {
-	if bb == nil {
-		return
-	}
-	bb.buf = bb.buf[:0]
-	bbPool.Put(bb)
-}
-
-var utf16ConverterPool = sync.Pool{
-	New: func() interface{} {
-		return &utf16Converter{
-			buf: sys.NewByteBuffer(1024),
-		}
-	},
-}
-
-type utf16Converter struct {
-	buf *sys.ByteBuffer
-}
-
-func (c *utf16Converter) UTF16BytesToString(b []byte) (string, error) {
-	c.buf.Reset()
-	err := sys.UTF16ToUTF8Bytes(b, c.buf)
-	if err != nil {
-		return "", err
-	}
-	return string(c.buf.Bytes()), nil
-}
-
-func newUTF16Converter() *utf16Converter {
-	return utf16ConverterPool.Get().(*utf16Converter)
-}
-
-func (c *utf16Converter) free() {
-	utf16ConverterPool.Put(c)
-}
-
-func evtFormatMessage(metadataHandle EvtHandle, eventHandle EvtHandle, messageID uint32, values []EvtVariant, messageFlag EvtFormatMessageFlag) (string, error) {
-	var (
-		valuesCount = uint32(len(values))
-		valuesPtr   uintptr
-	)
-	if len(values) > 0 {
-		valuesPtr = uintptr(unsafe.Pointer(&values[0]))
-	}
-
-	var bufferUsed uint32
-	err := _EvtFormatMessage(metadataHandle, eventHandle, messageID, valuesCount, valuesPtr, messageFlag, 0, nil, &bufferUsed)
-	if err != ERROR_INSUFFICIENT_BUFFER {
-		return "", err
-	}
-
-	bb := newByteBuffer(bufferUsed * 2)
-	defer bb.free()
-
-	err = _EvtFormatMessage(metadataHandle, eventHandle, messageID, valuesCount, valuesPtr, messageFlag, uint32(len(bb.buf)/2), &bb.buf[0], &bufferUsed)
-	if err != nil {
-		switch err {
-		case windows.ERROR_EVT_UNRESOLVED_VALUE_INSERT:
-		case windows.ERROR_EVT_UNRESOLVED_PARAMETER_INSERT:
-		case windows.ERROR_EVT_MAX_INSERTS_REACHED:
-		default:
-			return "", errors.Wrap(err, "failed in EvtFormatMessage")
-		}
-	}
-
-	c := newUTF16Converter()
-	defer c.free()
-
-	return c.UTF16BytesToString(bb.buf)
 }

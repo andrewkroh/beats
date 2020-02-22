@@ -55,7 +55,6 @@ func errnoErr(e syscall.Errno) error {
 
 var (
 	modwevtapi = windows.NewLazySystemDLL("wevtapi.dll")
-	modole32   = windows.NewLazySystemDLL("ole32.dll")
 
 	procEvtOpenLog                      = modwevtapi.NewProc("EvtOpenLog")
 	procEvtQuery                        = modwevtapi.NewProc("EvtQuery")
@@ -77,7 +76,6 @@ var (
 	procEvtNextEventMetadata            = modwevtapi.NewProc("EvtNextEventMetadata")
 	procEvtGetObjectArrayProperty       = modwevtapi.NewProc("EvtGetObjectArrayProperty")
 	procEvtGetObjectArraySize           = modwevtapi.NewProc("EvtGetObjectArraySize")
-	procStringFromGUID2                 = modole32.NewProc("StringFromGUID2")
 )
 
 func _EvtOpenLog(session EvtHandle, path *uint16, flags uint32) (handle EvtHandle, err error) {
@@ -320,18 +318,6 @@ func _EvtGetObjectArrayProperty(objectArray EvtObjectArrayPropertyHandle, proper
 
 func _EvtGetObjectArraySize(objectArray EvtObjectArrayPropertyHandle, arraySize *uint32) (err error) {
 	r1, _, e1 := syscall.Syscall(procEvtGetObjectArraySize.Addr(), 2, uintptr(objectArray), uintptr(unsafe.Pointer(arraySize)), 0)
-	if r1 == 0 {
-		if e1 != 0 {
-			err = errnoErr(e1)
-		} else {
-			err = syscall.EINVAL
-		}
-	}
-	return
-}
-
-func _StringFromGUID2(rguid *syscall.GUID, pStr *uint16, strSize uint32) (err error) {
-	r1, _, e1 := syscall.Syscall(procStringFromGUID2.Addr(), 3, uintptr(unsafe.Pointer(rguid)), uintptr(unsafe.Pointer(pStr)), uintptr(strSize))
 	if r1 == 0 {
 		if e1 != 0 {
 			err = errnoErr(e1)

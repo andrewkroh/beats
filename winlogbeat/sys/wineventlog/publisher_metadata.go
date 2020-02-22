@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// +build windows
+
 package wineventlog
 
 import (
@@ -26,15 +28,20 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// PublisherMetadata provides methods to query metadata from an event log
+// publisher.
 type PublisherMetadata struct {
-	Name   string
-	Handle EvtHandle
+	Name   string    // Name of the publisher/provider.
+	Handle EvtHandle // Handle to the publisher metadata from EvtOpenPublisherMetadata.
 }
 
+// Close releases the publisher metadata handle.
 func (m *PublisherMetadata) Close() error {
 	return m.Handle.Close()
 }
 
+// NewPublisherMetadata opens the publisher's metadata. Close must be called on
+// the returned PublisherMetadata to release its handle.
 func NewPublisherMetadata(session EvtHandle, name string) (*PublisherMetadata, error) {
 	var publisherName, logFile *uint16
 	if info, err := os.Stat(name); err == nil && info.Mode().IsRegular() {
@@ -122,7 +129,7 @@ func (m *PublisherMetadata) PublisherMessage() (string, error) {
 	if int32(messageID) == -1 {
 		return "", nil
 	}
-	return getMessageStringFromMessageID(m, messageID)
+	return getMessageStringFromMessageID(m, messageID, nil)
 }
 
 func (m *PublisherMetadata) Keywords() ([]MetadataKeyword, error) {
@@ -193,7 +200,7 @@ func NewMetadataKeyword(publisherMetadataHandle EvtHandle, arrayHandle EvtObject
 	// The value is -1 if the keyword did not specify a message attribute.
 	var message string
 	if int32(messageID) != -1 {
-		message, err = EvtFormatMessageID(publisherMetadataHandle, messageID)
+		message, err = evtFormatMessage(publisherMetadataHandle, NilHandle, messageID, nil, EvtFormatMessageId)
 		if err != nil {
 			return nil, err
 		}
@@ -263,7 +270,7 @@ func NewMetadataOpcode(publisherMetadataHandle EvtHandle, arrayHandle EvtObjectA
 	// The value is -1 if the opcode did not specify a message attribute.
 	var message string
 	if int32(messageID) != -1 {
-		message, err = EvtFormatMessageID(publisherMetadataHandle, messageID)
+		message, err = evtFormatMessage(publisherMetadataHandle, NilHandle, messageID, nil, EvtFormatMessageId)
 		if err != nil {
 			return nil, err
 		}
@@ -333,7 +340,7 @@ func NewMetadataLevel(publisherMetadataHandle EvtHandle, arrayHandle EvtObjectAr
 	// The value is -1 if the level did not specify a message attribute.
 	var message string
 	if int32(messageID) != -1 {
-		message, err = EvtFormatMessageID(publisherMetadataHandle, messageID)
+		message, err = evtFormatMessage(publisherMetadataHandle, NilHandle, messageID, nil, EvtFormatMessageId)
 		if err != nil {
 			return nil, err
 		}
@@ -404,7 +411,7 @@ func NewMetadataTask(publisherMetadataHandle EvtHandle, arrayHandle EvtObjectArr
 	// The value is -1 if the task did not specify a message attribute.
 	var message string
 	if int32(messageID) != -1 {
-		message, err = EvtFormatMessageID(publisherMetadataHandle, messageID)
+		message, err = evtFormatMessage(publisherMetadataHandle, NilHandle, messageID, nil, EvtFormatMessageId)
 		if err != nil {
 			return nil, err
 		}
@@ -482,7 +489,7 @@ func NewMetadataChannel(publisherMetadataHandle EvtHandle, arrayHandle EvtObject
 	// The value is -1 if the task did not specify a message attribute.
 	var message string
 	if int32(messageID) != -1 {
-		message, err = EvtFormatMessageID(publisherMetadataHandle, messageID)
+		message, err = evtFormatMessage(publisherMetadataHandle, NilHandle, messageID, nil, EvtFormatMessageId)
 		if err != nil {
 			return nil, err
 		}
@@ -541,8 +548,9 @@ func (itr *EventMetadataIterator) Close() error {
 	)
 }
 
-// Next advances to the next event handle. It returns windows.ERROR_NO_MORE_ITEMS
-// when done.
+// Next advances to the next event handle. It returns false when there are
+// no more items or an error occurred. You should call Err() to check for an
+// error.
 func (itr *EventMetadataIterator) Next() bool {
 	// Close existing handle.
 	itr.currentEvent.Close()
@@ -558,6 +566,7 @@ func (itr *EventMetadataIterator) Next() bool {
 	return true
 }
 
+// Err returns an error if Next() failed due to an error.
 func (itr *EventMetadataIterator) Err() error {
 	return itr.lastErr
 }
@@ -634,5 +643,5 @@ func (itr *EventMetadataIterator) Message() (string, error) {
 		return "", nil
 	}
 
-	return getMessageStringFromMessageID(itr.Publisher, messageID)
+	return getMessageStringFromMessageID(itr.Publisher, messageID, nil)
 }

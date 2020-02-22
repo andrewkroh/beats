@@ -25,8 +25,6 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/sys/windows"
-
-	"github.com/elastic/beats/winlogbeat/sys"
 )
 
 // EvtHandle is a handle to the event log.
@@ -412,11 +410,9 @@ func (v EvtVariant) Data(buf []byte) (interface{}, error) {
 	case EvtVarTypeNull:
 		return nil, nil
 	case EvtVarTypeString:
-		c := newUTF16Converter()
-		defer c.free()
 		addr := unsafe.Pointer(&buf[0])
 		offset := v.Value - uintptr(addr)
-		s, err := c.UTF16BytesToString(buf[offset:])
+		s, err := UTF16BytesToString(buf[offset:])
 		return s, err
 	case EvtVarTypeSByte:
 		return int8(v.Value), nil
@@ -578,23 +574,6 @@ func EvtGetObjectArraySize(handle EvtObjectArrayPropertyHandle) (uint32, error) 
 	return arrayLen, nil
 }
 
-func EvtFormatMessageID(publisherMetadataHandle EvtHandle, messageID uint32) (string, error) {
-	var bufferUsed uint32
-	err := _EvtFormatMessage(publisherMetadataHandle, 0, messageID, 0, 0, EvtFormatMessageId, 0, nil, &bufferUsed)
-	if err != ERROR_INSUFFICIENT_BUFFER {
-		return "", errors.Errorf("expected ERROR_INSUFFICIENT_BUFFER but got %v", err)
-	}
-
-	buf := make([]byte, bufferUsed*2)
-	err = _EvtFormatMessage(publisherMetadataHandle, 0, messageID, 0, 0, EvtFormatMessageId, uint32(len(buf)/2), &buf[0], &bufferUsed)
-	if err != nil {
-		return "", errors.Wrapf(err, "EvtFormatMessage failed")
-	}
-
-	s, _, err := sys.UTF16BytesToString(buf)
-	return s, err
-}
-
 func GetEventMetadataProperty(metadataHandle EvtHandle, propertyID EvtEventMetadataPropertyID) (interface{}, error) {
 	var bufferUsed uint32
 	err := _EvtGetEventMetadataProperty(metadataHandle, 8, 0, 0, nil, &bufferUsed)
@@ -611,10 +590,6 @@ func GetEventMetadataProperty(metadataHandle EvtHandle, propertyID EvtEventMetad
 
 	return pEvtVariant.Data(buf)
 }
-
-// Add -trace to enable debug prints around syscalls.
-//go:generate go get golang.org/x/sys/windows/mkwinsyscall
-//go:generate $GOPATH/bin/mkwinsyscall.exe -systemdll -output zsyscall_windows.go syscall_windows.go
 
 // Windows API calls
 //sys   _EvtOpenLog(session EvtHandle, path *uint16, flags uint32) (handle EvtHandle, err error) = wevtapi.EvtOpenLog
@@ -637,5 +612,3 @@ func GetEventMetadataProperty(metadataHandle EvtHandle, propertyID EvtEventMetad
 //sys   _EvtNextEventMetadata(enumerator EvtHandle, flags uint32) (handle EvtHandle, err error) = wevtapi.EvtNextEventMetadata
 //sys   _EvtGetObjectArrayProperty(objectArray EvtObjectArrayPropertyHandle, propertyID EvtPublisherMetadataPropertyID, arrayIndex uint32, flags uint32, bufferSize uint32, evtVariant *EvtVariant, bufferUsed *uint32) (err error) = wevtapi.EvtGetObjectArrayProperty
 //sys   _EvtGetObjectArraySize(objectArray EvtObjectArrayPropertyHandle, arraySize *uint32) (err error) = wevtapi.EvtGetObjectArraySize
-
-//sys   _StringFromGUID2(rguid *syscall.PublisherGUID, pStr *uint16, strSize uint32) (err error) = ole32.StringFromGUID2

@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"text/template"
@@ -29,6 +30,11 @@ import (
 
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/winlogbeat/sys"
+)
+
+const (
+	security4752File = "../../../x-pack/winlogbeat/module/security/test/testdata/4752.evtx"
+	sysmon9File      = "../../../x-pack/winlogbeat/module/sysmon/test/testdata/sysmon-9.01.evtx"
 )
 
 func TestTemplateFunc(t *testing.T) {
@@ -57,7 +63,7 @@ func TestTemplateNodes(t *testing.T) {
 func TestRenderSysmon9(t *testing.T) {
 	logp.TestingSetup()
 
-	logHandle := openLog(t, "../../../x-pack/winlogbeat/module/sysmon/test/testdata/sysmon-9.01.evtx")
+	logHandle := openLog(t, sysmon9File)
 
 	defer logHandle.Close()
 
@@ -78,7 +84,7 @@ func TestRenderSysmon9(t *testing.T) {
 func TestRenderSecurityEventID4752(t *testing.T) {
 	logp.TestingSetup()
 
-	logHandle := openLog(t, "../../../x-pack/winlogbeat/module/security/test/testdata/4752.evtx")
+	logHandle := openLog(t, security4752File)
 	defer logHandle.Close()
 
 	r, err := NewRenderer()
@@ -169,8 +175,12 @@ func TestRenderApplicationWindowsErrorReporting1001(t *testing.T) {
 	}
 }
 
-func openLog(t *testing.T, log string) EvtHandle {
-	var flags EvtQueryFlag = EvtQueryReverseDirection
+func openLog(t *testing.T, log string, eventID ...string) EvtHandle {
+	var (
+		err   error
+		path               = log
+		flags EvtQueryFlag = EvtQueryReverseDirection
+	)
 
 	if info, err := os.Stat(log); err == nil && info.Mode().IsRegular() {
 		flags |= EvtQueryFilePath
@@ -178,7 +188,23 @@ func openLog(t *testing.T, log string) EvtHandle {
 		flags |= EvtQueryChannelPath
 	}
 
-	h, err := EvtQuery(NilHandle, log, "", flags)
+	var query string
+	if len(eventID) > 0 {
+		// Convert to URI.
+		abs, err := filepath.Abs(log)
+		if err != nil {
+			t.Fatal(err)
+		}
+		path = "file://" + filepath.ToSlash(abs)
+
+		query, err = Query{Log: path, EventID: strings.Join(eventID, ",")}.Build()
+		if err != nil {
+			t.Fatal(err)
+		}
+		path = ""
+	}
+
+	h, err := EvtQuery(NilHandle, path, query, EvtQueryFilePath)
 	if err != nil {
 		t.Fatal("failed to open log", log, err)
 	}

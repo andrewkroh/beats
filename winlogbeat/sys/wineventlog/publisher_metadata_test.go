@@ -15,12 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// +build windows
+
 package wineventlog
 
 import (
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/sys/windows"
 )
 
 func TestPublisherMetadata(t *testing.T) {
@@ -216,4 +220,9 @@ func testPublisherMetadata(t *testing.T, provider string) {
 			}
 		})
 	})
+}
+
+func TestNewPublisherMetadataUnknown(t *testing.T) {
+	_, err := NewPublisherMetadata(NilHandle, "Fake-Publisher")
+	assert.Equal(t, windows.ERROR_FILE_NOT_FOUND, errors.Cause(err))
 }

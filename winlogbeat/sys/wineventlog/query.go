@@ -49,8 +49,8 @@ var (
 // Query that identifies the source of the events and one or more selectors or
 // suppressors.
 type Query struct {
-	// Name of the channel or the path to the log file that contains the events
-	// to query.
+	// Name of the channel or the URI path to the log file that contains the
+	// events to query. The path to files must be a URI like file://C:/log.evtx.
 	Log string
 
 	IgnoreOlder time.Duration // Ignore records older than this time period.
