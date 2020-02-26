@@ -57,6 +57,17 @@ func New(log *logp.Logger, mux *http.ServeMux, config *common.Config) (*Server, 
 	return &Server{mux: mux, l: l, config: cfg, log: log.Named("api")}, nil
 }
 
+// Handle registers the handler for the given pattern.
+// If a handler already exists for pattern, Handle panics.
+func (s *Server) Handle(pattern string, handler http.Handler) {
+	s.mux.Handle(pattern, handler)
+}
+
+// HandleFunc registers the handler function for the given pattern.
+func (s *Server) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+	s.mux.HandleFunc(pattern, handler)
+}
+
 // Start starts the HTTP server and accepting new connection.
 func (s *Server) Start() {
 	s.log.Info("Starting stats endpoint")

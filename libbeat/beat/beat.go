@@ -18,6 +18,8 @@
 package beat
 
 import (
+	"net/http"
+
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/management"
 )
@@ -66,6 +68,11 @@ type Beat struct {
 	Fields []byte // Data from fields.yml
 
 	ConfigManager management.ConfigManager // config manager
+
+	APIServer interface {
+		Handle(pattern string, handler http.Handler)
+		HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	}
 }
 
 // BeatConfig struct contains the basic configuration of every beat

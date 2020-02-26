@@ -400,6 +400,7 @@ func (b *Beat) launch(settings Settings, bt beat.Creator) error {
 		}
 		s.Start()
 		defer s.Stop()
+		b.APIServer = s
 	}
 
 	if err = seccomp.LoadFilter(b.Config.Seccomp); err != nil {
