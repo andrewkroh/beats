@@ -24,6 +24,7 @@ package beater
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -159,6 +160,12 @@ func (eb *Winlogbeat) Run(b *beat.Beat) error {
 		ctx, cancel := context.WithTimeout(context.Background(), eb.config.ShutdownTimeout)
 		defer cancel()
 		acker.Wait(ctx)
+	}
+
+	if eb.beat.APIServer != nil {
+		eb.beat.APIServer.HandleFunc("/ui", func(writer http.ResponseWriter, request *http.Request) {
+			writer.Write([]byte("Hello Winlogbeat world!"))
+		})
 	}
 
 	return nil
