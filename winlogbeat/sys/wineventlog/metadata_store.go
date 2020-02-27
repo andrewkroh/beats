@@ -40,12 +40,13 @@ var (
 )
 
 type publisherMetadataStore struct {
-	Metadata *PublisherMetadata
-	Keywords map[int64]string
-	Opcodes  map[uint8]string
-	Levels   map[uint8]string
-	Tasks    map[uint16]string
-	Events   map[uint16]*eventMetadata
+	Metadata          *PublisherMetadata
+	Keywords          map[int64]string
+	Opcodes           map[uint8]string
+	Levels            map[uint8]string
+	Tasks             map[uint16]string
+	Events            map[uint16]*eventMetadata
+	EventFingerprints map[uint16]map[uint64]*eventMetadata
 
 	log *logp.Logger
 }
@@ -55,7 +56,11 @@ func newPublisherMetadataStore(session EvtHandle, provider string, log *logp.Log
 	if err != nil {
 		return nil, err
 	}
-	store := &publisherMetadataStore{Metadata: md, log: log.With("publisher", provider)}
+	store := &publisherMetadataStore{
+		Metadata:          md,
+		EventFingerprints: map[uint16]map[uint64]*eventMetadata{},
+		log:               log.With("publisher", provider),
+	}
 
 	// Query the provider metadata to build an in-memory cache of the
 	// information to optimize event reading.
@@ -75,12 +80,13 @@ func newPublisherMetadataStore(session EvtHandle, provider string, log *logp.Log
 
 func newEmptyPublisherMetadataStore(provider string, log *logp.Logger) *publisherMetadataStore {
 	return &publisherMetadataStore{
-		Keywords: map[int64]string{},
-		Opcodes:  map[uint8]string{},
-		Levels:   map[uint8]string{},
-		Tasks:    map[uint16]string{},
-		Events:   map[uint16]*eventMetadata{},
-		log:      log.With("publisher", provider, "empty", true),
+		Keywords:          map[int64]string{},
+		Opcodes:           map[uint8]string{},
+		Levels:            map[uint8]string{},
+		Tasks:             map[uint16]string{},
+		Events:            map[uint16]*eventMetadata{},
+		EventFingerprints: map[uint16]map[uint64]*eventMetadata{},
+		log:               log.With("publisher", provider, "empty", true),
 	}
 }
 
@@ -146,8 +152,7 @@ func (s *publisherMetadataStore) initEvents() error {
 	for itr.Next() {
 		evt, err := newEventMetadataFromPublisherMetadata(itr, s.Metadata)
 		if err != nil {
-			s.log.Warn("Failed to read metadata from publisher for event.",
-				"event.code", evt.EventID,
+			s.log.Warnw("Failed to read metadata from publisher for event.",
 				"error", err)
 			continue
 		}
@@ -156,16 +161,54 @@ func (s *publisherMetadataStore) initEvents() error {
 	return itr.Err()
 }
 
-func (s *publisherMetadataStore) getEventMetadata(eventID uint16) *eventMetadata {
-	return s.Events[eventID]
-}
+func (s *publisherMetadataStore) getEventMetadata(eventID uint16, eventDataFingerprint uint64, eventHandle EvtHandle) *eventMetadata {
+	fingerprints, found := s.EventFingerprints[eventID]
+	if !found {
+		fingerprints = map[uint64]*eventMetadata{}
+		s.EventFingerprints[eventID] = fingerprints
+	}
 
-func (s *publisherMetadataStore) addEventMetadata(eventHandle EvtHandle) *eventMetadata {
+	em, found := fingerprints[eventDataFingerprint]
+	if found {
+		return em
+	}
+
+	// To ensure we always match the correct event data parameter names to
+	// values we will rely a fingerprint made of the number of event data
+	// properties and each of their EvtVariant type values.
+	//
+	// The first time we observe a new fingerprint value we get the XML
+	// representation of the event in order to know the parameter names.
+	// If they turn out to match the values that we got from the provider's
+	// metadata then we just associate the fingerprint with a pointer to the
+	// providers metadata for the event ID.
+
+	defaultEM := s.Events[eventID]
+
+	// Use XML to get the parameters names.
 	em, err := newEventMetadataFromEventHandle(s.Metadata, eventHandle)
 	if err != nil {
-		return nil
+		if defaultEM != nil {
+			fingerprints[eventDataFingerprint] = defaultEM
+		}
+		return defaultEM
 	}
-	s.Events[em.EventID] = em
+
+	// Are the parameters the same as what the provider metadata listed?
+	// This ignores the message values.
+	if em.equal(defaultEM) {
+		fingerprints[eventDataFingerprint] = defaultEM
+		return defaultEM
+	}
+
+	// If we couldn't get a message from the event handle use the one
+	// from the installed provider metadata.
+	if defaultEM != nil && em.MsgStatic == "" && em.MsgTemplate == nil {
+		em.MsgStatic = defaultEM.MsgStatic
+		em.MsgTemplate = defaultEM.MsgTemplate
+	}
+
+	fingerprints[eventDataFingerprint] = em
 	return em
 }
 
@@ -205,8 +248,14 @@ func newEventMetadataFromEventHandle(publisher *PublisherMetadata, eventHandle E
 		EventID: uint16(event.EventIdentifier.ID),
 		Version: uint8(event.Version),
 	}
-	for _, pair := range event.EventData.Pairs {
-		em.EventData = append(em.EventData, EventData{Name: pair.Key})
+	if len(event.EventData.Pairs) > 0 {
+		for _, pair := range event.EventData.Pairs {
+			em.EventData = append(em.EventData, EventData{Name: pair.Key})
+		}
+	} else {
+		for _, pair := range event.UserData.Pairs {
+			em.EventData = append(em.EventData, EventData{Name: pair.Key})
+		}
 	}
 
 	// The message template is only available from the publisher metadata. This
@@ -313,6 +362,31 @@ func (em *eventMetadata) setMessage(msg string) error {
 		em.MsgTemplate = tmpl
 	}
 	return nil
+}
+
+func (em *eventMetadata) equal(other *eventMetadata) bool {
+	if em == other {
+		return true
+	}
+	if em == nil || other == nil {
+		return false
+	}
+
+	eventDataNamesEqual := func(a, b []EventData) bool {
+		if len(a) != len(b) {
+			return false
+		}
+		for n, v := range a {
+			if v.Name != b[n].Name {
+				return false
+			}
+		}
+		return true
+	}
+
+	return em.EventID == other.EventID &&
+		em.Version == other.Version &&
+		eventDataNamesEqual(em.EventData, other.EventData)
 }
 
 // --- Template Funcs

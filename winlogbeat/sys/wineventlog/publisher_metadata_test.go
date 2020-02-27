@@ -30,6 +30,8 @@ import (
 func TestPublisherMetadata(t *testing.T) {
 	// Modern Application
 	testPublisherMetadata(t, "Microsoft-Windows-PowerShell")
+	// Modern Application that uses UserData in XML
+	testPublisherMetadata(t, "Microsoft-Windows-Eventlog")
 	// Classic with messages (no event-data XML templates).
 	testPublisherMetadata(t, "Microsoft-Windows-Security-SPP")
 	// Classic without message metadata (no event-data XML templates).

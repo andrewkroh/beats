@@ -21,12 +21,14 @@ package wineventlog
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"strconv"
 	"text/template"
 	"time"
 	"unsafe"
 
+	"github.com/cespare/xxhash"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
@@ -87,16 +89,15 @@ func (r *Renderer) Render(handle EvtHandle) (*sys.Event, error) {
 		errs = append(errs, err)
 	}
 
-	eventData, err := r.renderUser(handle, event)
+	eventData, fingerprint, err := r.renderUser(handle, event)
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, "failed to render event data"))
 	}
 
+	r.log.Infow("event fingerprint", "event.code", event.EventIdentifier.ID, "fingerprint", fingerprint)
+
 	// Load cached event metadata or try to bootstrap it from the event's XML.
-	eventMetadata := md.getEventMetadata(uint16(event.EventIdentifier.ID))
-	if eventMetadata == nil {
-		eventMetadata = md.addEventMetadata(handle)
-	}
+	eventMetadata := md.getEventMetadata(uint16(event.EventIdentifier.ID), fingerprint, handle)
 
 	// Associate raw system properties to names (e.g. level=2 to Error).
 	enrichRawValuesWithNames(md, event)
@@ -192,21 +193,27 @@ func (r *Renderer) renderSystem(handle EvtHandle, event *sys.Event) error {
 	return nil
 }
 
-func (r *Renderer) renderUser(handle EvtHandle, event *sys.Event) ([]interface{}, error) {
+func (r *Renderer) renderUser(handle EvtHandle, event *sys.Event) ([]interface{}, uint64, error) {
 	bb, propertyCount, err := r.render(r.userContext, handle)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get user values")
+		return nil, 0, errors.Wrap(err, "failed to get user values")
 	}
 	defer bb.free()
 
 	if propertyCount == 0 {
-		return nil, nil
+		return nil, 0, nil
 	}
+
+	// Fingerprint the argument types to help ensure we match these values with
+	// the correct event data parameter names.
+	argumentHash := xxhash.New()
+	binary.Write(argumentHash, binary.LittleEndian, propertyCount)
 
 	parameters := make([]interface{}, propertyCount)
 	for i := 0; i < propertyCount; i++ {
 		offset := i * int(sizeofEvtVariant)
 		evtVar := (*EvtVariant)(unsafe.Pointer(&bb.buf[offset]))
+		binary.Write(argumentHash, binary.LittleEndian, uint32(evtVar.Type))
 
 		parameters[i], err = evtVar.Data(bb.buf)
 		if err != nil {
@@ -219,7 +226,7 @@ func (r *Renderer) renderUser(handle EvtHandle, event *sys.Event) ([]interface{}
 			)
 		}
 	}
-	return parameters, nil
+	return parameters, argumentHash.Sum64(), nil
 }
 
 func (r *Renderer) render(context EvtHandle, eventHandle EvtHandle) (*byteBuffer, int, error) {
