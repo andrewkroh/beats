@@ -3,6 +3,7 @@
 package wineventlog
 
 import (
+	"github.com/pkg/errors"
 	"go.uber.org/multierr"
 	"golang.org/x/sys/windows"
 )
@@ -10,7 +11,8 @@ import (
 const maxEvtNextHandles = 1024
 
 type EventIterator struct {
-	subscription EvtHandle                    // Handle from EvtQuery or EvtSubscription.
+	subscriptionFactory SubscriptionFactory          // Factory for producing a new subscription handle.
+	subscription EvtHandle // Handle from EvtQuery or EvtSubscription.
 	batchSize    uint32                       // Number of handles to request by default.
 	handles      [maxEvtNextHandles]EvtHandle // Handles returned by EvtNext.
 	read         int                          // Current read index of handles.
@@ -18,20 +20,41 @@ type EventIterator struct {
 	lastErr      error                        // Last error returned by EvtNext.
 }
 
+type EventIteratorOption func(*EventIterator)
+
+func WithBatchSize(size int) EventIteratorOption {
+	return func(itr *EventIterator) {
+		if size > 0 {
+			itr.batchSize = uint32(size)
+		}
+		if size > maxEvtNextHandles {
+			itr.batchSize = 1024
+		}
+	}
+}
+
+type SubscriptionFactory func() (EvtHandle, error)
+
 // NewEventIterator creates a new iterator for the given EvtQuery or EvtSubscription
 // handle. The batchSize is the number of handles the iterator will request
 // when it calls EvtNext. batchSize must be less than 1024 (a reasonable value
 // is 512, too big and you can hit windows.RPC_S_INVALID_BOUND errors depending
 // on the size of the events).
-func NewEventIterator(subscription EvtHandle, batchSize uint32) EventIterator {
-	if batchSize > maxEvtNextHandles {
-		batchSize = 1024
+func NewEventIterator(subscription SubscriptionFactory, opts ...EventIteratorOption) (*EventIterator, error) {
+	handle, err := subscription()
+	if err != nil {
+		return nil, err
+	}
+	itr := &EventIterator{
+		subscriptionFactory: subscription,
+		subscription: handle,
+		batchSize: 512,
+	}
+	for _, opt := range opts {
+		opt(itr)
 	}
 
-	return EventIterator{
-		subscription: subscription,
-		batchSize:    batchSize,
-	}
+	return itr, nil
 }
 
 // Next advances the iterator to the next handle. After Next returns false, the
@@ -43,18 +66,40 @@ func (itr *EventIterator) Next() bool {
 		return true
 	}
 
-	var numReturned uint32
-	if err := _EvtNext(itr.subscription, itr.batchSize, &itr.handles[0], 0, 0, &numReturned); err != nil {
-		if windows.ERROR_NO_MORE_ITEMS != err {
-			itr.lastErr = err
-		}
-		return false
-	}
-
-	itr.read = 0
-	itr.length = int(numReturned)
-	return true
+	return itr.moreHandles()
 }
+
+func (itr *EventIterator) moreHandles() bool {
+	itr.read, itr.length = 0, 0
+
+	var numReturned, batchSize uint32 = 0, itr.batchSize
+	for batchSize > 0 {
+		err := _EvtNext(itr.subscription, batchSize, &itr.handles[0], 0, 0, &numReturned)
+		switch err {
+		case nil:
+			itr.length = int(numReturned)
+			return true
+		case windows.RPC_S_INVALID_BOUND:
+			batchSize /= 2
+			itr.lastErr = err
+			itr.subscription.Close()
+			itr.subscription = NilHandle
+			itr.subscription, err = itr.subscriptionFactory()
+			if err != nil {
+				itr.lastErr = errors.Wrap(err, "failed to recover from RPC_S_INVALID_BOUND error")
+				return false
+			}
+			continue
+		case windows.ERROR_NO_MORE_ITEMS:
+			return false
+		default:
+			itr.lastErr = err
+			return false
+		}
+	}
+	return false
+}
+
 
 // Handle returns the most recent handle read by Next(). You must Close() the
 // returned Handle().
@@ -79,6 +124,10 @@ func (itr *EventIterator) Err() error {
 // Close closes any handles that were not iterated.
 func (itr *EventIterator) Close() error {
 	var errs []error
+	if err := itr.subscription.Close(); err != nil {
+		itr.subscription = NilHandle
+		errs = append(errs, err)
+	}
 	for i := itr.read; i < itr.length; i++ {
 		if err := itr.handles[i].Close(); err != nil {
 			errs = append(errs, err)
