@@ -25,8 +25,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/joeshaw/multierror"
 	"github.com/pkg/errors"
+	"go.uber.org/multierr"
 	"golang.org/x/sys/windows"
 
 	"github.com/elastic/beats/libbeat/common"
@@ -62,12 +62,10 @@ var defaultWinEventLogExpConfig = winEventLogExpConfig{
 // Validate validates the winEventLogExpConfig data and returns an error describing
 // any problems or nil.
 func (c *winEventLogExpConfig) Validate() error {
-	var errs multierror.Errors
 	if c.Name == "" {
-		errs = append(errs, fmt.Errorf("event log is missing a 'name'"))
+		return fmt.Errorf("event log is missing a 'name'")
 	}
-
-	return errs.Err()
+	return nil
 }
 
 // Validate that winEventLogExp implements the EventLog interface.
@@ -76,15 +74,15 @@ var _ EventLog = &winEventLogExp{}
 // winEventLogExp implements the EventLog interface for reading from the Windows
 // Event Log API.
 type winEventLogExp struct {
-	config       winEventLogExpConfig
-	query        string
-	channelName  string                   // Name of the channel from which to read.
-	file         bool                     // Reading from file rather than channel.
-	subscription win.EvtHandle            // Handle to the subscription.
-	maxRead      int                      // Maximum number returned in one Read.
-	lastRead     checkpoint.EventLogState // Record number of the last read event.
-	log          *logp.Logger
+	config      winEventLogExpConfig
+	query       string
+	channelName string                   // Name of the channel from which to read.
+	file        bool                     // Reading from file rather than channel.
+	maxRead     int                      // Maximum number returned in one Read.
+	lastRead    checkpoint.EventLogState // Record number of the last read event.
+	log         *logp.Logger
 
+	iterator *win.EventIterator
 	renderer *win.Renderer
 }
 
@@ -94,17 +92,26 @@ func (l *winEventLogExp) Name() string {
 }
 
 func (l *winEventLogExp) Open(state checkpoint.EventLogState) error {
-	var bookmark win.EvtHandle
+	l.lastRead = state
+
 	var err error
+	l.iterator, err = win.NewEventIterator(func() (handle win.EvtHandle, err error) {
+		return l.open(l.lastRead)
+	}, win.WithBatchSize(l.maxRead))
+
+	return err
+}
+
+func (l *winEventLogExp) open(state checkpoint.EventLogState) (win.EvtHandle, error) {
+	var bookmark win.Bookmark
 	if len(state.Bookmark) > 0 {
-		bookmark, err = win.CreateBookmarkFromXML(state.Bookmark)
-	} else if state.RecordNumber > 0 {
-		bookmark, err = win.CreateBookmarkFromRecordID(l.channelName, state.RecordNumber)
+		var err error
+		bookmark, err = win.NewBookmarkFromXML(state.Bookmark)
+		if err != nil {
+			return win.NilHandle, err
+		}
+		defer bookmark.Close()
 	}
-	if err != nil {
-		return err
-	}
-	defer win.Close(bookmark)
 
 	if l.file {
 		return l.openFile(state, bookmark)
@@ -112,12 +119,12 @@ func (l *winEventLogExp) Open(state checkpoint.EventLogState) error {
 	return l.openChannel(bookmark)
 }
 
-func (l *winEventLogExp) openChannel(bookmark win.EvtHandle) error {
+func (l *winEventLogExp) openChannel(bookmark win.Bookmark) (win.EvtHandle, error) {
 	// Using a pull subscription to receive events. See:
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa385771(v=vs.85).aspx#pull
 	signalEvent, err := windows.CreateEvent(nil, 0, 0, nil)
 	if err != nil {
-		return nil
+		return win.NilHandle, err
 	}
 	defer windows.CloseHandle(signalEvent)
 
@@ -129,27 +136,21 @@ func (l *winEventLogExp) openChannel(bookmark win.EvtHandle) error {
 	}
 
 	l.log.Debugw("Using subscription query.", "winlog.query", l.query)
-	subscriptionHandle, err := win.Subscribe(
+	return win.Subscribe(
 		0, // Session - nil for localhost
 		signalEvent,
-		"",       // Channel - empty b/c channel is in the query
-		l.query,  // Query - nil means all events
-		bookmark, // Bookmark - for resuming from a specific event
+		"",                      // Channel - empty b/c channel is in the query
+		l.query,                 // Query - nil means all events
+		win.EvtHandle(bookmark), // Bookmark - for resuming from a specific event
 		flags)
-	if err != nil {
-		return err
-	}
-
-	l.subscription = subscriptionHandle
-	return nil
 }
 
-func (l *winEventLogExp) openFile(state checkpoint.EventLogState, bookmark win.EvtHandle) error {
+func (l *winEventLogExp) openFile(state checkpoint.EventLogState, bookmark win.Bookmark) (win.EvtHandle, error) {
 	path := l.channelName
 
 	h, err := win.EvtQuery(0, path, "", win.EvtQueryFilePath|win.EvtQueryForwardDirection)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get handle to event log file %v", path)
+		return win.NilHandle, errors.Wrapf(err, "failed to get handle to event log file %v", path)
 	}
 
 	if bookmark > 0 {
@@ -158,11 +159,11 @@ func (l *winEventLogExp) openFile(state checkpoint.EventLogState, bookmark win.E
 
 		// This seeks to the last read event and strictly validates that the
 		// bookmarked record number exists.
-		if err = win.EvtSeek(h, 0, bookmark, win.EvtSeekRelativeToBookmark|win.EvtSeekStrict); err == nil {
+		if err = win.EvtSeek(h, 0, win.EvtHandle(bookmark), win.EvtSeekRelativeToBookmark|win.EvtSeekStrict); err == nil {
 			// Then we advance past the last read event to avoid sending that
 			// event again. This won't fail if we're at the end of the file.
 			err = errors.Wrap(
-				win.EvtSeek(h, 1, bookmark, win.EvtSeekRelativeToBookmark),
+				win.EvtSeek(h, 1, win.EvtHandle(bookmark), win.EvtSeekRelativeToBookmark),
 				"failed to seek past bookmarked position")
 		} else {
 			l.log.Warnf("s Failed to seek to bookmarked location in %v (error: %v). "+
@@ -174,60 +175,56 @@ func (l *winEventLogExp) openFile(state checkpoint.EventLogState, bookmark win.E
 		}
 
 		if err != nil {
-			return err
+			return win.NilHandle, err
 		}
 	}
 
-	l.subscription = h
-	return nil
+	return h, err
 }
 
 func (l *winEventLogExp) Read() ([]Record, error) {
-	batchSize := l.maxRead
-	for {
-		records, err := l.read(batchSize)
-		if windows.RPC_S_INVALID_BOUND == err && batchSize/2 > 0 {
-			batchSize /= 2
-			incrementMetric(readErrors, err)
-			if err := l.Close(); err != nil {
-				return nil, errors.Wrap(err, "failed to recover from RPC_S_INVALID_BOUND")
-			}
-			if err := l.Open(l.lastRead); err != nil {
-				return nil, errors.Wrap(err, "failed to recover from RPC_S_INVALID_BOUND")
-			}
-			continue
-		} else if err == nil && Stop == l.config.NoMoreEvents {
-			err = io.EOF
-		}
-		l.log.Debugf("Read() is returning %d records.", len(records))
-		return records, err
-	}
-}
-
-func (l *winEventLogExp) read(size int) ([]Record, error) {
-	itr := win.NewEventIterator(l.subscription, size)
-	defer itr.Close()
-
 	var records []Record
-	for itr.Next() {
-		r, err := l.processHandle(itr.Handle())
+	for l.iterator.Next() {
+		record, err := l.processHandle(l.iterator.Handle())
 		if err != nil {
 			l.log.Warnw("Dropping event due to rendering error.", "error", err)
 			incrementMetric(dropReasons, err)
 			continue
 		}
-		records = append(records, *r)
+		records = append(records, *record)
+
+		// It has read the maximum requested number of events.
+		if len(records) >= l.maxRead {
+			return records, nil
+		}
 	}
-	return records, itr.Err()
+
+	// An error occurred while retrieving more events.
+	if err := l.iterator.Err(); err != nil {
+		return records, err
+	}
+
+	// Reader is configured to stop when there are no more events.
+	if Stop == l.config.NoMoreEvents {
+		return records, io.EOF
+	}
+
+	return records, nil
 }
 
 func (l *winEventLogExp) processHandle(h win.EvtHandle) (*Record, error) {
 	defer h.Close()
 
+	// NOTE: Render can return an error and a partial event.
 	evt, err := l.renderer.Render(h)
-	if err != nil {
+	if evt == nil {
 		return nil, err
 	}
+	if err != nil {
+		evt.RenderErr = append(evt.RenderErr, err.Error())
+	}
+
+	// TODO: Need to add XML when configured.
 
 	r := &Record{
 		API:   winEventLogExpAPIName,
@@ -261,8 +258,11 @@ func (l *winEventLogExp) createBookmarkFromEvent(evtHandle win.EvtHandle) (strin
 }
 
 func (l *winEventLogExp) Close() error {
-	l.log.Debug("Closing subscription handle.")
-	return l.subscription.Close()
+	l.log.Debug("Closing event log reader handles.")
+	return multierr.Combine(
+		l.iterator.Close(),
+		l.renderer.Close(),
+	)
 }
 
 // newWinEventLogExp creates and returns a new EventLog for reading event logs
@@ -275,7 +275,7 @@ func newWinEventLogExp(options *common.Config) (EventLog, error) {
 
 	queryLog := c.Name
 	isFile := false
-	if info, err := os.Stat(c.Name); err != nil && info.Mode().IsRegular() {
+	if info, err := os.Stat(c.Name); err == nil && info.Mode().IsRegular() {
 		path, err := filepath.Abs(c.Name)
 		if err != nil {
 			return nil, err
@@ -317,6 +317,6 @@ func init() {
 	// Register wineventlog API if it is available.
 	available, _ := win.IsAvailable()
 	if available {
-		Register(winEventLogExpAPIName, 0, newWinEventLogExp, win.Channels)
+		Register(winEventLogExpAPIName, 10, newWinEventLogExp, win.Channels)
 	}
 }

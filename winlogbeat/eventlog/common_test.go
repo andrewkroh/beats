@@ -28,6 +28,7 @@ type factory func(*common.Config) (EventLog, error)
 type teardown func()
 
 func fatalErr(t *testing.T, err error) {
+	t.Helper()
 	if err != nil {
 		t.Fatal(err)
 	}

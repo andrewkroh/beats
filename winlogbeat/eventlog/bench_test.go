@@ -22,7 +22,6 @@ package eventlog
 import (
 	"bytes"
 	"flag"
-	"io"
 	"math/rand"
 	"os/exec"
 	"strconv"
@@ -37,7 +36,7 @@ import (
 
 var (
 	benchTest    = flag.Bool("benchtest", false, "Run benchmarks for the eventlog package")
-	injectAmount = flag.Int("inject", 500000, "Number of events to inject before running benchmarks")
+	injectAmount = flag.Int("inject", 1E6, "Number of events to inject before running benchmarks")
 )
 
 // TestBenchmarkBatchReadSize tests the performance of different
@@ -85,9 +84,6 @@ func TestBenchmarkBatchReadSize(t *testing.T) {
 			// Each iteration reads one batch.
 			for i := 0; i < b.N; i++ {
 				_, err = eventlog.Read()
-				if err == io.EOF {
-					return
-				}
 				if err != nil {
 					b.Fatal(err)
 					return

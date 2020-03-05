@@ -106,7 +106,7 @@ func TestReadLargeBatchSize(t *testing.T) {
 
 	t.Logf("number of records returned: %v", eventCount)
 
-	wineventlog := eventlog.(*winEventLog)
+	wineventlog := eventlog.(*winEventLogExp)
 	assert.Equal(t, 1024, wineventlog.maxRead)
 
 	expvar.Do(func(kv expvar.KeyValue) {
@@ -137,5 +137,5 @@ func TestReadEvtxFile(t *testing.T) {
 }
 
 func setupWinEventLog(t *testing.T, recordID uint64, options map[string]interface{}) (EventLog, func()) {
-	return setupEventLog(t, newWinEventLog, recordID, options)
+	return setupEventLog(t, newWinEventLogExp, recordID, options)
 }

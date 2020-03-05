@@ -68,10 +68,16 @@ func NewRenderer() (*Renderer, error) {
 }
 
 func (r *Renderer) Close() error {
-	return multierr.Combine(
-		r.systemContext.Close(),
-		r.userContext.Close(),
-	)
+	errs := []error{r.systemContext.Close(), r.userContext.Close()}
+	for _, md := range r.metadataCache {
+		if md.Metadata == nil {
+			continue
+		}
+		if err := md.Metadata.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return multierr.Combine(errs...)
 }
 
 func (r *Renderer) Render(handle EvtHandle) (*sys.Event, error) {
