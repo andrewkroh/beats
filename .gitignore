@@ -3,6 +3,7 @@
 /.idea
 /.vscode
 /build
+/bazel-*
 /*/*.template*.json
 **/html_docs
 *beat/fields.yml
