@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "alerts.go",
+        "algos.go",
+        "buffer.go",
+        "config.go",
+        "extensions.go",
+        "fields.go",
+        "fingerprint.go",
+        "ja3.go",
+        "parse.go",
+        "tls.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/packetbeat/protos/tls",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/streambuf:go_default_library",
+        "//libbeat/common/x509util:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//packetbeat/config:go_default_library",
+        "//packetbeat/pb:go_default_library",
+        "//packetbeat/procs:go_default_library",
+        "//packetbeat/protos:go_default_library",
+        "//packetbeat/protos/applayer:go_default_library",
+        "//packetbeat/protos/tcp:go_default_library",
+        "@com_github_elastic_ecs//code/go/ecs:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "alerts_test.go",
+        "buffer_test.go",
+        "extensions_test.go",
+        "fingerprint_test.go",
+        "ja3_test.go",
+        "parse_test.go",
+        "tls_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/streambuf:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//packetbeat/protos:go_default_library",
+        "//packetbeat/publish:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

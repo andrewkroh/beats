@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["logger.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/core/logger",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/file:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/logp/configure:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/application/paths:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        "@co_elastic_go_ecszap//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+        "@org_uber_go_zap//zapcore:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["logger_test.go"],
+    embed = [":go_default_library"],
+)

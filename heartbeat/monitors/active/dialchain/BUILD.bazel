@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "dialchain.go",
+        "dialers.go",
+        "socks5.go",
+        "tls.go",
+        "util.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/heartbeat/monitors/active/dialchain",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//heartbeat/eventext:go_default_library",
+        "//heartbeat/look:go_default_library",
+        "//heartbeat/monitors/active/dialchain/tlsmeta:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/transport:go_default_library",
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "//libbeat/logp:go_default_library",
+    ],
+)

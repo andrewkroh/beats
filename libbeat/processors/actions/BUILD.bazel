@@ -1,0 +1,63 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add_fields.go",
+        "add_labels.go",
+        "add_tags.go",
+        "copy_fields.go",
+        "decode_base64_field.go",
+        "decode_json_fields.go",
+        "decompress_gzip_field.go",
+        "drop_event.go",
+        "drop_fields.go",
+        "extract_field.go",
+        "include_fields.go",
+        "rename.go",
+        "replace.go",
+        "truncate_fields.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/actions",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/beat/events:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/jsontransform:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/processors/checks:go_default_library",
+        "//libbeat/processors/script/javascript/module/processor:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@org_uber_go_multierr//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "add_fields_test.go",
+        "add_labels_test.go",
+        "add_tags_test.go",
+        "common_test.go",
+        "copy_fields_test.go",
+        "decode_base64_field_test.go",
+        "decode_json_fields_test.go",
+        "decompress_gzip_field_test.go",
+        "extract_field_test.go",
+        "include_fields_test.go",
+        "rename_test.go",
+        "replace_test.go",
+        "truncate_fields_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

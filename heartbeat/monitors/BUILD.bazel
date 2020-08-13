@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "factory.go",
+        "monitor.go",
+        "plugin.go",
+        "regrecord.go",
+        "resolver.go",
+        "task.go",
+        "util.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/heartbeat/monitors",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//heartbeat/eventext:go_default_library",
+        "//heartbeat/hbregistry:go_default_library",
+        "//heartbeat/look:go_default_library",
+        "//heartbeat/monitors/jobs:go_default_library",
+        "//heartbeat/monitors/stdfields:go_default_library",
+        "//heartbeat/monitors/wrappers:go_default_library",
+        "//heartbeat/scheduler:go_default_library",
+        "//heartbeat/scheduler/schedule:go_default_library",
+        "//heartbeat/watcher:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/cfgfile:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/plugin:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "@com_github_mitchellh_hashstructure//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "mocks_test.go",
+        "monitor_test.go",
+        "task_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//heartbeat/eventext:go_default_library",
+        "//heartbeat/hbtest:go_default_library",
+        "//heartbeat/hbtestllext:go_default_library",
+        "//heartbeat/monitors/jobs:go_default_library",
+        "//heartbeat/scheduler:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "@com_github_elastic_go_lookslike//:go_default_library",
+        "@com_github_elastic_go_lookslike//isdef:go_default_library",
+        "@com_github_elastic_go_lookslike//testslike:go_default_library",
+        "@com_github_elastic_go_lookslike//validator:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

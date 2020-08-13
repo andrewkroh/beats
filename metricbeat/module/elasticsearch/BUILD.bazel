@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "elasticsearch.go",
+        "fields.go",
+        "metricset.go",
+        "testing.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/elasticsearch",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/schema:go_default_library",
+        "//libbeat/common/schema/mapstriface:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//metricbeat/helper:go_default_library",
+        "//metricbeat/helper/elastic:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "//metricbeat/mb/testing:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["elasticsearch_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//metricbeat/mb/testing:go_default_library",
+        "//metricbeat/module/elasticsearch/ccr:go_default_library",
+        "//metricbeat/module/elasticsearch/cluster_stats:go_default_library",
+        "//metricbeat/module/elasticsearch/enrich:go_default_library",
+        "//metricbeat/module/elasticsearch/index:go_default_library",
+        "//metricbeat/module/elasticsearch/index_recovery:go_default_library",
+        "//metricbeat/module/elasticsearch/index_summary:go_default_library",
+        "//metricbeat/module/elasticsearch/ml_job:go_default_library",
+        "//metricbeat/module/elasticsearch/node_stats:go_default_library",
+        "//metricbeat/module/elasticsearch/shard:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

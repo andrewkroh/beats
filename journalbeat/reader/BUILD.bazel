@@ -1,0 +1,102 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "fields.go",
+        "journal.go",
+        "journal_other.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/journalbeat/reader",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//journalbeat/pkg/journalfield:go_default_library",
+        "//journalbeat/pkg/journalread:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//journalbeat/cmd/instance:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/common/backoff:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "@com_github_coreos_go_systemd_v22//sdjournal:go_default_library",
+            "@com_github_elastic_go_concert//ctxtool:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//journalbeat/cmd/instance:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/common/backoff:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "@com_github_coreos_go_systemd_v22//sdjournal:go_default_library",
+            "@com_github_elastic_go_concert//ctxtool:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//journalbeat/checkpoint:go_default_library",
+            "//libbeat/beat:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

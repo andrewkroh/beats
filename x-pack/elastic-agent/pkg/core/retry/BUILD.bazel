@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "error.go",
+        "retrystrategy.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/core/retry",
+    visibility = ["//visibility:public"],
+    deps = ["//libbeat/common/backoff:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["retrystrategy_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//libbeat/common/backoff:go_default_library"],
+)

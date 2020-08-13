@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "defs_service_windows_386.go",
+        "defs_service_windows_amd64.go",
+        "doc.go",
+        "reader.go",
+        "service.go",
+        "service_status.go",
+        "zservice_windows.go",
+    ],
+    cgo = True,
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/windows/service",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//windows:go_default_library",
+            "@org_golang_x_sys//windows/registry:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "reader_test.go",
+        "service_status_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "binary.go",
+        "codes.go",
+        "commands.go",
+        "config.go",
+        "errors.go",
+        "fields.go",
+        "memcache.go",
+        "parse.go",
+        "plugin_tcp.go",
+        "plugin_udp.go",
+        "text.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/packetbeat/protos/memcache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/streambuf:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//packetbeat/config:go_default_library",
+        "//packetbeat/procs:go_default_library",
+        "//packetbeat/protos:go_default_library",
+        "//packetbeat/protos/applayer:go_default_library",
+        "//packetbeat/protos/tcp:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "binary_test.go",
+        "memcache_test.go",
+        "parse_test.go",
+        "plugin_udp_test.go",
+        "text_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/streambuf:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "fields.go",
+        "list.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/auditbeat/include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//auditbeat/module/auditd:go_default_library",
+        "//auditbeat/module/file_integrity:go_default_library",
+        "//libbeat/asset:go_default_library",
+    ],
+)

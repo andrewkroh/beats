@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "ec2.go",
+        "fetch.go",
+        "provider.go",
+        "watch.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/libbeat/autodiscover/providers/aws/ec2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/autodiscover:go_default_library",
+        "//libbeat/autodiscover/template:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/bus:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/keystore:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//x-pack/libbeat/autodiscover/providers/aws:go_default_library",
+        "//x-pack/libbeat/common/aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2/ec2iface:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@org_uber_go_multierr//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "fetch_test.go",
+        "mock_ec2_client_test.go",
+        "mocks_test.go",
+        "provider_test.go",
+        "watch_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/bus:go_default_library",
+        "//libbeat/keystore:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//x-pack/libbeat/autodiscover/providers/aws:go_default_library",
+        "//x-pack/libbeat/autodiscover/providers/aws/test:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2/ec2iface:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "fixedthreadexecutor.go",
+        "loopback.go",
+        "probes.go",
+        "types.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/auditbeat/module/system/socket/helper",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android_386": [
+            "//libbeat/common:go_default_library",
+            "//x-pack/auditbeat/tracing:go_default_library",
+            "@com_github_joeshaw_multierror//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:android_amd64": [
+            "//libbeat/common:go_default_library",
+            "//x-pack/auditbeat/tracing:go_default_library",
+            "@com_github_joeshaw_multierror//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux_386": [
+            "//libbeat/common:go_default_library",
+            "//x-pack/auditbeat/tracing:go_default_library",
+            "@com_github_joeshaw_multierror//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux_amd64": [
+            "//libbeat/common:go_default_library",
+            "//x-pack/auditbeat/tracing:go_default_library",
+            "@com_github_joeshaw_multierror//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//unix:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

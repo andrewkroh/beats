@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "isdefs.go",
+        "validators.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/heartbeat/hbtestllext",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_elastic_go_lookslike//:go_default_library",
+        "@com_github_elastic_go_lookslike//isdef:go_default_library",
+        "@com_github_elastic_go_lookslike//llpath:go_default_library",
+        "@com_github_elastic_go_lookslike//llresult:go_default_library",
+    ],
+)

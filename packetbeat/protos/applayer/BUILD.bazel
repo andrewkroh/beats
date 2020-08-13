@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["applayer.go"],
+    importpath = "github.com/elastic/beats/v7/packetbeat/protos/applayer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/streambuf:go_default_library",
+        "//packetbeat/pb:go_default_library",
+    ],
+)

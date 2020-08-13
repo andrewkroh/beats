@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "azure.go",
+        "client.go",
+        "client_utils.go",
+        "data.go",
+        "doc.go",
+        "fields.go",
+        "mock_service.go",
+        "monitor_service.go",
+        "resources.go",
+        "service_interface.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/azure",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "@com_github_azure_azure_sdk_for_go//services/preview/monitor/mgmt/2019-06-01/insights:go_default_library",
+        "@com_github_azure_azure_sdk_for_go//services/resources/mgmt/2019-03-01/resources:go_default_library",
+        "@com_github_azure_go_autorest_autorest_azure_auth//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_stretchr_testify//mock:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "client_test.go",
+        "client_utils_test.go",
+        "data_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "@com_github_azure_azure_sdk_for_go//services/preview/monitor/mgmt/2019-06-01/insights:go_default_library",
+        "@com_github_azure_azure_sdk_for_go//services/resources/mgmt/2019-03-01/resources:go_default_library",
+        "@com_github_azure_go_autorest_autorest_date//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//mock:go_default_library",
+    ],
+)

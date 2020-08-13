@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "data.go",
+        "remote_write.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/prometheus/remote_write",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "//metricbeat/helper/server:go_default_library",
+        "//metricbeat/helper/server/http:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "@com_github_gogo_protobuf//proto:go_default_library",
+        "@com_github_golang_snappy//:go_default_library",
+        "@com_github_prometheus_common//model:go_default_library",
+        "@com_github_prometheus_prometheus//prompb:go_default_library",
+    ],
+)

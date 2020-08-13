@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "kind.go",
+        "kubectl.go",
+        "kuberemote.go",
+        "kubernetes.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/dev-tools/mage/kubernetes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev-tools/mage:go_default_library",
+        "@com_github_magefile_mage//mg:go_default_library",
+        "@com_github_magefile_mage//sh:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_api//rbac/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/api/errors:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/runtime/schema:go_default_library",
+        "@io_k8s_apimachinery//pkg/watch:go_default_library",
+        "@io_k8s_client_go//kubernetes:go_default_library",
+        "@io_k8s_client_go//rest:go_default_library",
+        "@io_k8s_client_go//tools/clientcmd:go_default_library",
+        "@io_k8s_client_go//tools/portforward:go_default_library",
+        "@io_k8s_client_go//tools/watch:go_default_library",
+        "@io_k8s_client_go//transport/spdy:go_default_library",
+        "@org_golang_x_crypto//ssh:go_default_library",
+    ],
+)

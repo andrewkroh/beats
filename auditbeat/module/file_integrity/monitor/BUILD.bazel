@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "filetree.go",
+        "monitor.go",
+        "nonrecursive.go",
+        "recursive.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/auditbeat/module/file_integrity/monitor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/logp:go_default_library",
+        "@com_github_fsnotify_fsnotify//:go_default_library",
+        "@com_github_joeshaw_multierror//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "filetree_test.go",
+        "monitor_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_fsnotify_fsnotify//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

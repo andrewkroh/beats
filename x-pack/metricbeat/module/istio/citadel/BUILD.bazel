@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["citadel.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/istio/citadel",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//metricbeat/helper/prometheus:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["citadel_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//metricbeat/mb/testing:go_default_library",
+        "//x-pack/metricbeat/module/istio:go_default_library",
+    ],
+)

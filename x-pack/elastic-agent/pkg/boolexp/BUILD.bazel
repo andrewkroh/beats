@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "boolexp.go",
+        "compare.go",
+        "expression.go",
+        "methods.go",
+        "visitor.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/boolexp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/boolexp/parser:go_default_library",
+        "@com_github_antlr_antlr4//runtime/Go/antlr:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["boolexp_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/boolexp/parser:go_default_library",
+        "@com_github_antlr_antlr4//runtime/Go/antlr:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

@@ -1,0 +1,125 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "filesystem.go",
+        "helper.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/system/filesystem",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/mb/parse:go_default_library",
+            "//metricbeat/module/system:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/mb/parse:go_default_library",
+            "//metricbeat/module/system:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/mb/parse:go_default_library",
+            "//metricbeat/module/system:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/mb/parse:go_default_library",
+            "//metricbeat/module/system:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/mb/parse:go_default_library",
+            "//metricbeat/module/system:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/mb/parse:go_default_library",
+            "//metricbeat/module/system:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/mb/parse:go_default_library",
+            "//metricbeat/module/system:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "filesystem_test.go",
+        "helper_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_elastic_gosigar//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

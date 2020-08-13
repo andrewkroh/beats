@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "coordinator.go",
+        "sync_client.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/functionbeat/function/core",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common/acker:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/publisher/pipetool:go_default_library",
+        "//x-pack/functionbeat/function/telemetry:go_default_library",
+        "@com_github_joeshaw_multierror//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "coordinator_test.go",
+        "sync_client_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//x-pack/functionbeat/function/telemetry:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

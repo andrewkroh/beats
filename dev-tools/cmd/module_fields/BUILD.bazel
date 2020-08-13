@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["module_fields.go"],
+    importpath = "github.com/elastic/beats/v7/dev-tools/cmd/module_fields",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/generator/fields:go_default_library",
+        "//licenses:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "module_fields",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

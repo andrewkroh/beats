@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["go-netflow-example.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/input/netflow/decoder/examples",
+    visibility = ["//visibility:private"],
+    deps = ["//x-pack/filebeat/input/netflow/decoder:go_default_library"],
+)
+
+go_binary(
+    name = "examples",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

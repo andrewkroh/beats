@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "beat.go",
+        "error.go",
+        "event.go",
+        "info.go",
+        "pipeline.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/beat",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/instrumentation:go_default_library",
+        "//libbeat/keystore:go_default_library",
+        "//libbeat/management:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["event_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

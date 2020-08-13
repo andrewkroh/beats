@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "counter.go",
+        "message_buffer.go",
+        "multiline.go",
+        "multiline_config.go",
+        "pattern.go",
+        "while.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/reader/multiline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common/match:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/reader:go_default_library",
+        "//libbeat/reader/readfile:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "message_buffer_test.go",
+        "multiline_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/match:go_default_library",
+        "//libbeat/reader:go_default_library",
+        "//libbeat/reader/readfile:go_default_library",
+        "//libbeat/reader/readfile/encoding:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

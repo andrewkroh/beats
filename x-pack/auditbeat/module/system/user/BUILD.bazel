@@ -1,0 +1,103 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "user.go",
+        "users_linux.go",
+        "users_other.go",
+    ],
+    cgo = True,
+    importpath = "github.com/elastic/beats/v7/x-pack/auditbeat/module/system/user",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "//auditbeat/datastore:go_default_library",
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//x-pack/auditbeat/cache:go_default_library",
+            "//x-pack/auditbeat/module/system:go_default_library",
+            "@com_github_cespare_xxhash_v2//:go_default_library",
+            "@com_github_gofrs_uuid//:go_default_library",
+            "@com_github_joeshaw_multierror//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//auditbeat/datastore:go_default_library",
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//x-pack/auditbeat/cache:go_default_library",
+            "//x-pack/auditbeat/module/system:go_default_library",
+            "@com_github_cespare_xxhash_v2//:go_default_library",
+            "@com_github_gofrs_uuid//:go_default_library",
+            "@com_github_joeshaw_multierror//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//metricbeat/mb:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["user_test.go"],
+    embed = [":go_default_library"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//auditbeat/core:go_default_library",
+            "//auditbeat/testing:go_default_library",
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_stretchr_testify//require:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//auditbeat/core:go_default_library",
+            "//auditbeat/testing:go_default_library",
+            "//metricbeat/mb/testing:go_default_library",
+            "@com_github_stretchr_testify//require:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

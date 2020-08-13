@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cassandra.go",
+        "config.go",
+        "fields.go",
+        "parser.go",
+        "pub.go",
+        "trans.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/packetbeat/protos/cassandra",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/streambuf:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//packetbeat/config:go_default_library",
+        "//packetbeat/pb:go_default_library",
+        "//packetbeat/procs:go_default_library",
+        "//packetbeat/protos:go_default_library",
+        "//packetbeat/protos/applayer:go_default_library",
+        "//packetbeat/protos/cassandra/internal/gocql:go_default_library",
+        "//packetbeat/protos/tcp:go_default_library",
+    ],
+)

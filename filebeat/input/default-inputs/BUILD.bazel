@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "inputs.go",
+        "inputs_linux.go",
+        "inputs_other.go",
+        "inputs_windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/input/default-inputs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/beater:go_default_library",
+        "//filebeat/input/unix:go_default_library",
+        "//filebeat/input/v2:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/logp:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//filebeat/input/v2/input-cursor:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//filebeat/input/v2/input-cursor:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//filebeat/input/v2/input-cursor:go_default_library",
+            "//filebeat/input/winlog:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

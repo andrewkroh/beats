@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["credentials.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/libbeat/common/aws",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/logp:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws/defaults:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws/external:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws/stscreds:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/sts:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["credentials_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

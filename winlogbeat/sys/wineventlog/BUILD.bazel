@@ -1,0 +1,70 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bookmark.go",
+        "bufferpool.go",
+        "doc.go",
+        "format_message.go",
+        "iterator.go",
+        "metadata_store.go",
+        "publisher_metadata.go",
+        "query.go",
+        "renderer.go",
+        "stringinserts.go",
+        "syscall_windows.go",
+        "template.go",
+        "wineventlog_windows.go",
+        "winmeta.go",
+        "zsyscall_windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/winlogbeat/sys/wineventlog",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "@com_github_joeshaw_multierror//:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/logp:go_default_library",
+            "//winlogbeat/sys:go_default_library",
+            "@com_github_cespare_xxhash_v2//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//windows:go_default_library",
+            "@org_uber_go_multierr//:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "bookmark_test.go",
+        "format_message_test.go",
+        "iterator_test.go",
+        "metadata_store_test.go",
+        "publisher_metadata_test.go",
+        "query_test.go",
+        "renderer_test.go",
+        "stringinserts_test.go",
+        "template_test.go",
+        "util_test.go",
+        "wineventlog_windows_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/common/atomic:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//winlogbeat/sys:go_default_library",
+            "@com_github_andrewkroh_sys//windows/svc/eventlog:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//windows:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

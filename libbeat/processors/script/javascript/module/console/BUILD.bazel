@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["console.go"],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/script/javascript/module/console",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/logp:go_default_library",
+        "@com_github_dop251_goja//:go_default_library",
+        "@com_github_dop251_goja_nodejs//require:go_default_library",
+        "@com_github_dop251_goja_nodejs//util:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["console_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/processors/script/javascript:go_default_library",
+        "//libbeat/processors/script/javascript/module/require:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+    ],
+)

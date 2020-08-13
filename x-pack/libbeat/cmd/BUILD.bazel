@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "enroll.go",
+        "inject.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/libbeat/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/cmd:go_default_library",
+        "//libbeat/cmd/instance:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/cli:go_default_library",
+        "//x-pack/libbeat/autodiscover/providers/aws/ec2:go_default_library",
+        "//x-pack/libbeat/autodiscover/providers/aws/elb:go_default_library",
+        "//x-pack/libbeat/licenser:go_default_library",
+        "//x-pack/libbeat/management:go_default_library",
+        "//x-pack/libbeat/management/api:go_default_library",
+        "//x-pack/libbeat/management/fleet:go_default_library",
+        "//x-pack/libbeat/processors/add_cloudfoundry_metadata:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+    ],
+)

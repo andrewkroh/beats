@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "path.go",
+        "windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/script/javascript/module/path",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_dop251_goja//:go_default_library",
+        "@com_github_dop251_goja_nodejs//require:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["path_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/processors/script/javascript:go_default_library",
+        "//libbeat/processors/script/javascript/module/require:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

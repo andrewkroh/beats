@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "dbus.go",
+        "doc.go",
+        "users.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/system/users",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "@com_github_godbus_dbus//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "@com_github_godbus_dbus//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["users_test.go"],
+    embed = [":go_default_library"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "@com_github_godbus_dbus//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "@com_github_godbus_dbus//:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

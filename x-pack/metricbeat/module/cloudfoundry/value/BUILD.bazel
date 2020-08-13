@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["value.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/cloudfoundry/value",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//metricbeat/mb:go_default_library",
+        "//x-pack/metricbeat/module/cloudfoundry:go_default_library",
+    ],
+)

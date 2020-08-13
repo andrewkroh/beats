@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "doc.go",
+        "metricbeat.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/beater",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/autodiscover:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/cfgfile:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/management:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//metricbeat/autodiscover/appender/kubernetes/token:go_default_library",
+        "//metricbeat/autodiscover/builder/hints:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/module:go_default_library",
+        "//metricbeat/processor/add_kubernetes_metadata:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

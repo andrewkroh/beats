@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "dialer.go",
+        "dialer_posix.go",
+        "dialer_windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/helper/dialer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common/transport:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_microsoft_go_winio//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "gen.go",
+        "out.go",
+        "run.go",
+        "sig.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/publisher/pipeline/stress",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/acker:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/outputs:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "//libbeat/publisher/pipeline:go_default_library",
+        "//libbeat/publisher/processing:go_default_library",
+    ],
+)

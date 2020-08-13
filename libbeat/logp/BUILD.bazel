@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "core.go",
+        "encoding.go",
+        "environment.go",
+        "eventlog_unsupported.go",
+        "eventlog_windows.go",
+        "fields.go",
+        "global.go",
+        "level.go",
+        "logger.go",
+        "options.go",
+        "selective.go",
+        "syslog_unix.go",
+        "syslog_unsupported.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/logp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common/file:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "@co_elastic_go_ecszap//:go_default_library",
+        "@com_github_hashicorp_go_multierror//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+        "@org_uber_go_zap//zapcore:go_default_library",
+        "@org_uber_go_zap//zaptest/observer:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@org_golang_x_sys//windows/svc/eventlog:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "core_test.go",
+        "global_test.go",
+        "selective_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+    ],
+)

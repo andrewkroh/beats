@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "migrate.go",
+        "registrar.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/registrar",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/config:go_default_library",
+        "//filebeat/input/file:go_default_library",
+        "//libbeat/common/file:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//libbeat/statestore:go_default_library",
+        "//libbeat/statestore/backend/memlog:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

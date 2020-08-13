@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "array_decoder.go",
+        "compressor.go",
+        "decoder.go",
+        "frame.go",
+        "marshal.go",
+        "stream_decoder.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/packetbeat/protos/cassandra/internal/gocql",
+    visibility = ["//packetbeat/protos/cassandra:__subpackages__"],
+    deps = [
+        "//libbeat/common/streambuf:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_golang_snappy//:go_default_library",
+        "@in_gopkg_inf_v0//:go_default_library",
+    ],
+)

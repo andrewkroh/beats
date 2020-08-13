@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "decoder.go",
+        "doc.go",
+        "include.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/input/netflow/decoder",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/filebeat/input/netflow/decoder/config:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/ipfix:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/protocol:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/record:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/v1:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/v5:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/v6:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/v7:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/v8:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/v9:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

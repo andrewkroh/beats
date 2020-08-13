@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "downloader.go",
+        "verifier.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/artifact/download/localremote",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/artifact:go_default_library",
+        "//x-pack/elastic-agent/pkg/artifact/download:go_default_library",
+        "//x-pack/elastic-agent/pkg/artifact/download/composed:go_default_library",
+        "//x-pack/elastic-agent/pkg/artifact/download/fs:go_default_library",
+        "//x-pack/elastic-agent/pkg/artifact/download/http:go_default_library",
+        "//x-pack/elastic-agent/pkg/artifact/download/snapshot:go_default_library",
+        "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
+        "//x-pack/elastic-agent/pkg/release:go_default_library",
+    ],
+)

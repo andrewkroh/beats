@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "descriptor.go",
+        "execution_context.go",
+        "process_cred.go",
+        "process_cred_other.go",
+        "spec.go",
+        "tag.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/core/app",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/agent/program:go_default_library",
+        "//x-pack/elastic-agent/pkg/artifact:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

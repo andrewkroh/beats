@@ -1,0 +1,100 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "make_listener_posix.go",
+        "make_listener_windows.go",
+        "routes.go",
+        "server.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/api",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/api/npipe:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "server_test.go",
+        "server_windows_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/api/npipe:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

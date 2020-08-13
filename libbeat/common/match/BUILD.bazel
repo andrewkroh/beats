@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cmp.go",
+        "compile.go",
+        "matcher.go",
+        "matchers.go",
+        "optimize.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/common/match",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "matcher_bench_test.go",
+        "matcher_test.go",
+    ],
+    embed = [":go_default_library"],
+)

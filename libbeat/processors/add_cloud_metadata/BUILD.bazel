@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add_cloud_metadata.go",
+        "config.go",
+        "http_fetcher.go",
+        "provider_alibaba_cloud.go",
+        "provider_aws_ec2.go",
+        "provider_azure_vm.go",
+        "provider_digital_ocean.go",
+        "provider_google_gce.go",
+        "provider_openstack_nova.go",
+        "provider_tencent_cloud.go",
+        "providers.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/add_cloud_metadata",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/schema:go_default_library",
+        "//libbeat/common/schema/mapstriface:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/processors/script/javascript/module/processor:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "provider_alibaba_cloud_test.go",
+        "provider_aws_ec2_test.go",
+        "provider_azure_vm_test.go",
+        "provider_digital_ocean_test.go",
+        "provider_google_gce_test.go",
+        "provider_openstack_nova_test.go",
+        "provider_tencent_cloud_test.go",
+        "providers_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

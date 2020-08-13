@@ -1,0 +1,97 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "file.go",
+        "glob.go",
+        "identifier.go",
+        "identifier_inode_deviceid.go",
+        "identifier_inode_deviceid_windows.go",
+        "identifier_test_windows.go",
+        "state.go",
+        "states.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/input/file",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/file:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_mitchellh_hashstructure//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "glob_other_test.go",
+        "glob_test.go",
+        "glob_windows_test.go",
+        "identifier_test.go",
+        "states_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/common/file:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

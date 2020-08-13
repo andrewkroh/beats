@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "auth.go",
+        "cert.go",
+        "secret.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/input/o365audit/auth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "@com_github_azure_go_autorest_autorest_adal//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

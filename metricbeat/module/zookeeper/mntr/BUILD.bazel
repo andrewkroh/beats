@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "data.go",
+        "mntr.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/zookeeper/mntr",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/schema:go_default_library",
+        "//libbeat/common/schema/mapstrstr:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "//metricbeat/module/zookeeper:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["root.go"],
+    importpath = "github.com/elastic/beats/v7/journalbeat/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//journalbeat/beater:go_default_library",
+        "//libbeat/cmd:go_default_library",
+        "//libbeat/cmd/instance:go_default_library",
+        "//libbeat/processors/script:go_default_library",
+        "//libbeat/processors/timestamp:go_default_library",
+    ],
+)

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "watch_config.go",
+        "watcher.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/heartbeat/watcher",
+    visibility = ["//visibility:public"],
+    deps = ["//libbeat/logp:go_default_library"],
+)

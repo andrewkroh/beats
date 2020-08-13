@@ -1,0 +1,63 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "codec.go",
+        "config.go",
+        "consume.go",
+        "inbroker.go",
+        "internal_api.go",
+        "log.go",
+        "module.go",
+        "outbroker.go",
+        "produce.go",
+        "spool.go",
+        "timer.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/publisher/queue/spool",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/common/cfgtype:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/feature:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/outputs/codec:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "//libbeat/publisher/queue:go_default_library",
+        "@com_github_dustin_go_humanize//:go_default_library",
+        "@com_github_elastic_go_structform//:go_default_library",
+        "@com_github_elastic_go_structform//cborl:go_default_library",
+        "@com_github_elastic_go_structform//gotype:go_default_library",
+        "@com_github_elastic_go_structform//json:go_default_library",
+        "@com_github_elastic_go_structform//ubjson:go_default_library",
+        "@com_github_elastic_go_txfile//:go_default_library",
+        "@com_github_elastic_go_txfile//pq:go_default_library",
+        "@com_github_joeshaw_multierror//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "codec_test.go",
+        "spool_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "//libbeat/publisher/queue:go_default_library",
+        "//libbeat/publisher/queue/queuetest:go_default_library",
+        "@com_github_dustin_go_humanize//:go_default_library",
+        "@com_github_elastic_go_txfile//:go_default_library",
+        "@com_github_elastic_go_txfile//txfiletest:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

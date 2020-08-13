@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "go_default_test",
+    srcs = ["powershell_windows_test.go"],
+    data = glob(["testdata/**"]),
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/cmd/instance:go_default_library",
+            "//libbeat/processors/timestamp:go_default_library",
+            "//x-pack/winlogbeat/module:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

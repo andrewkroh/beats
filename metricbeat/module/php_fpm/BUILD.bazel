@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "fields.go",
+        "url.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/php_fpm",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+    ],
+)

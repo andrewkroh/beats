@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cache.go",
+        "doc.go",
+        "eventlog.go",
+        "eventlogging.go",
+        "factory.go",
+        "retry.go",
+        "wineventlog.go",
+        "wineventlog_expirimental.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/winlogbeat/eventlog",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//winlogbeat/checkpoint:go_default_library",
+        "//winlogbeat/sys:go_default_library",
+        "@com_github_joeshaw_multierror//:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//winlogbeat/sys/eventlogging:go_default_library",
+            "//winlogbeat/sys/wineventlog:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//windows:go_default_library",
+            "@org_uber_go_multierr//:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "bench_test.go",
+        "eventlogging_test.go",
+        "wineventlog_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//winlogbeat/checkpoint:go_default_library",
+            "//winlogbeat/sys/eventlogging:go_default_library",
+            "//winlogbeat/sys/wineventlog:go_default_library",
+            "@com_github_andrewkroh_sys//windows/svc/eventlog:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+            "@org_golang_x_sys//windows/svc/eventlog:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

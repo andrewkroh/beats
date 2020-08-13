@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "kubernetes.go",
+        "metrics_cache.go",
+        "prometheus.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/kubernetes/util",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/kubernetes:go_default_library",
+        "//libbeat/common/kubernetes/metadata:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "@com_github_prometheus_client_model//go:go_default_library",
+        "@io_k8s_apimachinery//pkg/api/meta:go_default_library",
+        "@io_k8s_apimachinery//pkg/api/resource:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "kubernetes_test.go",
+        "metrics_cache_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/kubernetes:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/api/meta:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/types:go_default_library",
+        "@io_k8s_client_go//tools/cache:go_default_library",
+    ],
+)

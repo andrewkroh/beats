@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "input.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/input/kafka",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/channel:go_default_library",
+        "//filebeat/input:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/acker:go_default_library",
+        "//libbeat/common/backoff:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/common/kafka:go_default_library",
+        "//libbeat/common/transport/kerberos:go_default_library",
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/monitoring/adapter:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_shopify_sarama//:go_default_library",
+    ],
+)

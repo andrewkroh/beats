@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cancel.go",
+        "signal.go",
+        "signal_util.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/common/op",
+    visibility = ["//visibility:public"],
+)

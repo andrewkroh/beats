@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "pipelines.go",
+        "reader.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/dockerlogbeat/pipelinemock",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "@com_github_docker_docker//api/types/plugins/logdriver:go_default_library",
+        "@com_github_gogo_protobuf//proto:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

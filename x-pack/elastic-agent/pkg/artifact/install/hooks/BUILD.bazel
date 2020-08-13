@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["hooks_installer.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/artifact/install/hooks",
+    visibility = ["//visibility:public"],
+    deps = ["//x-pack/elastic-agent/pkg/agent/program:go_default_library"],
+)

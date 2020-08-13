@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client_helper.go",
+        "storage.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/azure/storage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//metricbeat/mb:go_default_library",
+        "//x-pack/metricbeat/module/azure:go_default_library",
+        "@com_github_azure_azure_sdk_for_go//services/preview/monitor/mgmt/2019-06-01/insights:go_default_library",
+        "@com_github_azure_azure_sdk_for_go//services/resources/mgmt/2019-03-01/resources:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "client_helper_test.go",
+        "storage_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//x-pack/metricbeat/module/azure:go_default_library",
+        "@com_github_azure_azure_sdk_for_go//services/preview/monitor/mgmt/2019-06-01/insights:go_default_library",
+        "@com_github_azure_azure_sdk_for_go//services/resources/mgmt/2019-03-01/resources:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//mock:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

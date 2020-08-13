@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "defs_pdh_windows_386.go",
+        "defs_pdh_windows_amd64.go",
+        "doc.go",
+        "pdh_query_windows.go",
+        "pdh_windows.go",
+        "zpdh_windows.go",
+    ],
+    cgo = True,
+    importpath = "github.com/elastic/beats/v7/metricbeat/helper/windows/pdh",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@com_github_pkg_errors//:go_default_library",
+            "@org_golang_x_sys//windows:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "pdh_query_windows_test.go",
+        "pdh_windows_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

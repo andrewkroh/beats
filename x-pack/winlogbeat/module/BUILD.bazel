@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["testing_windows.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/winlogbeat/module",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/mapping:go_default_library",
+            "//libbeat/processors/script/javascript:go_default_library",
+            "//libbeat/processors/script/javascript/module:go_default_library",
+            "//winlogbeat/checkpoint:go_default_library",
+            "//winlogbeat/eventlog:go_default_library",
+            "//winlogbeat/processors/script/javascript/module/winlogbeat:go_default_library",
+            "@com_github_pmezard_go_difflib//difflib:go_default_library",
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

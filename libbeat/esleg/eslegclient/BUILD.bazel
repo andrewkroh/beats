@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "api.go",
+        "bulkapi.go",
+        "config.go",
+        "connection.go",
+        "enc.go",
+        "errors.go",
+        "url.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/esleg/eslegclient",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/transport:go_default_library",
+        "//libbeat/common/transport/kerberos:go_default_library",
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/outputs/codec:go_default_library",
+        "//libbeat/testing:go_default_library",
+        "@co_elastic_go_apm//:go_default_library",
+        "@co_elastic_go_apm_module_apmelasticsearch//:go_default_library",
+        "@co_elastic_go_apm_module_apmhttp//:go_default_library",
+        "@com_github_elastic_go_structform//gotype:go_default_library",
+        "@com_github_elastic_go_structform//json:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "api_mock_test.go",
+        "api_test.go",
+        "bulkapi_mock_test.go",
+        "connection_test.go",
+        "enc_test.go",
+        "url_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring/report:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

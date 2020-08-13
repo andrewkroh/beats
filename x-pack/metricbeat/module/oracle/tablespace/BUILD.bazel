@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "data.go",
+        "data_files.go",
+        "extractor.go",
+        "metricset.go",
+        "temp_free_space.go",
+        "used_and_free_space.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/oracle/tablespace",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//x-pack/metricbeat/module/oracle:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "data_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

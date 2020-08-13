@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["add_formatted_index.go"],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/add_formatted_index",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/beat/events:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/fmtstr:go_default_library",
+    ],
+)

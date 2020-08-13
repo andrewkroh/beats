@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["input.go"],
+    importpath = "github.com/elastic/beats/v7/filebeat/input/winlog",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/input/v2:go_default_library",
+        "//filebeat/input/v2/input-cursor:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/feature:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//winlogbeat/checkpoint:go_default_library",
+        "//winlogbeat/eventlog:go_default_library",
+        "@com_github_elastic_go_concert//ctxtool:go_default_library",
+        "@com_github_elastic_go_concert//timed:go_default_library",
+    ],
+)

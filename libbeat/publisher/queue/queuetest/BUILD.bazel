@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "event.go",
+        "log.go",
+        "producer_cancel.go",
+        "queuetest.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/publisher/queue/queuetest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "//libbeat/publisher/queue:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

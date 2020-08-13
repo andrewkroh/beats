@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "go_default_test",
+    srcs = ["qmgr_test.go"],
+    deps = [
+        "//libbeat/logp:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/testing:go_default_library",
+        "//metricbeat/module/prometheus:go_default_library",
+        "//metricbeat/module/prometheus/collector:go_default_library",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["module_include_list.go"],
+    importpath = "github.com/elastic/beats/v7/dev-tools/cmd/module_include_list",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev-tools/mage:go_default_library",
+        "//licenses:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "module_include_list",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

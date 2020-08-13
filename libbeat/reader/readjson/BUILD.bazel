@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "docker_json.go",
+        "json.go",
+        "json_config.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/reader/readjson",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/jsontransform:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/reader:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "docker_json_test.go",
+        "json_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/reader:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

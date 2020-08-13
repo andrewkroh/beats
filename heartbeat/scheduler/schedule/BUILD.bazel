@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["schedule.go"],
+    importpath = "github.com/elastic/beats/v7/heartbeat/scheduler/schedule",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//heartbeat/scheduler:go_default_library",
+        "//heartbeat/scheduler/schedule/cron:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["schedule_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//heartbeat/scheduler:go_default_library",
+        "//heartbeat/scheduler/schedule/cron:go_default_library",
+    ],
+)

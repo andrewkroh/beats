@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "select.go",
+        "settings.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/outputs/outil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/fmtstr:go_default_library",
+        "//libbeat/conditions:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["select_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

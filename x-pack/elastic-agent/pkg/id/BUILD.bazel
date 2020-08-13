@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["generate.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/id",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_oklog_ulid//:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["generate_test.go"],
+    embed = [":go_default_library"],
+    deps = ["@com_github_stretchr_testify//require:go_default_library"],
+)

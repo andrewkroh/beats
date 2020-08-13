@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "fields.go",
+        "zookeeper.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/zookeeper",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

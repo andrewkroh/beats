@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "batch.go",
+        "client.go",
+        "config.go",
+        "consumer.go",
+        "controller.go",
+        "logger.go",
+        "module.go",
+        "monitoring.go",
+        "nilpipeline.go",
+        "output.go",
+        "pipeline.go",
+        "retry.go",
+        "testing.go",
+        "util.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/publisher/pipeline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/acker:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/outputs:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "//libbeat/publisher/processing:go_default_library",
+        "//libbeat/publisher/queue:go_default_library",
+        "@co_elastic_go_apm//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "client_test.go",
+        "controller_test.go",
+        "output_test.go",
+        "pipeline_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/internal/testutil:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/outputs:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "//libbeat/publisher/queue:go_default_library",
+        "//libbeat/publisher/queue/memqueue:go_default_library",
+        "//libbeat/tests/resources:go_default_library",
+        "@co_elastic_go_apm//apmtest:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["reader.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/dockerlogbeat/pipereader",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_containerd_fifo//:go_default_library",
+        "@com_github_docker_docker//api/types/plugins/logdriver:go_default_library",
+        "@com_github_gogo_protobuf//proto:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["reader_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//x-pack/dockerlogbeat/pipelinemock:go_default_library",
+        "@com_github_docker_docker//api/types/plugins/logdriver:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

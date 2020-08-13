@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "service.go",
+        "service_unix.go",
+        "service_windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@org_golang_x_sys//windows/svc:go_default_library",
+            "@org_golang_x_sys//windows/svc/debug:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

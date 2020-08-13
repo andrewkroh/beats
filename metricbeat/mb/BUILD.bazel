@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "builders.go",
+        "event.go",
+        "lightmetricset.go",
+        "lightmodules.go",
+        "mb.go",
+        "registry.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/mb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//metricbeat/helper/dialer:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_joeshaw_multierror//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "event_test.go",
+        "example_metricset_test.go",
+        "example_module_test.go",
+        "lightmetricset_test.go",
+        "lightmodules_test.go",
+        "mb_test.go",
+        "registry_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat/events:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/processors/add_id:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

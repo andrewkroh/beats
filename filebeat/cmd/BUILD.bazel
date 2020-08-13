@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "generate.go",
+        "modules.go",
+        "root.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/beater:go_default_library",
+        "//filebeat/generator/fields:go_default_library",
+        "//filebeat/generator/fileset:go_default_library",
+        "//filebeat/generator/module:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/cfgfile:go_default_library",
+        "//libbeat/cmd:go_default_library",
+        "//libbeat/cmd/instance:go_default_library",
+        "//libbeat/common/cli:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//libbeat/processors/script:go_default_library",
+        "//libbeat/processors/timestamp:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@com_github_spf13_pflag//:go_default_library",
+    ],
+)

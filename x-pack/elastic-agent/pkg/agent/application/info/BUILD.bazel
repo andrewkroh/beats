@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "agent_id.go",
+        "agent_info.go",
+        "agent_metadata.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/agent/application/info",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/agent/application/paths:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/storage:go_default_library",
+        "//x-pack/elastic-agent/pkg/config:go_default_library",
+        "//x-pack/elastic-agent/pkg/release:go_default_library",
+        "@com_github_elastic_go_sysinfo//:go_default_library",
+        "@com_github_elastic_go_sysinfo//types:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+    ],
+)

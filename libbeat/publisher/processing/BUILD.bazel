@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "default.go",
+        "processing.go",
+        "processors.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/publisher/processing",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/mapping:go_default_library",
+        "//libbeat/outputs/codec/json:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/processors/actions:go_default_library",
+        "//libbeat/processors/timeseries:go_default_library",
+        "@com_github_elastic_ecs//code/go/ecs:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["default_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/processors/actions:go_default_library",
+        "@com_github_elastic_ecs//code/go/ecs:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

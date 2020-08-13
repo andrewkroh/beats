@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "dhcpv4.go",
+        "fields.go",
+        "option_ip_address.go",
+        "option_ip_addresses.go",
+        "option_text.go",
+        "options.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/packetbeat/protos/dhcpv4",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//packetbeat/config:go_default_library",
+        "//packetbeat/pb:go_default_library",
+        "//packetbeat/protos:go_default_library",
+        "@com_github_elastic_ecs//code/go/ecs:go_default_library",
+        "@com_github_insomniacslk_dhcp//dhcpv4:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["dhcpv4_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//packetbeat/protos:go_default_library",
+        "//packetbeat/publish:go_default_library",
+        "@com_github_insomniacslk_dhcp//dhcpv4:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

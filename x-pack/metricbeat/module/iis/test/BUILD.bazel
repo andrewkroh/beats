@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["integration.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/iis/test",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@com_github_pkg_errors//:go_default_library",
+            "@com_github_stackexchange_wmi//:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

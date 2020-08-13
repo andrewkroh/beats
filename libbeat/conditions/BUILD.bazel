@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "and.go",
+        "conditions.go",
+        "equals.go",
+        "extractors.go",
+        "fields.go",
+        "has_fields.go",
+        "matcher.go",
+        "network.go",
+        "not.go",
+        "or.go",
+        "range.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/conditions",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/match:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "and_test.go",
+        "conditions_benchmarks_test.go",
+        "conditions_test.go",
+        "equals_test.go",
+        "extractors_test.go",
+        "has_fields_test.go",
+        "matcher_test.go",
+        "network_test.go",
+        "not_test.go",
+        "or_test.go",
+        "range_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

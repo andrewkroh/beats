@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "backoff.go",
+        "failover.go",
+        "hosts.go",
+        "metrics.go",
+        "observer.go",
+        "output_reg.go",
+        "outputs.go",
+        "plugin.go",
+        "util.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/outputs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/backoff:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/plugin:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "//libbeat/testing:go_default_library",
+    ],
+)

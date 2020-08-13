@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cli.go",
+        "confirm.go",
+        "password.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/common/cli",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@org_golang_x_crypto//ssh/terminal:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "cli_test.go",
+        "confirm_test.go",
+        "password_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_spf13_cobra//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

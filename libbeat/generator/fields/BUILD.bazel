@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "fields.go",
+        "module_fields_collector.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/generator/fields",
+    visibility = ["//visibility:public"],
+)

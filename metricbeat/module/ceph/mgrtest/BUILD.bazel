@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["password.go"],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/ceph/mgrtest",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_stretchr_testify//require:go_default_library"],
+)

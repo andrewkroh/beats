@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "check.go",
+        "elastic_fetcher.go",
+        "es_callback.go",
+        "license.go",
+        "licensetype_string.go",
+        "oss_license.go",
+        "state_string.go",
+        "types.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/libbeat/licenser",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/esleg/eslegclient:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/outputs/elasticsearch:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "check_test.go",
+        "elastic_fetcher_test.go",
+        "license_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/esleg/eslegclient:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

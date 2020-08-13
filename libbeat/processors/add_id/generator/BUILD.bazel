@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "errors.go",
+        "es_generator.go",
+        "generator.go",
+        "mac.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/add_id/generator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "es_generator_test.go",
+        "generator_test.go",
+        "mac_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["@com_github_stretchr_testify//assert:go_default_library"],
+)

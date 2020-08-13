@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["msetlists.go"],
+    importpath = "github.com/elastic/beats/v7/metricbeat/scripts/msetlists",
+    visibility = ["//visibility:public"],
+    deps = ["//metricbeat/mb:go_default_library"],
+)

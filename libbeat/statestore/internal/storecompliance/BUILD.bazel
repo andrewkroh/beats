@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "reg.go",
+        "storecompliance.go",
+        "util.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/statestore/internal/storecompliance",
+    visibility = ["//libbeat/statestore:__subpackages__"],
+    deps = [
+        "//libbeat/common/cleanup:go_default_library",
+        "//libbeat/statestore/backend:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

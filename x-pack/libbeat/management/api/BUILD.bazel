@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "auth_client.go",
+        "client.go",
+        "configuration.go",
+        "convert.go",
+        "doc.go",
+        "enroll.go",
+        "enrollment_token.go",
+        "event_reporter.go",
+        "response.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/libbeat/management/api",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/kibana:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_joeshaw_multierror//:go_default_library",
+        "@com_github_mitchellh_hashstructure//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "auth_client_test.go",
+        "client_test.go",
+        "configuration_test.go",
+        "convert_test.go",
+        "enroll_test.go",
+        "enrollment_token_test.go",
+        "event_reporter_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

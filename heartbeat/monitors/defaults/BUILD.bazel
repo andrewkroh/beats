@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["default.go"],
+    importpath = "github.com/elastic/beats/v7/heartbeat/monitors/defaults",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//heartbeat/monitors/active/http:go_default_library",
+        "//heartbeat/monitors/active/icmp:go_default_library",
+        "//heartbeat/monitors/active/tcp:go_default_library",
+    ],
+)

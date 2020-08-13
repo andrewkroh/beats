@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["cef2json.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/processors/decode_cef/cef/cmd/cef2json",
+    visibility = ["//visibility:private"],
+    deps = ["//x-pack/filebeat/processors/decode_cef/cef:go_default_library"],
+)
+
+go_binary(
+    name = "cef2json",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

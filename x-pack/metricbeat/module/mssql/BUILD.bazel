@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "connection.go",
+        "doc.go",
+        "fields.go",
+        "mssql.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/mssql",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "@com_github_denisenkom_go_mssqldb//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

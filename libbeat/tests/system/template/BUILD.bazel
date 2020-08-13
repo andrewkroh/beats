@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["template.go"],
+    importpath = "github.com/elastic/beats/v7/libbeat/tests/system/template",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/template:go_default_library",
+        "//libbeat/version:go_default_library",
+    ],
+)

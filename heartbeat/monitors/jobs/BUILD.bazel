@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "job.go",
+        "testing.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/heartbeat/monitors/jobs",
+    visibility = ["//visibility:public"],
+    deps = ["//libbeat/beat:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["job_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//heartbeat/eventext:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "@com_github_elastic_go_lookslike//:go_default_library",
+        "@com_github_elastic_go_lookslike//testslike:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

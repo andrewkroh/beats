@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/dev-tools/cmd/fakewebapi",
+    visibility = ["//visibility:private"],
+    deps = ["//x-pack/elastic-agent/pkg/fleetapi:go_default_library"],
+)
+
+go_binary(
+    name = "fakewebapi",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

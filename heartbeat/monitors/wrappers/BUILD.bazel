@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "monitors.go",
+        "util.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/heartbeat/monitors/wrappers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//heartbeat/eventext:go_default_library",
+        "//heartbeat/look:go_default_library",
+        "//heartbeat/monitors/jobs:go_default_library",
+        "//heartbeat/monitors/stdfields:go_default_library",
+        "//heartbeat/scheduler/schedule:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_mitchellh_hashstructure//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "monitors_test.go",
+        "util_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//heartbeat/eventext:go_default_library",
+        "//heartbeat/hbtestllext:go_default_library",
+        "//heartbeat/monitors/jobs:go_default_library",
+        "//heartbeat/monitors/stdfields:go_default_library",
+        "//heartbeat/scheduler/schedule:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "@com_github_elastic_go_lookslike//:go_default_library",
+        "@com_github_elastic_go_lookslike//isdef:go_default_library",
+        "@com_github_elastic_go_lookslike//testslike:go_default_library",
+        "@com_github_elastic_go_lookslike//validator:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

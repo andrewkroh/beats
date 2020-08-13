@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["indexers.go"],
+    importpath = "github.com/elastic/beats/v7/metricbeat/processor/add_kubernetes_metadata",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/processors/add_kubernetes_metadata:go_default_library",
+    ],
+)

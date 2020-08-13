@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["fuzz.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/processors/decode_cef/cef/fuzz",
+    visibility = ["//visibility:public"],
+    deps = ["//x-pack/filebeat/processors/decode_cef/cef:go_default_library"],
+)

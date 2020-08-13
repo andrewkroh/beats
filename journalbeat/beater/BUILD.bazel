@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["journalbeat.go"],
+    importpath = "github.com/elastic/beats/v7/journalbeat/beater",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//journalbeat/checkpoint:go_default_library",
+        "//journalbeat/cmd/instance:go_default_library",
+        "//journalbeat/config:go_default_library",
+        "//journalbeat/include:go_default_library",
+        "//journalbeat/input:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/acker:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/processors/decode_csv_fields:go_default_library",
+        "//libbeat/publisher/pipetool:go_default_library",
+    ],
+)

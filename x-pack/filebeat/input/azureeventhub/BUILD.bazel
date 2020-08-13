@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "eph.go",
+        "input.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/input/azureeventhub",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/channel:go_default_library",
+        "//filebeat/input:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_azure_azure_event_hubs_go_v3//:go_default_library",
+        "@com_github_azure_azure_event_hubs_go_v3//eph:go_default_library",
+        "@com_github_azure_azure_event_hubs_go_v3//storage:go_default_library",
+        "@com_github_azure_azure_storage_blob_go//azblob:go_default_library",
+        "@com_github_azure_go_autorest_autorest//azure:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "config_test.go",
+        "eph_test.go",
+        "file_persister_test.go",
+        "input_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//filebeat/channel:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_azure_azure_event_hubs_go_v3//:go_default_library",
+        "@com_github_azure_azure_event_hubs_go_v3//persist:go_default_library",
+        "@com_github_azure_go_autorest_autorest//azure:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

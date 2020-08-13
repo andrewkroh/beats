@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "configuration.go",
+        "connector.go",
+        "doc.go",
+        "factory.go",
+        "options.go",
+        "publish.go",
+        "runner.go",
+        "runner_group.go",
+        "testing.go",
+        "wrapper.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/mb/module",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/cfgfile:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/fmtstr:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/processors/add_formatted_index:go_default_library",
+        "//libbeat/testing:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "connector_test.go",
+        "example_test.go",
+        "options_test.go",
+        "runner_group_test.go",
+        "runner_test.go",
+        "wrapper_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/outputs/codec/json:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/publisher/testing:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

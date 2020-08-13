@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "reporter.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/reporter/fleet",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
+        "//x-pack/elastic-agent/pkg/fleetapi:go_default_library",
+        "//x-pack/elastic-agent/pkg/reporter:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["reporter_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
+        "//x-pack/elastic-agent/pkg/fleetapi:go_default_library",
+        "//x-pack/elastic-agent/pkg/reporter:go_default_library",
+    ],
+)

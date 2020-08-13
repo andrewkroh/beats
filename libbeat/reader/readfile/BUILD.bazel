@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "encode.go",
+        "limit.go",
+        "line.go",
+        "line_terminator.go",
+        "strip_newline.go",
+        "timeout.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/reader/readfile",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common/streambuf:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/reader:go_default_library",
+        "//libbeat/reader/readfile/encoding:go_default_library",
+        "@org_golang_x_text//transform:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "encode_test.go",
+        "limit_test.go",
+        "line_test.go",
+        "strip_newline_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/reader:go_default_library",
+        "//libbeat/reader/readfile/encoding:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@org_golang_x_text//transform:go_default_library",
+    ],
+)

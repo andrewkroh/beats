@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "blacklist.go",
+        "cache.go",
+        "config.go",
+        "enroll.go",
+        "error.go",
+        "manager.go",
+        "plugin.go",
+        "state.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/libbeat/management",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/cfgfile:go_default_library",
+        "//libbeat/cmd/instance:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/common/file:go_default_library",
+        "//libbeat/common/match:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/feature:go_default_library",
+        "//libbeat/keystore:go_default_library",
+        "//libbeat/kibana:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/management:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//x-pack/libbeat/management/api:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "blacklist_test.go",
+        "cache_test.go",
+        "config_test.go",
+        "error_test.go",
+        "manager_test.go",
+        "state_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//x-pack/libbeat/management/api:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

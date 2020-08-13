@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "encoding.go",
+        "mixed.go",
+        "utf16.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/reader/readfile/encoding",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_x_text//encoding:go_default_library",
+        "@org_golang_x_text//encoding/charmap:go_default_library",
+        "@org_golang_x_text//encoding/htmlindex:go_default_library",
+        "@org_golang_x_text//encoding/simplifiedchinese:go_default_library",
+        "@org_golang_x_text//encoding/unicode:go_default_library",
+        "@org_golang_x_text//transform:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["utf16_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@org_golang_x_text//encoding/unicode:go_default_library",
+        "@org_golang_x_text//transform:go_default_library",
+    ],
+)

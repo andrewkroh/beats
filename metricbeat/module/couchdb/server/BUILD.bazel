@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "server.go",
+        "v1.go",
+        "v2.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/couchdb/server",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//metricbeat/helper:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "fields.go",
+        "fileset.go",
+        "module.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/scripts/mage/generate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev-tools/mage:go_default_library",
+        "//filebeat/generator/fields:go_default_library",
+        "//filebeat/generator/fileset:go_default_library",
+        "//filebeat/generator/module:go_default_library",
+    ],
+)

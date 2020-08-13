@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "clean.go",
+        "cursor.go",
+        "doc.go",
+        "input.go",
+        "manager.go",
+        "publish.go",
+        "store.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/input/v2/input-cursor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/input/v2:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/acker:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/common/cleanup:go_default_library",
+        "//libbeat/common/transform/typeconv:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/statestore:go_default_library",
+        "@com_github_elastic_go_concert//:go_default_library",
+        "@com_github_elastic_go_concert//ctxtool:go_default_library",
+        "@com_github_elastic_go_concert//timed:go_default_library",
+        "@com_github_elastic_go_concert//unison:go_default_library",
+        "@com_github_urso_sderr//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "clean_test.go",
+        "cursor_test.go",
+        "manager_test.go",
+        "publish_test.go",
+        "store_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//filebeat/input/v2:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/publisher/testing:go_default_library",
+        "//libbeat/statestore:go_default_library",
+        "//libbeat/statestore/storetest:go_default_library",
+        "//libbeat/tests/resources:go_default_library",
+        "@com_github_elastic_go_concert//unison:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

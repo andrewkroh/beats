@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["hbtestutil.go"],
+    importpath = "github.com/elastic/beats/v7/heartbeat/hbtest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//heartbeat/hbtestllext:go_default_library",
+        "//heartbeat/monitors/active/dialchain/tlsmeta:go_default_library",
+        "//heartbeat/monitors/wrappers:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/x509util:go_default_library",
+        "@com_github_elastic_go_lookslike//:go_default_library",
+        "@com_github_elastic_go_lookslike//isdef:go_default_library",
+        "@com_github_elastic_go_lookslike//validator:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

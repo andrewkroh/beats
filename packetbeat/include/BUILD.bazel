@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "fields.go",
+        "list.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/packetbeat/include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//packetbeat/protos/amqp:go_default_library",
+        "//packetbeat/protos/cassandra:go_default_library",
+        "//packetbeat/protos/dhcpv4:go_default_library",
+        "//packetbeat/protos/dns:go_default_library",
+        "//packetbeat/protos/http:go_default_library",
+        "//packetbeat/protos/icmp:go_default_library",
+        "//packetbeat/protos/memcache:go_default_library",
+        "//packetbeat/protos/mongodb:go_default_library",
+        "//packetbeat/protos/mysql:go_default_library",
+        "//packetbeat/protos/nfs:go_default_library",
+        "//packetbeat/protos/pgsql:go_default_library",
+        "//packetbeat/protos/redis:go_default_library",
+        "//packetbeat/protos/thrift:go_default_library",
+        "//packetbeat/protos/tls:go_default_library",
+    ],
+)

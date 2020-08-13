@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "resolve.go",
+        "statechange_string.go",
+        "stateresolver.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/agent/stateresolver",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/agent/configrequest:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/program:go_default_library",
+        "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
+        "//x-pack/elastic-agent/pkg/id:go_default_library",
+        "//x-pack/elastic-agent/pkg/release:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "resolve_test.go",
+        "stateresolver_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/agent/configrequest:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/program:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/transpiler:go_default_library",
+        "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
+        "//x-pack/elastic-agent/pkg/release:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

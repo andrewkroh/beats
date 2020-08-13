@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "listener_windows.go",
+        "listerner_posix.go",
+        "pipe.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/api/npipe",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@com_github_microsoft_go_winio//:go_default_library",
+            "@com_github_pkg_errors//:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "listener_windows_test.go",
+        "pipe_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@com_github_stretchr_testify//require:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

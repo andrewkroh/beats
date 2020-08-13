@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["inputs.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/input/default-inputs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/beater:go_default_library",
+        "//filebeat/input/default-inputs:go_default_library",
+        "//filebeat/input/v2:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//x-pack/filebeat/input/cloudfoundry:go_default_library",
+        "//x-pack/filebeat/input/http_endpoint:go_default_library",
+        "//x-pack/filebeat/input/o365audit:go_default_library",
+    ],
+)

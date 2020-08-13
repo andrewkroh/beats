@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "decode_cef.go",
+        "fields.go",
+        "keys.ecs.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/processors/decode_cef",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//x-pack/filebeat/processors/decode_cef/cef:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@org_uber_go_multierr//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["decode_cef_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "@com_github_pmezard_go_difflib//difflib:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

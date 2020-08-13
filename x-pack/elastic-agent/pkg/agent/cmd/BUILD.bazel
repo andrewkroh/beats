@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "common.go",
+        "enroll.go",
+        "introspect.go",
+        "reexec.go",
+        "reexec_windows.go",
+        "run.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/agent/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common/backoff:go_default_library",
+        "//libbeat/common/cli:go_default_library",
+        "//libbeat/logp/configure:go_default_library",
+        "//libbeat/service:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/application:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/application/paths:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/application/reexec:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/configuration:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/control/client:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/control/server:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/warn:go_default_library",
+        "//x-pack/elastic-agent/pkg/basecmd:go_default_library",
+        "//x-pack/elastic-agent/pkg/cli:go_default_library",
+        "//x-pack/elastic-agent/pkg/config:go_default_library",
+        "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
+        "//x-pack/elastic-agent/pkg/fleetapi:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@org_golang_x_sys//windows/svc:go_default_library",
+            "@org_golang_x_sys//windows/svc/mgr:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["cmd_test.go"],
+    embed = [":go_default_library"],
+)

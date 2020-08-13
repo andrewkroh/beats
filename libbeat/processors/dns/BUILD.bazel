@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cache.go",
+        "config.go",
+        "dns.go",
+        "doc.go",
+        "resolver.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/dns",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/monitoring/adapter:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/processors/script/javascript/module/processor:go_default_library",
+        "@com_github_miekg_dns//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_rcrowley_go_metrics//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "cache_test.go",
+        "constants_test.go",
+        "dns_test.go",
+        "resolver_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "@com_github_miekg_dns//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

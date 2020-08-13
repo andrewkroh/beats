@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "data.go",
+        "mgr_osd_perf.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/ceph/mgr_osd_perf",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "//metricbeat/module/ceph/mgr:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["mgr_osd_perf_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//metricbeat/mb/testing:go_default_library",
+        "//metricbeat/module/ceph:go_default_library",
+    ],
+)

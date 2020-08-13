@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["root.go"],
+    importpath = "github.com/elastic/beats/v7/heartbeat/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//heartbeat/autodiscover/builder/hints:go_default_library",
+        "//heartbeat/beater:go_default_library",
+        "//heartbeat/monitors/defaults:go_default_library",
+        "//libbeat/cmd:go_default_library",
+        "//libbeat/cmd/instance:go_default_library",
+        "//libbeat/publisher/processing:go_default_library",
+    ],
+)

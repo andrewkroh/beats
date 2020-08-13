@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "diskstore.go",
+        "doc.go",
+        "error.go",
+        "json.go",
+        "memlog.go",
+        "op.go",
+        "store.go",
+        "util.go",
+        "util_darwin.go",
+        "util_other.go",
+        "util_windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/statestore/backend/memlog",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/cleanup:go_default_library",
+        "//libbeat/common/transform/typeconv:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/statestore/backend:go_default_library",
+        "@com_github_elastic_go_structform//gotype:go_default_library",
+        "@com_github_elastic_go_structform//json:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "@org_golang_x_sys//unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "@org_golang_x_sys//unix:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "memlog_test.go",
+        "util_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/logp:go_default_library",
+        "//libbeat/statestore:go_default_library",
+        "//libbeat/statestore/backend:go_default_library",
+        "//libbeat/statestore/internal/storecompliance:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

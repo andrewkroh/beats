@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["zip_installer.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/artifact/install/zip",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        "//x-pack/elastic-agent/pkg/artifact:go_default_library",
+        "@com_github_hashicorp_go_multierror//:go_default_library",
+    ],
+)

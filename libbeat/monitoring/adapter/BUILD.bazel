@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "filters.go",
+        "go-metrics.go",
+        "go-metrics-wrapper.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/monitoring/adapter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "@com_github_rcrowley_go_metrics//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "filters_test.go",
+        "go-metrics_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/monitoring:go_default_library",
+        "@com_github_rcrowley_go_metrics//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

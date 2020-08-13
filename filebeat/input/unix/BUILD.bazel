@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "input.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/input/unix",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/input/v2:go_default_library",
+        "//filebeat/input/v2/input-stateless:go_default_library",
+        "//filebeat/inputsource:go_default_library",
+        "//filebeat/inputsource/common:go_default_library",
+        "//filebeat/inputsource/unix:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/feature:go_default_library",
+        "@com_github_dustin_go_humanize//:go_default_library",
+        "@com_github_elastic_go_concert//ctxtool:go_default_library",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["collector.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/openmetrics/collector",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "//metricbeat/module/prometheus/collector:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["collector_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//metricbeat/mb/testing:go_default_library",
+        "//x-pack/metricbeat/module/openmetrics:go_default_library",
+    ],
+)

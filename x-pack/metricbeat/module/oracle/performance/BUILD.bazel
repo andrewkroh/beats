@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "buffer_cache_hit_ratio.go",
+        "cursors.go",
+        "data.go",
+        "extractor.go",
+        "library_cache.go",
+        "metricset.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/oracle/performance",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//x-pack/metricbeat/module/oracle:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

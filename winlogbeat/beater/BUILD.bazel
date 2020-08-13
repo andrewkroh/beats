@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "acker.go",
+        "eventlogger.go",
+        "metrics.go",
+        "winlogbeat.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/winlogbeat/beater",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/acker:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/common/fmtstr:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/processors/add_formatted_index:go_default_library",
+        "//libbeat/publisher/pipetool:go_default_library",
+        "//winlogbeat/checkpoint:go_default_library",
+        "//winlogbeat/config:go_default_library",
+        "//winlogbeat/eventlog:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["eventlogger_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cfgfile.go",
+        "factories.go",
+        "glob_manager.go",
+        "glob_watcher.go",
+        "list.go",
+        "reload.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/cfgfile",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//libbeat/publisher/pipetool:go_default_library",
+        "@com_github_joeshaw_multierror//:go_default_library",
+        "@com_github_mitchellh_hashstructure//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "cfgfile_test.go",
+        "glob_manager_test.go",
+        "glob_watcher_test.go",
+        "list_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/publisher/testing:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

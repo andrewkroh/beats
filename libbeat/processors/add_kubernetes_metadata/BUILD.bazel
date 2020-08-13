@@ -1,0 +1,71 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cache.go",
+        "config.go",
+        "indexers.go",
+        "indexing.go",
+        "kubernetes.go",
+        "matchers.go",
+        "registry.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/add_kubernetes_metadata",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/fmtstr:go_default_library",
+        "//libbeat/common/kubernetes:go_default_library",
+        "//libbeat/common/kubernetes/metadata:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/outputs/codec:go_default_library",
+        "//libbeat/outputs/codec/format:go_default_library",
+        "//libbeat/plugin:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//libbeat/processors:go_default_library",
+            "@io_k8s_client_go//kubernetes:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//libbeat/processors:go_default_library",
+            "@io_k8s_client_go//kubernetes:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//libbeat/processors:go_default_library",
+            "@io_k8s_client_go//kubernetes:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//libbeat/processors:go_default_library",
+            "@io_k8s_client_go//kubernetes:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/processors:go_default_library",
+            "@io_k8s_client_go//kubernetes:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "indexers_test.go",
+        "kubernetes_test.go",
+        "matchers_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/kubernetes:go_default_library",
+        "//libbeat/common/kubernetes/metadata:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+        "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/types:go_default_library",
+    ],
+)

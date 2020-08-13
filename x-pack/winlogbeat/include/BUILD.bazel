@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["list.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/winlogbeat/include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/winlogbeat/module/powershell:go_default_library",
+        "//x-pack/winlogbeat/module/security:go_default_library",
+        "//x-pack/winlogbeat/module/sysmon:go_default_library",
+    ],
+)

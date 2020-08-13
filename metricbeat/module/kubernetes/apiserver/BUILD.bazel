@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "apiserver.go",
+        "metricset.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/kubernetes/apiserver",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//metricbeat/helper/prometheus:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["apiserver_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//metricbeat/helper/prometheus/ptest:go_default_library",
+        "//metricbeat/mb/testing:go_default_library",
+        "//metricbeat/module/kubernetes:go_default_library",
+    ],
+)

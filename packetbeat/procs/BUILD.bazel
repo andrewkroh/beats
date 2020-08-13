@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "procs.go",
+        "procs_linux.go",
+        "procs_other.go",
+        "procs_windows.go",
+        "syscall_windows.go",
+        "zsyscall_windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/packetbeat/procs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//packetbeat/protos/applayer:go_default_library",
+        "@com_github_elastic_go_sysinfo//:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "@com_github_elastic_gosigar//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "@com_github_elastic_gosigar//:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@org_golang_x_sys//windows:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "procs_linux_test.go",
+        "procs_test.go",
+        "procs_windows_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//packetbeat/protos/applayer:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

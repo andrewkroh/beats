@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "go_default_test",
+    srcs = ["ebs_test.go"],
+    deps = [
+        "//metricbeat/mb:go_default_library",
+        "//x-pack/metricbeat/module/aws:go_default_library",
+        "//x-pack/metricbeat/module/aws/cloudwatch:go_default_library",
+    ],
+)

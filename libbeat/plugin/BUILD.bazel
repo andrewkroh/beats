@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cli.go",
+        "cli_stub.go",
+        "load.go",
+        "load_stub.go",
+        "plugin.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/plugin",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//libbeat/common/cfgwarn:go_default_library",
+            "//libbeat/logp:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

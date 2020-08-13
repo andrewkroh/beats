@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["root.go"],
+    importpath = "github.com/elastic/beats/v7/auditbeat/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//auditbeat/core:go_default_library",
+        "//libbeat/cmd:go_default_library",
+        "//libbeat/cmd/instance:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/publisher/processing:go_default_library",
+        "//metricbeat/beater:go_default_library",
+        "//metricbeat/mb/module:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@com_github_spf13_pflag//:go_default_library",
+    ],
+)

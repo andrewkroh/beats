@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["cmd.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/basecmd/version",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/agent/control/client:go_default_library",
+        "//x-pack/elastic-agent/pkg/cli:go_default_library",
+        "//x-pack/elastic-agent/pkg/release:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["cmd_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/logp:go_default_library",
+        "//x-pack/elastic-agent/pkg/agent/control/server:go_default_library",
+        "//x-pack/elastic-agent/pkg/cli:go_default_library",
+        "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
+        "//x-pack/elastic-agent/pkg/release:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+    ],
+)

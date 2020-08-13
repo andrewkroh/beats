@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "client_mocked.go",
+        "config.go",
+        "input.go",
+        "logging.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/input/mqtt",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/channel:go_default_library",
+        "//filebeat/input:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/backoff:go_default_library",
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_eclipse_paho_mqtt_golang//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["input_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//filebeat/input:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/backoff:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_eclipse_paho_mqtt_golang//:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

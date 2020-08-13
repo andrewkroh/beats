@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["root.go"],
+    importpath = "github.com/elastic/beats/v7/winlogbeat/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/cmd:go_default_library",
+        "//libbeat/cmd/instance:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/processors/script:go_default_library",
+        "//libbeat/processors/timestamp:go_default_library",
+        "//libbeat/publisher/processing:go_default_library",
+        "//winlogbeat/beater:go_default_library",
+        "//winlogbeat/include:go_default_library",
+        "//winlogbeat/processors/script/javascript/module/winlogbeat:go_default_library",
+    ],
+)

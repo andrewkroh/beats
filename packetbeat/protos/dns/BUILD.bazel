@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "dns.go",
+        "dns_tcp.go",
+        "dns_udp.go",
+        "errors.go",
+        "fields.go",
+        "names.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/packetbeat/protos/dns",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//packetbeat/config:go_default_library",
+        "//packetbeat/pb:go_default_library",
+        "//packetbeat/procs:go_default_library",
+        "//packetbeat/protos:go_default_library",
+        "//packetbeat/protos/tcp:go_default_library",
+        "@com_github_miekg_dns//:go_default_library",
+        "@org_golang_x_net//publicsuffix:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "dns_tcp_test.go",
+        "dns_test.go",
+        "dns_udp_test.go",
+        "names_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//packetbeat/pb:go_default_library",
+        "//packetbeat/protos:go_default_library",
+        "//packetbeat/protos/tcp:go_default_library",
+        "//packetbeat/publish:go_default_library",
+        "@com_github_miekg_dns//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

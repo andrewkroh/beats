@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "communityid.go",
+        "doc.go",
+        "encoding.go",
+        "flow.go",
+        "hasher.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/common/flowhash",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["communityid_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_tsg_gopacket//:go_default_library",
+        "@com_github_tsg_gopacket//layers:go_default_library",
+        "@com_github_tsg_gopacket//pcap:go_default_library",
+    ],
+)

@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "config.go",
+        "kafka.go",
+        "log.go",
+        "message.go",
+        "partition.go",
+        "scram.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/outputs/kafka",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/common/fmtstr:go_default_library",
+        "//libbeat/common/kafka:go_default_library",
+        "//libbeat/common/transport:go_default_library",
+        "//libbeat/common/transport/kerberos:go_default_library",
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//libbeat/monitoring/adapter:go_default_library",
+        "//libbeat/outputs:go_default_library",
+        "//libbeat/outputs/codec:go_default_library",
+        "//libbeat/outputs/outil:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "//libbeat/testing:go_default_library",
+        "@com_github_shopify_sarama//:go_default_library",
+        "@com_github_xdg_scram//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "common_test.go",
+        "config_test.go",
+        "partition_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/internal/testutil:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/publisher:go_default_library",
+        "@com_github_shopify_sarama//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

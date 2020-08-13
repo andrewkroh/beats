@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "collector.go",
+        "config.go",
+        "data.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/prometheus/collector",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//metricbeat/helper/labelhash:go_default_library",
+        "//metricbeat/helper/prometheus:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_prometheus_client_model//go:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["collector_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//metricbeat/helper/prometheus:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/testing:go_default_library",
+        "//metricbeat/module/prometheus:go_default_library",
+        "@com_github_golang_protobuf//proto:go_default_library",
+        "@com_github_prometheus_client_model//go:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

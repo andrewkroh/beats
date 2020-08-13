@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "api_gateway_proxy.go",
+        "cloudwatch_kinesis.go",
+        "cloudwatch_logs.go",
+        "config.go",
+        "kinesis.go",
+        "sqs.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/functionbeat/provider/aws/aws",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/feature:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//x-pack/functionbeat/function/core:go_default_library",
+        "//x-pack/functionbeat/function/provider:go_default_library",
+        "//x-pack/functionbeat/function/telemetry:go_default_library",
+        "//x-pack/functionbeat/provider/aws/aws/transformer:go_default_library",
+        "@com_github_aws_aws_lambda_go//events:go_default_library",
+        "@com_github_aws_aws_lambda_go//lambda:go_default_library",
+        "@com_github_awslabs_goformation_v4//cloudformation:go_default_library",
+        "@com_github_awslabs_goformation_v4//cloudformation/iam:go_default_library",
+        "@com_github_awslabs_goformation_v4//cloudformation/lambda:go_default_library",
+        "@com_github_awslabs_goformation_v4//cloudformation/policies:go_default_library",
+        "@com_github_dustin_go_humanize//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "api_gateway_proxy_test.go",
+        "cloudwatch_logs_test.go",
+        "config_test.go",
+        "kinesis_test.go",
+        "sqs_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//x-pack/functionbeat/function/provider:go_default_library",
+        "@com_github_aws_aws_lambda_go//events:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

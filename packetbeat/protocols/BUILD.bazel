@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["plugin.go"],
+    importpath = "github.com/elastic/beats/v7/packetbeat/protocols",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/plugin:go_default_library",
+        "//packetbeat/protos:go_default_library",
+    ],
+)

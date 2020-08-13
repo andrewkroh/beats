@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/elastic/beats/v7/libbeat/scripts/cmd/stress_pipeline",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp/configure:go_default_library",
+        "//libbeat/outputs/console:go_default_library",
+        "//libbeat/outputs/elasticsearch:go_default_library",
+        "//libbeat/outputs/fileout:go_default_library",
+        "//libbeat/outputs/logstash:go_default_library",
+        "//libbeat/paths:go_default_library",
+        "//libbeat/publisher/pipeline/stress:go_default_library",
+        "//libbeat/publisher/queue/memqueue:go_default_library",
+        "//libbeat/publisher/queue/spool:go_default_library",
+        "//libbeat/service:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "stress_pipeline",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

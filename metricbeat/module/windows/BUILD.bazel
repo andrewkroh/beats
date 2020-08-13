@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "fields.go",
+        "windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/windows",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/helper:go_default_library",
+            "//metricbeat/mb:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

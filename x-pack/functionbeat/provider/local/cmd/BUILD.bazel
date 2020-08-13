@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["root.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/functionbeat/provider/local/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/functionbeat/function/cmd:go_default_library",
+        "//x-pack/functionbeat/manager/beater:go_default_library",
+    ],
+)

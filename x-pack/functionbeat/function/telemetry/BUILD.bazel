@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["telemetry.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/functionbeat/function/telemetry",
+    visibility = ["//visibility:public"],
+    deps = ["//libbeat/monitoring:go_default_library"],
+)

@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "data.go",
+        "s3_daily_storage.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/aws/s3_daily_storage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common/schema:go_default_library",
+        "//libbeat/common/schema/mapstrstr:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//x-pack/libbeat/common/aws:go_default_library",
+        "//x-pack/metricbeat/module/aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/cloudwatch:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

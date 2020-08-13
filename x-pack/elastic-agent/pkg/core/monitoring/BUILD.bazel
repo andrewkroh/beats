@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["monitor.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/core/monitoring",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/agent/configuration:go_default_library",
+        "//x-pack/elastic-agent/pkg/artifact:go_default_library",
+        "//x-pack/elastic-agent/pkg/config:go_default_library",
+        "//x-pack/elastic-agent/pkg/core/monitoring/beats:go_default_library",
+        "//x-pack/elastic-agent/pkg/core/monitoring/config:go_default_library",
+    ],
+)

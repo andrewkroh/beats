@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "get_temp_creds.go",
+        "sqs_send_receive_delete.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/aws/mtest/scripts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws/defaults:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws/external:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/sqs:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/sqs/sqsiface:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/sts:go_default_library",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["cmd.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/basecmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/elastic-agent/pkg/basecmd/restart:go_default_library",
+        "//x-pack/elastic-agent/pkg/basecmd/version:go_default_library",
+        "//x-pack/elastic-agent/pkg/cli:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["cmd_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//x-pack/elastic-agent/pkg/cli:go_default_library"],
+)

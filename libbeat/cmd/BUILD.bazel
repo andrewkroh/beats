@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "completion.go",
+        "export.go",
+        "keystore.go",
+        "modules.go",
+        "root.go",
+        "run.go",
+        "setup.go",
+        "test.go",
+        "version.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/cfgfile:go_default_library",
+        "//libbeat/cmd/export:go_default_library",
+        "//libbeat/cmd/instance:go_default_library",
+        "//libbeat/cmd/test:go_default_library",
+        "//libbeat/common/cli:go_default_library",
+        "//libbeat/common/terminal:go_default_library",
+        "//libbeat/keystore:go_default_library",
+        "//libbeat/version:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@org_golang_x_crypto//ssh/terminal:go_default_library",
+    ],
+)

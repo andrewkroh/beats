@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "case.go",
+        "config.go",
+        "convert.go",
+        "definitions.go",
+        "doc.go",
+        "fields.go",
+        "input.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/filebeat/input/netflow",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/channel:go_default_library",
+        "//filebeat/harvester:go_default_library",
+        "//filebeat/input:go_default_library",
+        "//filebeat/inputsource:go_default_library",
+        "//filebeat/inputsource/udp:go_default_library",
+        "//libbeat/asset:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/common/flowhash:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/monitoring:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/fields:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/record:go_default_library",
+        "@com_github_cespare_xxhash_v2//:go_default_library",
+        "@com_github_dustin_go_humanize//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "case_test.go",
+        "definitions_test.go",
+        "netflow_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/fields:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/protocol:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/record:go_default_library",
+        "//x-pack/filebeat/input/netflow/decoder/test:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_tsg_gopacket//:go_default_library",
+        "@com_github_tsg_gopacket//pcap:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+    ],
+)

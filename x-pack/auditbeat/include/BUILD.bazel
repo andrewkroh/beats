@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["list.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/auditbeat/include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//x-pack/auditbeat/module/system:go_default_library",
+        "//x-pack/auditbeat/module/system/host:go_default_library",
+        "//x-pack/auditbeat/module/system/login:go_default_library",
+        "//x-pack/auditbeat/module/system/package:go_default_library",
+        "//x-pack/auditbeat/module/system/process:go_default_library",
+        "//x-pack/auditbeat/module/system/socket:go_default_library",
+        "//x-pack/auditbeat/module/system/user:go_default_library",
+    ],
+)

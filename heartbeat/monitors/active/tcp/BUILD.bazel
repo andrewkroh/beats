@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "datacheck.go",
+        "endpoint.go",
+        "tcp.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/heartbeat/monitors/active/tcp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//heartbeat/eventext:go_default_library",
+        "//heartbeat/look:go_default_library",
+        "//heartbeat/monitors:go_default_library",
+        "//heartbeat/monitors/active/dialchain:go_default_library",
+        "//heartbeat/monitors/active/dialchain/tlsmeta:go_default_library",
+        "//heartbeat/monitors/jobs:go_default_library",
+        "//heartbeat/monitors/wrappers:go_default_library",
+        "//heartbeat/reason:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/transport:go_default_library",
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "endpoint_test.go",
+        "helpers_test.go",
+        "socks5_test.go",
+        "tcp_test.go",
+        "tls_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//heartbeat/hbtest:go_default_library",
+        "//heartbeat/monitors:go_default_library",
+        "//heartbeat/monitors/stdfields:go_default_library",
+        "//heartbeat/monitors/wrappers:go_default_library",
+        "//heartbeat/scheduler/schedule:go_default_library",
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/testing:go_default_library",
+        "@com_github_armon_go_socks5//:go_default_library",
+        "@com_github_elastic_go_lookslike//:go_default_library",
+        "@com_github_elastic_go_lookslike//isdef:go_default_library",
+        "@com_github_elastic_go_lookslike//testslike:go_default_library",
+        "@com_github_elastic_go_lookslike//validator:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

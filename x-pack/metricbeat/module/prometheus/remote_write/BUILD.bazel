@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "data.go",
+        "remote_write.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/prometheus/remote_write",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//metricbeat/helper/prometheus:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "//metricbeat/mb/parse:go_default_library",
+        "//metricbeat/module/prometheus/remote_write:go_default_library",
+        "//x-pack/metricbeat/module/prometheus/collector:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_prometheus_client_model//go:go_default_library",
+        "@com_github_prometheus_common//model:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["remote_write_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//metricbeat/helper/prometheus:go_default_library",
+        "//x-pack/metricbeat/module/prometheus/collector:go_default_library",
+        "@com_github_prometheus_common//model:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

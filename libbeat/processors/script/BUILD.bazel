@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["processor.go"],
+    importpath = "github.com/elastic/beats/v7/libbeat/processors/script",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/processors:go_default_library",
+        "//libbeat/processors/script/javascript:go_default_library",
+        "//libbeat/processors/script/javascript/module:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

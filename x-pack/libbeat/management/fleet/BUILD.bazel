@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "manager.go",
+        "plugin.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/libbeat/management/fleet",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/feature:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/management:go_default_library",
+        "//x-pack/libbeat/management:go_default_library",
+        "//x-pack/libbeat/management/api:go_default_library",
+        "@com_github_elastic_elastic_agent_client_v7//pkg/client:go_default_library",
+        "@com_github_elastic_elastic_agent_client_v7//pkg/proto:go_default_library",
+        "@com_github_gofrs_uuid//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["manager_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/reload:go_default_library",
+        "//libbeat/management:go_default_library",
+        "@com_github_elastic_elastic_agent_client_v7//pkg/proto:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["includes.go"],
+    importpath = "github.com/elastic/beats/v7/libbeat/publisher/includes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/outputs/codec/format:go_default_library",
+        "//libbeat/outputs/codec/json:go_default_library",
+        "//libbeat/outputs/console:go_default_library",
+        "//libbeat/outputs/elasticsearch:go_default_library",
+        "//libbeat/outputs/fileout:go_default_library",
+        "//libbeat/outputs/kafka:go_default_library",
+        "//libbeat/outputs/logstash:go_default_library",
+        "//libbeat/outputs/redis:go_default_library",
+        "//libbeat/publisher/queue/memqueue:go_default_library",
+        "//libbeat/publisher/queue/spool:go_default_library",
+    ],
+)

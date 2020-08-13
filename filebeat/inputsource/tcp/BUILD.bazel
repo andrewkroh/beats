@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "handler.go",
+        "server.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/filebeat/inputsource/tcp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//filebeat/inputsource:go_default_library",
+        "//filebeat/inputsource/common:go_default_library",
+        "//libbeat/common/cfgtype:go_default_library",
+        "//libbeat/common/transport/tlscommon:go_default_library",
+        "@org_golang_x_net//netutil:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["server_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//filebeat/inputsource:go_default_library",
+        "//filebeat/inputsource/common:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "@com_github_dustin_go_humanize//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

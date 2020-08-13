@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "dsn.go",
+        "query.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/sql/query",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/cfgwarn:go_default_library",
+        "//metricbeat/helper/sql:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "@com_github_go_sql_driver_mysql//:go_default_library",
+        "@com_github_jmoiron_sqlx//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

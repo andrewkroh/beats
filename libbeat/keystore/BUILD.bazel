@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "file_keystore.go",
+        "keystore.go",
+        "secure_string.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/keystore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/bus:go_default_library",
+        "//libbeat/common/file:go_default_library",
+        "@com_github_elastic_go_ucfg//:go_default_library",
+        "@com_github_elastic_go_ucfg//parse:go_default_library",
+        "@org_golang_x_crypto//pbkdf2:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "file_keystore_test.go",
+        "keystore_test.go",
+        "secure_string_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/common:go_default_library",
+        "@com_github_docker_docker//pkg/ioutils:go_default_library",
+        "@com_github_elastic_go_ucfg//:go_default_library",
+        "@com_github_elastic_go_ucfg//parse:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

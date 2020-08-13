@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["event.go"],
+    importpath = "github.com/elastic/beats/v7/metricbeat/module/docker/event",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/module/docker:go_default_library",
+            "@com_github_docker_docker//api/types:go_default_library",
+            "@com_github_docker_docker//api/types/events:go_default_library",
+            "@com_github_docker_docker//client:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/module/docker:go_default_library",
+            "@com_github_docker_docker//api/types:go_default_library",
+            "@com_github_docker_docker//api/types/events:go_default_library",
+            "@com_github_docker_docker//client:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/module/docker:go_default_library",
+            "@com_github_docker_docker//api/types:go_default_library",
+            "@com_github_docker_docker//api/types/events:go_default_library",
+            "@com_github_docker_docker//client:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/module/docker:go_default_library",
+            "@com_github_docker_docker//api/types:go_default_library",
+            "@com_github_docker_docker//api/types/events:go_default_library",
+            "@com_github_docker_docker//client:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/common:go_default_library",
+            "//libbeat/logp:go_default_library",
+            "//metricbeat/mb:go_default_library",
+            "//metricbeat/module/docker:go_default_library",
+            "@com_github_docker_docker//api/types:go_default_library",
+            "@com_github_docker_docker//api/types/events:go_default_library",
+            "@com_github_docker_docker//client:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

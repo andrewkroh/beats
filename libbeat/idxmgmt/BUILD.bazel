@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "assets.go",
+        "client_handler.go",
+        "componenttype_string.go",
+        "idxmgmt.go",
+        "loadmode_string.go",
+        "std.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/libbeat/idxmgmt",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/beat/events:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/common/atomic:go_default_library",
+        "//libbeat/idxmgmt/ilm:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/outputs:go_default_library",
+        "//libbeat/outputs/outil:go_default_library",
+        "//libbeat/template:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "mockilm_test.go",
+        "std_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//libbeat/beat:go_default_library",
+        "//libbeat/common:go_default_library",
+        "//libbeat/idxmgmt/ilm:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//libbeat/mapping:go_default_library",
+        "//libbeat/template:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//mock:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

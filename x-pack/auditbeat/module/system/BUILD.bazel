@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "entity_hash.go",
+        "fields.go",
+        "system.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/x-pack/auditbeat/module/system",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/logp:go_default_library",
+        "//metricbeat/mb:go_default_library",
+        "@com_github_elastic_go_sysinfo//:go_default_library",
+    ],
+)

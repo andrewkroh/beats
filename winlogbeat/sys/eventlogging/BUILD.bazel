@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "eventlogging_windows.go",
+        "stringinserts_windows.go",
+        "syscall_windows.go",
+        "zsyscall_windows.go",
+    ],
+    importpath = "github.com/elastic/beats/v7/winlogbeat/sys/eventlogging",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//libbeat/logp:go_default_library",
+            "//winlogbeat/sys:go_default_library",
+            "@org_golang_x_sys//windows:go_default_library",
+            "@org_golang_x_sys//windows/registry:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["syscall_windows_test.go"],
+    embed = [":go_default_library"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@com_github_stretchr_testify//assert:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
