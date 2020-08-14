@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 go_test(
     name = "go_default_test",
     srcs = ["pipeline_test.go"],
+    data = glob(["config/*.js"]),
     deps = [
         "//libbeat/beat:go_default_library",
         "//libbeat/cmd/instance:go_default_library",

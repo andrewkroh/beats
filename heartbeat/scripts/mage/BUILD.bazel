@@ -8,5 +8,8 @@ go_library(
     ],
     importpath = "github.com/elastic/beats/v7/heartbeat/scripts/mage",
     visibility = ["//visibility:public"],
-    deps = ["//dev-tools/mage:go_default_library"],
+    deps = [
+        "//dev-tools/mage:go_default_library",
+        "@com_github_magefile_mage//mg:go_default_library",
+    ],
 )

@@ -28,6 +28,7 @@ go_test(
         "counter_test.go",
         "histogram_test.go",
     ],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",
