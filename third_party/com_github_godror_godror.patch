@@ -1,0 +1,178 @@
+diff -ruN a/BUILD.bazel b/BUILD.bazel
+--- a/BUILD.bazel	2000-01-01 00:00:00.000000000 -0000
++++ b/BUILD.bazel	2000-01-01 00:00:00.000000000 -0000
+@@ -17,6 +17,7 @@
+         "subscr.go",
+         "version.go",
+     ],
++    cdeps = ["//odpi:lib"],
+     cgo = True,
+     clinkopts = select({
+         "@io_bazel_rules_go//go/platform:aix": [
+diff -ruN a/conn.go b/conn.go
+--- a/conn.go	2000-01-01 00:00:00.000000000 -0000
++++ b/conn.go	2000-01-01 00:00:00.000000000 -0000
+@@ -7,7 +7,7 @@
+ 
+ /*
+ #include <stdlib.h>
+-#include "dpiImpl.h"
++#include "dpi.h"
+ */
+ import "C"
+ 
+diff -ruN a/data.go b/data.go
+--- a/data.go	2000-01-01 00:00:00.000000000 -0000
++++ b/data.go	2000-01-01 00:00:00.000000000 -0000
+@@ -7,7 +7,7 @@
+ 
+ /*
+ #include <stdlib.h>
+-#include "dpiImpl.h"
++#include "dpi.h"
+ */
+ import "C"
+ import (
+diff -ruN a/drv.go b/drv.go
+--- a/drv.go	2000-01-01 00:00:00.000000000 -0000
++++ b/drv.go	2000-01-01 00:00:00.000000000 -0000
+@@ -46,7 +46,7 @@
+ 
+ #include <stdlib.h>
+ 
+-#include "dpi.c"
++#include "dpi.h"
+ */
+ import "C"
+ 
+diff -ruN a/lob.go b/lob.go
+--- a/lob.go	2000-01-01 00:00:00.000000000 -0000
++++ b/lob.go	2000-01-01 00:00:00.000000000 -0000
+@@ -6,7 +6,7 @@
+ package godror
+ 
+ /*
+-#include "dpiImpl.h"
++#include "dpi.h"
+ */
+ import "C"
+ import (
+diff -ruN a/obj.go b/obj.go
+--- a/obj.go	2000-01-01 00:00:00.000000000 -0000
++++ b/obj.go	2000-01-01 00:00:00.000000000 -0000
+@@ -7,7 +7,7 @@
+ 
+ /*
+ #include <stdlib.h>
+-#include "dpiImpl.h"
++#include "dpi.h"
+ */
+ import "C"
+ import (
+diff -ruN a/odpi/BUILD.bazel b/odpi/BUILD.bazel
+--- a/odpi/BUILD.bazel	1969-12-31 19:00:00.000000000 -0500
++++ b/odpi/BUILD.bazel	2000-01-01 00:00:00.000000000 -0000
+@@ -0,0 +1,45 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++cc_library(
++    name = "lib",
++    srcs = [
++        "src/dpiConn.c",
++        "src/dpiContext.c",
++        "src/dpiData.c",
++        "src/dpiDebug.c",
++        "src/dpiDeqOptions.c",
++        "src/dpiEnqOptions.c",
++        "src/dpiEnv.c",
++        "src/dpiError.c",
++        "src/dpiGen.c",
++        "src/dpiGlobal.c",
++        "src/dpiHandleList.c",
++        "src/dpiHandlePool.c",
++        "src/dpiLob.c",
++        "src/dpiMsgProps.c",
++        "src/dpiObject.c",
++        "src/dpiObjectAttr.c",
++        "src/dpiObjectType.c",
++        "src/dpiOci.c",
++        "src/dpiOracleType.c",
++        "src/dpiPool.c",
++        "src/dpiQueue.c",
++        "src/dpiRowid.c",
++        "src/dpiSodaColl.c",
++        "src/dpiSodaCollCursor.c",
++        "src/dpiSodaDb.c",
++        "src/dpiSodaDoc.c",
++        "src/dpiSodaDocCursor.c",
++        "src/dpiStmt.c",
++        "src/dpiSubscr.c",
++        "src/dpiUtils.c",
++        "src/dpiVar.c",
++        "src/dpiErrorMessages.h",
++        "src/dpiImpl.h",
++    ],
++    hdrs = [
++        "include/dpi.h",
++    ],
++    strip_include_prefix = "include",
++    visibility = ["//visibility:public"],
++)
+diff -ruN a/queue.go b/queue.go
+--- a/queue.go	2000-01-01 00:00:00.000000000 -0000
++++ b/queue.go	2000-01-01 00:00:00.000000000 -0000
+@@ -7,7 +7,7 @@
+ 
+ /*
+ #include <stdlib.h>
+-#include "dpiImpl.h"
++#include "dpi.h"
+ */
+ import "C"
+ import (
+diff -ruN a/rows.go b/rows.go
+--- a/rows.go	2000-01-01 00:00:00.000000000 -0000
++++ b/rows.go	2000-01-01 00:00:00.000000000 -0000
+@@ -6,7 +6,7 @@
+ package godror
+ 
+ /*
+-#include "dpiImpl.h"
++#include "dpi.h"
+ */
+ import "C"
+ import (
+diff -ruN a/stmt.go b/stmt.go
+--- a/stmt.go	2000-01-01 00:00:00.000000000 -0000
++++ b/stmt.go	2000-01-01 00:00:00.000000000 -0000
+@@ -7,7 +7,7 @@
+ 
+ /*
+ #include <stdlib.h>
+-#include "dpiImpl.h"
++#include "dpi.h"
+ 
+ const int sizeof_dpiData = sizeof(void);
+ 
+diff -ruN a/subscr.c b/subscr.c
+--- a/subscr.c	2000-01-01 00:00:00.000000000 -0000
++++ b/subscr.c	2000-01-01 00:00:00.000000000 -0000
+@@ -1,5 +1,5 @@
+ #include <stdio.h>
+-#include "dpiImpl.h"
++#include "dpi.h"
+ 
+ void CallbackSubscr(void *context, dpiSubscrMessage *message);
+ 
+diff -ruN a/subscr.go b/subscr.go
+--- a/subscr.go	2000-01-01 00:00:00.000000000 -0000
++++ b/subscr.go	2000-01-01 00:00:00.000000000 -0000
+@@ -8,7 +8,7 @@
+ /*
+ #include <stdlib.h>
+ #include <stdio.h>
+-#include "dpiImpl.h"
++#include "dpi.h"
+ 
+ void CallbackSubscrDebug(void *context, dpiSubscrMessage *message);
+ 
