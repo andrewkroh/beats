@@ -15,6 +15,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["pilot_test.go"],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//metricbeat/mb/testing:go_default_library",

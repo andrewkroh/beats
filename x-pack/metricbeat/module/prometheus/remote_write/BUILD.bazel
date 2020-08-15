@@ -27,6 +27,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["remote_write_test.go"],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

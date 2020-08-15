@@ -22,6 +22,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["data_test.go"],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = ["@com_github_stretchr_testify//assert:go_default_library"],
 )

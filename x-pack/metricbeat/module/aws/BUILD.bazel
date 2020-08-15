@@ -37,6 +37,7 @@ go_test(
         "aws_test.go",
         "utils_test.go",
     ],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",

@@ -23,6 +23,7 @@ go_test(
         "client_helper_test.go",
         "compute_vm_test.go",
     ],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

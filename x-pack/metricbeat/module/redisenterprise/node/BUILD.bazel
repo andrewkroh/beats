@@ -1,8 +1,21 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
+exports_files(
+    [
+        "manifest.yml",
+    ],
+    visibility = ["//x-pack/metricbeat/module/redisenterprise:__subpackages__"],
+)
+
 go_test(
     name = "go_default_test",
     srcs = ["node_test.go"],
+    data = [
+        "//x-pack/metricbeat/module/redisenterprise:module.yml",
+        # TODO: This should not depend on 'proxy'.
+        "//x-pack/metricbeat/module/redisenterprise/proxy:manifest.yml",
+        "manifest.yml",
+    ] + glob(["_meta/testdata/**"]),
     deps = [
         "//libbeat/logp:go_default_library",
         "//metricbeat/mb:go_default_library",

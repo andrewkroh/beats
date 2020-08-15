@@ -3,6 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 go_test(
     name = "go_default_test",
     srcs = ["qmgr_test.go"],
+    data = [
+        "//x-pack/metricbeat/module/ibmmq:module.yml",
+        "manifest.yml",
+    ] + glob(["_meta/testdata/**"]),
     deps = [
         "//libbeat/logp:go_default_library",
         "//metricbeat/mb:go_default_library",

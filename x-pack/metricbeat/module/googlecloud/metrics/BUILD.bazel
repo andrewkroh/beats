@@ -37,6 +37,7 @@ go_test(
         "metrics_requester_test.go",
         "response_parser_test.go",
     ],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//libbeat/logp:go_default_library",

@@ -30,6 +30,7 @@ go_test(
         "client_test.go",
         "data_test.go",
     ],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "@com_github_azure_azure_sdk_for_go//services/consumption/mgmt/2019-01-01/consumption:go_default_library",

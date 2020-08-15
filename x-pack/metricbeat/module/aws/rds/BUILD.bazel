@@ -25,6 +25,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["rds_test.go"],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//x-pack/metricbeat/module/aws:go_default_library",

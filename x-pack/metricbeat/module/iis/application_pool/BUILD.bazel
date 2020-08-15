@@ -29,6 +29,7 @@ go_test(
         "application_pool_test.go",
         "reader_test.go",
     ],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = select({
         "@io_bazel_rules_go//go/platform:windows": [
