@@ -1,0 +1,197 @@
+{
+    "asmdecl": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "assign": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "atomic": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "atomicalign": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "bools": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "buildssa": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "buildtag": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "cgocall": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "composites": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "copylocks": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "ctrlflow": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "deepequalerrors": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "errorsas": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "findcall": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "httpresponse": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "ifaceassert": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "inspect": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "loopclosure": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "lostcancel": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "nilfunc": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "nilness": {
+        "exclude_files": {
+            "libbeat/autodiscover/template/config.go": "143:10: impossible condition: nil != nil",
+            "libbeat/tests/compose/compose.go": "108:9: impossible condition: nil != nil",
+            "libbeat/outputs/elasticsearch/client.go": "258:14: tautological condition: nil == nil",
+            "filebeat/inputsource/udp/server.go":"impossible condition: nil != nil",
+            "x-pack/auditbeat/module/system/package/package.go": "492:16/507:16/522:16: tautological condition: non-nil != nil",
+            "_cgo_gotypes.go": "rules_go_work",
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "pkgfact": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "printf": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "shadow": {
+        "exclude_files": {
+            "libbeat/common/dtfmt/fmt.go": "",
+            "libbeat/common/match/optimize.go": "",
+            "libbeat/logp/global.go": "",
+            "libbeat/logp/logger.go": "",
+            "journalbeat/checkpoint/checkpoint.go": "",
+            "libbeat/common/config.go": "",
+            "libbeat/cloudid/cloudid.go": "",
+            "libbeat/plugin/plugin.go": "",
+            "libbeat/common/streambuf/ascii.go": "",
+            "libbeat/service/service.go": "",
+            "libbeat/keystore/file_keystore.go": "",
+            "libbeat/api/make_listener_posix.go": "",
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "shift": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "sortslice": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "stdmethods": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "stringintconv": {
+        "exclude_files": {
+            "x-pack/filebeat/input/netflow/decoder/template/test_helpers.go": "conversion from int to string yields a string of one rune",
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "structtag": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "testinggoroutine": {
+        "exclude_files": {
+            "libbeat/processors/dns/dns_test.go": "call to (*T).Fatal from a non-test goroutine",
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "tests": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "unmarshal": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "unreachable": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "unsafeptr": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    },
+    "unusedresult": {
+        "exclude_files": {
+            "external/.*": "external tools don't pass vet"
+        }
+    }
+}

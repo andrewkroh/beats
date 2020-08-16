@@ -985,10 +985,10 @@ def go_repositories():
         name = "com_github_godror_godror",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/godror/godror",
+        patch_args = ["-p1"],
+        patches = ["//third_party:com_github_godror_godror.patch"],
         sum = "h1:44FcfzDPp/PJZzen5Hm59SZQBhgrbR6E1KwCjg6gnJo=",
         version = "v0.10.4",
-        patches = ["//third_party:com_github_godror_godror.patch"],
-        patch_args = ["-p1"],
     )
     go_repository(
         name = "com_github_gofrs_flock",

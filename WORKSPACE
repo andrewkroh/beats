@@ -40,7 +40,10 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 
 go_rules_dependencies()
 
-go_register_toolchains(go_version = "1.14.7")
+go_register_toolchains(
+    go_version = "1.14.7",
+    nogo = "@//:beats_nogo",
+)
 
 load("//:repositories.bzl", "go_repositories")
 
