@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@beats_deps//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "py_libbeat_library",
+    srcs = ["base.py"],
+    data = ["//libbeat/tests/system/config:libbeat.yml.j2"],
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("elasticsearch"),
+    ],
+)

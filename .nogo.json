@@ -104,7 +104,8 @@
             "libbeat/autodiscover/template/config.go": "143:10: impossible condition: nil != nil",
             "libbeat/tests/compose/compose.go": "108:9: impossible condition: nil != nil",
             "libbeat/outputs/elasticsearch/client.go": "258:14: tautological condition: nil == nil",
-            "filebeat/inputsource/udp/server.go":"impossible condition: nil != nil",
+            "filebeat/inputsource/udp/server.go": "impossible condition: nil != nil",
+            "metricbeat/helper/prometheus/prometheus.go": "154:9: tautological condition: non-nil != nil",
             "x-pack/auditbeat/module/system/package/package.go": "492:16/507:16/522:16: tautological condition: non-nil != nil",
             "_cgo_gotypes.go": "rules_go_work",
             "external/.*": "external tools don't pass vet"

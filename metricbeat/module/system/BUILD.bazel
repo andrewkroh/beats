@@ -1,4 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@beats_deps//:requirements.bzl", "requirement")
 
 go_library(
     name = "go_default_library",
@@ -34,4 +36,19 @@ go_test(
     name = "go_default_test",
     srcs = ["hostnamechange_test.go"],
     embed = [":go_default_library"],
+)
+
+py_test(
+    name = "py_integ_test",
+    size = "small",
+    srcs = ["test_system.py"],
+    args = ["-v"],
+    data = [
+        "//metricbeat",
+    ],
+    main = "test_system.py",
+    deps = [
+        requirement("six"),
+        "//metricbeat/tests/system:py_metricbeat_library",
+    ],
 )

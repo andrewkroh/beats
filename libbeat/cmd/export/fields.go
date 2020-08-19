@@ -15,36 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package main
+package export
 
 import (
-	"flag"
-	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/elastic/beats/v7/libbeat/cmd/instance"
 )
 
-var (
-	inputFile  string
-	outputFile string
-)
+// GenFieldsCmd returns a command that outputs the fields YAML data embedded in
+// in the Beat.
+func GenFieldsCmd(settings instance.Settings) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "fields",
+		Short: "Export fields YAML to stdout",
+		Run: func(cmd *cobra.Command, args []string) {
+			b, err := instance.NewInitializedBeat(settings)
+			if err != nil {
+				fatalfInitCmd(err)
+			}
 
-func init() {
-	flag.StringVar(&inputFile, "i", "", "input file")
-	flag.StringVar(&outputFile, "o", "", "output file")
-}
-
-func main() {
-	flag.Parse()
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] [context_key:context_file ...]\n", os.Args[0])
-		flag.PrintDefaults()
+			if _, err = os.Stdout.Write(b.Fields); err != nil {
+				fatalf("Error writing fields YAML to stdout: %+v", err)
+			}
+		},
 	}
 
-	fmt.Println("hello world in=", inputFile, "out", outputFile)
-
-	if err := ioutil.WriteFile(outputFile, []byte("hello\n"), 0644); err != nil {
-		log.Fatal(err)
-	}
+	return cmd
 }

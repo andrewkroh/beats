@@ -6,6 +6,7 @@ go_library(
         "config.go",
         "dashboard.go",
         "export.go",
+        "fields.go",
         "ilm_policy.go",
         "index_pattern.go",
         "template.go",

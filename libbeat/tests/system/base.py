@@ -1,6 +1,8 @@
 import os
-from beat.beat import TestCase
+
 from elasticsearch import Elasticsearch, NotFoundError
+
+from libbeat.tests.system.beat.beat import TestCase
 
 
 class BaseTest(TestCase):

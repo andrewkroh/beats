@@ -1,28 +1,24 @@
-import subprocess
-
+import glob
 import jinja2
-import unittest
-import os
-import shutil
 import json
+import logging
+import os
+import re
+import shutil
 import signal
+import subprocess
 import sys
 import time
+import unittest
 import yaml
-import hashlib
-import re
-import glob
 from datetime import datetime, timedelta
 
 from .compose import ComposeMixin
-
 
 BEAT_REQUIRED_FIELDS = ["@timestamp",
                         "agent.type", "agent.name", "agent.version"]
 
 INTEGRATION_TESTS = os.environ.get('INTEGRATION_TESTS', False)
-
-yaml_cache = {}
 
 REGEXP_TYPE = type(re.compile("t"))
 
@@ -122,17 +118,25 @@ class TestCase(unittest.TestCase, ComposeMixin):
 
     @classmethod
     def setUpClass(self):
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(logging.Formatter(
+            '%(asctime)s [%(filename)s:%(lineno)d] %(levelname)s - %(message)s'))
+        logger.addHandler(stream_handler)
+        self.logger = logger
 
-        # Path to test binary
         if not hasattr(self, 'beat_name'):
-            self.beat_name = "beat"
+            raise ValueError('beat_name is a required attribute')
 
         if not hasattr(self, 'beat_path'):
             self.beat_path = "."
+        self.logger.debug("beat_path: {}".format(self.beat_path))
 
         # Path to test binary
         if not hasattr(self, 'test_binary'):
-            self.test_binary = os.path.abspath(self.beat_path + "/" + self.beat_name + ".test")
+            self.test_binary = os.path.abspath(os.path.join(self.beat_path, self.beat_name + ".test"))
+        self.logger.debug("test_binary: {}".format(self.test_binary))
 
         if not hasattr(self, 'template_paths'):
             self.template_paths = [
@@ -140,9 +144,11 @@ class TestCase(unittest.TestCase, ComposeMixin):
                 os.path.abspath(os.path.join(self.beat_path, "../libbeat"))
             ]
 
-        # Create build path
-        build_dir = self.beat_path + "/build"
-        self.build_path = build_dir + "/system-tests/"
+        test_outputs_dir = os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR")
+        if test_outputs_dir is None:
+            test_outputs_dir = os.environ.get("TEST_TMPDIR")
+        self.logger.debug("test_outputs_dir: {}".format(test_outputs_dir))
+        self.build_path = test_outputs_dir
 
         # Start the containers needed to run these tests
         self.compose_up_with_retries()
@@ -209,7 +215,7 @@ class TestCase(unittest.TestCase, ComposeMixin):
         if output is None:
             output = self.beat_name + ".log"
 
-        args = [cmd, "-systemTest"]
+        args = [cmd]
         if os.getenv("TEST_COVERAGE") == "true":
             args += [
                 "-test.coverprofile",
@@ -275,7 +281,7 @@ class TestCase(unittest.TestCase, ComposeMixin):
 
                 try:
                     jsons.append(self.flatten_object(json.loads(
-                        line, object_pairs_hook=self.json_raise_on_duplicates), []))
+                        line, object_pairs_hook=self.json_raise_on_duplicates)))
                 except:
                     print("Fail to load the json {}".format(line))
                     raise
@@ -326,26 +332,10 @@ class TestCase(unittest.TestCase, ComposeMixin):
 
         # create working dir
         self.working_dir = os.path.abspath(os.path.join(
-            self.build_path + "run", self.id()))
+            self.build_path, self.id()))
         if os.path.exists(self.working_dir):
             shutil.rmtree(self.working_dir)
         os.makedirs(self.working_dir)
-
-        fields_yml = os.path.join(self.beat_path, "fields.yml")
-        # Only add it if it exists
-        if os.path.isfile(fields_yml):
-            shutil.copyfile(fields_yml, os.path.join(self.working_dir, "fields.yml"))
-
-        try:
-            # update the last_run link
-            if os.path.islink(self.build_path + "last_run"):
-                os.unlink(self.build_path + "last_run")
-            os.symlink(self.build_path + "run/{}".format(self.id()),
-                       self.build_path + "last_run")
-        except:
-            # symlink is best effort and can fail when
-            # running tests in parallel
-            pass
 
     def wait_until(self, cond, max_timeout=10, poll_interval=0.1, name="cond"):
         """
@@ -544,96 +534,28 @@ class TestCase(unittest.TestCase, ComposeMixin):
                     raise Exception("Unexpected key '{}' found"
                                     .format(key))
 
-    def load_fields(self, fields_doc=None):
-        """
-        Returns a list of fields to expect in the output dictionaries
-        and a second list that contains the fields that have a
-        dictionary type.
+    def assert_fields_are_documented(self, evt):
+        """Asserts that all fields in the event are documented in fields.yml."""
+        if not hasattr(self, 'fields'):
+            # Use 'beat export fields' to initialize a BeatFields object.
+            result = subprocess.run([self.test_binary, '-c',
+                                     os.path.join(self.beat_name, self.beat_name+".yml"),
+                                     'export', 'fields'],
+                                    stdout=subprocess.PIPE)
+            if result.returncode != 0:
+                raise AssertionError("export fields field with exit code {}".format(result.returncode))
+            raw_yaml = result.stdout.decode('utf_8')
+            self.fields = BeatFields(raw_yaml)
 
-        Reads these lists from the fields documentation.
-        """
+        # Validate all fields.
+        self.fields.assert_fields_are_documented(evt)
 
-        if fields_doc is None:
-            fields_doc = self.beat_path + "/fields.yml"
-
-        def extract_fields(doc_list, name):
-            fields = []
-            dictfields = []
-            aliases = []
-
-            if doc_list is None:
-                return fields, dictfields, aliases
-
-            for field in doc_list:
-
-                # Skip fields without name entry
-                if "name" not in field:
-                    continue
-
-                # Chain together names. Names in group `base` are top-level.
-                if name != "" and name != "base":
-                    newName = name + "." + field["name"]
-                else:
-                    newName = field["name"]
-
-                if field.get("type") == "group":
-                    subfields, subdictfields, subaliases = extract_fields(field["fields"], newName)
-                    fields.extend(subfields)
-                    dictfields.extend(subdictfields)
-                    aliases.extend(subaliases)
-                else:
-                    fields.append(newName)
-                    if field.get("type") in ["object", "geo_point", "flattened"]:
-                        dictfields.append(newName)
-
-                if field.get("type") == "object" and field.get("object_type") == "histogram":
-                    fields.append(newName + ".values")
-                    fields.append(newName + ".counts")
-
-                if field.get("type") == "alias":
-                    aliases.append(newName)
-
-            return fields, dictfields, aliases
-
-        global yaml_cache
-
-        # TODO: Make fields_doc path more generic to work with beat-generator. If it can't find file
-        # "fields.yml" you should run "make update" on metricbeat folder
-        with open(fields_doc, "r", encoding="utf_8") as f:
-            path = os.path.abspath(os.path.dirname(__file__) + "../../../../fields.yml")
-            if not os.path.isfile(path):
-                path = os.path.abspath(os.path.dirname(__file__) + "../../../../_meta/fields.common.yml")
-            with open(path) as f2:
-                content = f2.read()
-
-            content += f.read()
-
-            hash = hashlib.md5(content.encode("utf-8")).hexdigest()
-            doc = ""
-            if hash in yaml_cache:
-                doc = yaml_cache[hash]
-            else:
-                doc = yaml.safe_load(content)
-                yaml_cache[hash] = doc
-
-            fields = []
-            dictfields = []
-            aliases = []
-
-            for item in doc:
-                subfields, subdictfields, subaliases = extract_fields(item["fields"], "")
-                fields.extend(subfields)
-                dictfields.extend(subdictfields)
-                aliases.extend(subaliases)
-            return fields, dictfields, aliases
-
-    def flatten_object(self, obj, dict_fields, prefix=""):
+    def flatten_object(self, obj, prefix=""):
         result = {}
         for key, value in obj.items():
-            if isinstance(value, dict) and prefix + key not in dict_fields:
+            if isinstance(value, dict):
                 new_prefix = prefix + key + "."
-                result.update(self.flatten_object(value, dict_fields,
-                                                  new_prefix))
+                result.update(self.flatten_object(value, new_prefix))
             else:
                 result[prefix + key] = value
         return result
@@ -693,43 +615,6 @@ class TestCase(unittest.TestCase, ComposeMixin):
             port=os.getenv("KIBANA_PORT", "5601"),
         )
 
-    def assert_fields_are_documented(self, evt):
-        """
-        Assert that all keys present in evt are documented in fields.yml.
-        This reads from the global fields.yml, means `make collect` has to be run before the check.
-        """
-        expected_fields, dict_fields, aliases = self.load_fields()
-        flat = self.flatten_object(evt, dict_fields)
-
-        def field_pattern_match(pattern, key):
-            pattern_fields = pattern.split(".")
-            key_fields = key.split(".")
-            if len(pattern_fields) != len(key_fields):
-                return False
-            for i in range(len(pattern_fields)):
-                if pattern_fields[i] == "*":
-                    continue
-                if pattern_fields[i] != key_fields[i]:
-                    return False
-            return True
-
-        def is_documented(key, docs):
-            if key in docs:
-                return True
-            for pattern in (f for f in docs if "*" in f):
-                if field_pattern_match(pattern, key):
-                    return True
-            return False
-
-        for key in flat.keys():
-            metaKey = key.startswith('@metadata.')
-            # Range keys as used in 'date_range' etc will not have docs of course
-            isRangeKey = key.split('.')[-1] in ['gte', 'gt', 'lte', 'lt']
-            if not(is_documented(key, expected_fields) or metaKey or isRangeKey):
-                raise Exception("Key '{}' found in event is not documented!".format(key))
-            if is_documented(key, aliases):
-                raise Exception("Key '{}' found in event is documented as an alias!".format(key))
-
     def get_beat_version(self):
         proc = self.start_beat(extra_args=["version"], output="version")
         proc.wait()
@@ -765,3 +650,116 @@ class TestCase(unittest.TestCase, ComposeMixin):
                 errors.append("{}".format(cfg_path))
         if len(errors) > 0:
             raise Exception("{}/{} ecs.version not explicitly set in:\n{}".format(module, fileset, '\n'.join(errors)))
+
+
+class BeatFields:
+    """Contains beat field data."""
+    fields = []
+    dictfields = []
+    aliases = []
+
+    def __init__(self, raw_yaml):
+        self.fields, self.dictfields, self.aliases = self.parse_yaml(raw_yaml)
+
+    def parse_yaml(self, raw_yaml):
+        doc = yaml.safe_load(raw_yaml)
+
+        fields = []
+        dictfields = []
+        aliases = []
+
+        for item in doc:
+            subfields, subdictfields, subaliases = self.extract_fields(item["fields"], "")
+            fields.extend(subfields)
+            dictfields.extend(subdictfields)
+            aliases.extend(subaliases)
+
+        return fields, dictfields, aliases
+
+    def extract_fields(self, doc_list, name):
+        fields = []
+        dictfields = []
+        aliases = []
+
+        if doc_list is None:
+            return fields, dictfields, aliases
+
+        for field in doc_list:
+            # Skip fields without name entry.
+            if "name" not in field:
+                continue
+
+            # Chain together names. Names in group `base` are top-level.
+            if name != "" and name != "base":
+                newName = name + "." + field["name"]
+            else:
+                newName = field["name"]
+
+            if field.get("type") == "group":
+                subfields, subdictfields, subaliases = self.extract_fields(field["fields"], newName)
+                fields.extend(subfields)
+                dictfields.extend(subdictfields)
+                aliases.extend(subaliases)
+            else:
+                fields.append(newName)
+                if field.get("type") in ["object", "geo_point", "flattened"]:
+                    dictfields.append(newName)
+
+            if field.get("type") == "object" and field.get("object_type") == "histogram":
+                fields.append(newName + ".values")
+                fields.append(newName + ".counts")
+
+            if field.get("type") == "alias":
+                aliases.append(newName)
+
+        return fields, dictfields, aliases
+
+    def assert_field_is_documented(self, key):
+        isMetaKey = key.startswith('@metadata.')
+        # Range keys as used in 'date_range' etc will not have docs.
+        isRangeKey = key.split('.')[-1] in ['gte', 'gt', 'lte', 'lt']
+
+        if not(self.is_documented(key, self.fields) or isMetaKey or isRangeKey):
+            raise Exception("Key '{}' found in event is not documented!".format(key))
+        if self.is_documented(key, self.aliases):
+            raise Exception("Key '{}' found in event is documented as an alias!".format(key))
+
+    def assert_fields_are_documented(self, evt):
+        """
+        Assert that all keys present in evt are documented in fields.yml.
+        This reads from the global fields.yml, means `make collect` has to be run before the check.
+        """
+        flat = self.flatten_object(evt)
+        for key in flat.keys():
+            self.assert_field_is_documented(key)
+
+    def flatten_object(self, obj, prefix=""):
+        result = {}
+        for key, value in obj.items():
+            # Skip object fields.
+            if isinstance(value, dict) and prefix + key not in self.dictfields:
+                new_prefix = prefix + key + "."
+                result.update(self.flatten_object(value, new_prefix))
+            else:
+                result[prefix + key] = value
+        return result
+
+    def field_pattern_match(self, pattern, key):
+        pattern_fields = pattern.split(".")
+        key_fields = key.split(".")
+        if len(pattern_fields) != len(key_fields):
+            return False
+        for i in range(len(pattern_fields)):
+            if pattern_fields[i] == "*":
+                continue
+            if pattern_fields[i] != key_fields[i]:
+                return False
+        return True
+
+    def is_documented(self, key, docs):
+        if key in docs:
+            return True
+        for pattern in (f for f in docs if "*" in f):
+            if self.field_pattern_match(pattern, key):
+                return True
+        return False

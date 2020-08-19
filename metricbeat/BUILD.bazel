@@ -1,5 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
+exports_files(["metricbeat.yml"])
+
 go_library(
     name = "go_default_library",
     srcs = ["main.go"],
@@ -12,6 +14,18 @@ go_binary(
     name = "metricbeat",
     embed = [":go_default_library"],
     visibility = ["//visibility:public"],
+)
+
+# The filename of the executable produced by a go_binary rule is unpredictable
+# so copy the binary well known name for tests.
+# Alternatively we could pass "$(execpath //metricbeat:metricbeat)" in args to
+# py_test, but then you need a custom _main_ to handle the args.
+genrule(
+    name = "normalized_binary",
+    srcs = [":metricbeat"],
+    outs = ["metricbeat.test"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//metricbeat:__subpackages__"],
 )
 
 go_test(

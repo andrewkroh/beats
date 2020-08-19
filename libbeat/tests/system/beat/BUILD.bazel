@@ -1,0 +1,22 @@
+load("@rules_python//python:defs.bzl", "py_library")
+load("@beats_deps//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "py_default_library",
+    srcs = [
+        "beat.py",
+        "common_tests.py",
+        "compose.py",
+        "tags.py",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("elasticsearch"),
+        requirement("jinja2"),
+        requirement("markupsafe"),
+        requirement("parameterized"),
+        requirement("PyYAML"),
+    ],
+)

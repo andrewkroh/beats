@@ -53,3 +53,18 @@ go_repositories()
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 
 gazelle_dependencies()
+
+load("@rules_python//python:pip.bzl", "pip3_import")
+
+# Create a central repo that knows about the dependencies needed for
+# requirements.txt.
+pip3_import(
+    name = "beats_deps",
+    requirements = "//libbeat/tests/system:requirements.txt",
+)
+
+# Load the central repo's install function from its `//:requirements.bzl` file,
+# and call it.
+load("@beats_deps//:requirements.bzl", "pip_install")
+
+pip_install()
