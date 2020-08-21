@@ -13,7 +13,6 @@ require (
 	github.com/Azure/azure-event-hubs-go/v3 v3.1.2
 	github.com/Azure/azure-sdk-for-go v37.1.0+incompatible
 	github.com/Azure/azure-storage-blob-go v0.8.0
-	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Azure/go-autorest/autorest v0.9.4
 	github.com/Azure/go-autorest/autorest/adal v0.8.1
 	github.com/Azure/go-autorest/autorest/azure/auth v0.4.2
@@ -107,7 +106,6 @@ require (
 	github.com/josephspurrier/goversioninfo v0.0.0-20190209210621-63e6d1acd3dd
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/lib/pq v1.1.2-0.20190507191818-2ff3cb3adc01
 	github.com/magefile/mage v1.10.0
 	github.com/mailru/easyjson v0.7.1 // indirect
@@ -123,6 +121,7 @@ require (
 	github.com/oklog/ulid v1.3.1
 	github.com/opencontainers/go-digest v1.0.0-rc1.0.20190228220655-ac19fd6e7483 // indirect
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6 // indirect
+	github.com/ory/dockertest/v3 v3.6.0
 	github.com/pierrre/gotestcover v0.0.0-20160517101806-924dca7d15f0
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0

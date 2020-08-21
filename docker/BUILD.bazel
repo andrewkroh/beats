@@ -1,0 +1,13 @@
+load("//bazel/rules/docker:docker_load.bzl", "docker_load")
+
+package(default_visibility = ["//visibility:public"])
+
+docker_load(
+    name = "kibana",
+    image = "@co_elastic_docker_kibana//image",
+)
+
+docker_load(
+    name = "elasticsearch",
+    image = "@co_elastic_docker_elasticsearch//image",
+)

@@ -632,6 +632,7 @@ def go_repositories():
         name = "com_github_dop251_goja_nodejs",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/dop251/goja_nodejs",
+        replace = "github.com/dop251/goja_nodejs",
         sum = "h1:RrkoB0pT3gnjXhL/t10BSP1mcr/0Ldea2uMyuBr2SWk=",
         version = "v0.0.0-20171011081505-adff31b136e6",
     )
@@ -2617,4 +2618,32 @@ def go_repositories():
         importpath = "gotest.tools",
         sum = "h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=",
         version = "v2.2.0+incompatible",
+    )
+    go_repository(
+        name = "com_github_cenkalti_backoff_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/cenkalti/backoff/v3",
+        sum = "h1:ske+9nBpD9qZsTBoF41nW5L+AIuFBKMeze18XQ3eG1c=",
+        version = "v3.0.0",
+    )
+    go_repository(
+        name = "com_github_nvveen_gotty",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/Nvveen/Gotty",
+        sum = "h1:TngWCqHvy9oXAN6lEVMRuU21PR1EtLVZJmdB18Gu3Rw=",
+        version = "v0.0.0-20120604004816-cd527374f1e5",
+    )
+    go_repository(
+        name = "com_github_ory_dockertest_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/ory/dockertest/v3",
+        sum = "h1:I6KNJ6izxGduLACQii2SP/g7GN0JM9Xfaik6aAVaw6Y=",
+        version = "v3.6.0",
+    )
+    go_repository(
+        name = "tools_gotest_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "gotest.tools/v3",
+        sum = "h1:kG1BFyqVHuQoVQiR1bWGnfz/fmHvvuiSPIV7rvl360E=",
+        version = "v3.0.2",
     )

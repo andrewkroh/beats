@@ -5,8 +5,8 @@ py_library(
     name = "py_metricbeat_library",
     srcs = ["metricbeat.py"],
     data = [
-        "//metricbeat:normalized_binary",
         "//metricbeat:metricbeat.yml",
+        "//metricbeat:normalized_binary",
         "//metricbeat/tests/system/config:metricbeat.yml.j2",
     ],
     visibility = ["//visibility:public"],

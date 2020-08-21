@@ -26,6 +26,13 @@ http_archive(
 )
 
 http_archive(
+    name = "io_bazel_rules_docker",
+    sha256 = "4521794f0fba2e20f3bf15846ab5e01d5332e587e9ce81629c7f96c793bb7036",
+    strip_prefix = "rules_docker-0.14.4",
+    urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.14.4/rules_docker-v0.14.4.tar.gz"],
+)
+
+http_archive(
     name = "com_google_protobuf",
     sha256 = "9748c0d90e54ea09e5e75fb7fac16edce15d2028d4356f32211cfa3c0e956564",
     strip_prefix = "protobuf-3.11.4",
@@ -68,3 +75,33 @@ pip3_import(
 load("@beats_deps//:requirements.bzl", "pip_install")
 
 pip_install()
+
+load(
+    "@io_bazel_rules_docker//repositories:repositories.bzl",
+    container_repositories = "repositories",
+)
+
+container_repositories()
+
+load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
+
+container_deps()
+
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_pull",
+)
+
+container_pull(
+    name = "co_elastic_docker_kibana",
+    registry = "docker.elastic.co",
+    repository = "kibana/kibana",
+    tag = "8.0.0-SNAPSHOT",
+)
+
+container_pull(
+    name = "co_elastic_docker_elasticsearch",
+    registry = "docker.elastic.co",
+    repository = "elasticsearch/elasticsearch",
+    tag = "8.0.0-SNAPSHOT",
+)

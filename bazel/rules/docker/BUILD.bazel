@@ -2,13 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "go_default_library",
-    srcs = ["main.go"],
-    importpath = "github.com/elastic/beats/v7/bazel/rules/fields_go",
+    srcs = ["docker.loader.go"],
+    importpath = "github.com/elastic/beats/v7/bazel/rules/docker",
     visibility = ["//visibility:private"],
 )
 
 go_binary(
-    name = "gotemplate",
+    name = "go_docker_loader",
     embed = [":go_default_library"],
     msan = "off",
     pure = "on",
@@ -17,9 +17,9 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
-load("//bazel/rules/fields_go:empty.bzl", "gotemplate")
-
-gotemplate(
-    name = "foo",
-    template = "foo.yml",
+exports_files(
+    [
+        "docker_load.bzl",
+    ],
+    ["//visibility:public"],
 )

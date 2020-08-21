@@ -27,11 +27,35 @@ go_test(
         "data_test.go",
         "status_test.go",
     ],
-    data = glob(["_meta/test/*", "_meta/testdata/*"]),
+    data = glob([
+        "_meta/test/*",
+        "_meta/testdata/*",
+    ]),
     embed = [":go_default_library"],
     deps = [
         "//metricbeat/mb/testing:go_default_library",
         "//metricbeat/module/kibana:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_integ_test",
+    size = "medium",
+    srcs = ["status_integration_test.go"],
+    data = [
+        "//docker:elasticsearch",
+        "//docker:kibana",
+    ],
+    embed = [":go_default_library"],
+    gotags = ["integration"],
+    tags = ["integration"],
+    deps = [
+        "//libbeat/tests/compose:go_default_library",
+        "//metricbeat/mb/testing:go_default_library",
+        "//metricbeat/module/kibana/mtest:go_default_library",
+        "@com_github_ory_dockertest_v3//:go_default_library",
+        "@com_github_ory_dockertest_v3//docker:go_default_library",
         "@com_github_stretchr_testify//require:go_default_library",
     ],
 )

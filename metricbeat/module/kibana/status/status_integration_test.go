@@ -20,19 +20,90 @@
 package status
 
 import (
+	"bytes"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"testing"
+	"time"
 
+	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v3/docker"
 	"github.com/stretchr/testify/require"
 
-	"github.com/elastic/beats/v7/libbeat/tests/compose"
 	mbtest "github.com/elastic/beats/v7/metricbeat/mb/testing"
 	"github.com/elastic/beats/v7/metricbeat/module/kibana/mtest"
 )
 
 func TestFetch(t *testing.T) {
-	service := compose.EnsureUpWithTimeout(t, 570, "kibana")
+	pool, err := dockertest.NewPool("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pool.MaxWait = 3 * time.Minute
 
-	f := mbtest.NewReportingMetricSetV2Error(t, mtest.GetConfig("status", service.Host(), false))
+	esOptions := &dockertest.RunOptions{
+		Name:       "elasticsearch",
+		Repository: "bazel/elasticsearch",
+		Tag:        "latest",
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"9200/tcp": []docker.PortBinding{{HostIP: "127.0.0.1", HostPort: "0"}},
+		},
+		Env: []string{
+			"ES_JAVA_OPTS=-Xms1g -Xmx1g",
+			"network.host=",
+			"transport.host=127.0.0.1",
+			"http.host=0.0.0.0",
+			"xpack.security.enabled=false",
+			"indices.id_field_data.enabled=true",
+		},
+	}
+	es, err := pool.RunWithOptions(esOptions)
+	if err != nil {
+		t.Fatalf("Could not start resource: %s", err)
+	}
+	defer pool.Purge(es)
+
+	kibanaOptions := &dockertest.RunOptions{
+		Name:       "kibana",
+		Repository: "bazel/kibana",
+		Tag:        "latest",
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"5601/tcp": []docker.PortBinding{{HostIP: "127.0.0.1", HostPort: "0"}},
+		},
+		Links: []string{
+			es.Container.Name,
+		},
+	}
+	kibana, err := pool.RunWithOptions(kibanaOptions)
+	if err != nil {
+		t.Fatalf("Could not start resource: %s", err)
+	}
+	defer pool.Purge(kibana)
+
+	endpoint := fmt.Sprintf("localhost:%s", kibana.GetPort("5601/tcp"))
+	t.Log("Kibana address:", endpoint)
+
+	err = pool.Retry(func() error {
+		r, err := http.Get("http://" + endpoint + "/api/status")
+		if err != nil {
+			return err
+		}
+		defer r.Body.Close()
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return err
+		}
+		if r.StatusCode == http.StatusOK && bytes.Contains(body, []byte(`{"overall":{"state":"green"`)) && bytes.Contains(body, []byte(`"metrics"`)) {
+			return nil
+		}
+		return fmt.Errorf("http status: %d", r.StatusCode)
+	})
+	if err != nil {
+		t.Fatal("Timeout waiting for Kibana", err)
+	}
+
+	f := mbtest.NewReportingMetricSetV2Error(t, mtest.GetConfig("status", endpoint, false))
 	events, errs := mbtest.ReportingFetchV2Error(f)
 
 	require.Empty(t, errs)
