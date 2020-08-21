@@ -24,6 +24,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["node_test.go"],
+    data = ["//metricbeat/module/kubernetes:testdata"],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

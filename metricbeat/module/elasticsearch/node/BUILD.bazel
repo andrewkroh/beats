@@ -26,6 +26,7 @@ go_test(
         "data_test.go",
         "node_test.go",
     ],
+    data = glob(["_meta/test/*"]),
     embed = [":go_default_library"],
     deps = [
         "//metricbeat/mb/testing:go_default_library",

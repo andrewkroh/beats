@@ -21,6 +21,9 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["leader_test.go"],
+    data = [
+        "//metricbeat/module/etcd:testdata",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//metricbeat/mb/testing:go_default_library",

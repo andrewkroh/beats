@@ -21,6 +21,9 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["connection_test.go"],
+    data = glob(["_meta/testdata/*"]) + [
+        "//metricbeat/module/rabbitmq:testdata",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

@@ -26,6 +26,7 @@ go_test(
         "config_test.go",
         "data_test.go",
     ],
+    data = glob(["_meta/test/*"]),
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

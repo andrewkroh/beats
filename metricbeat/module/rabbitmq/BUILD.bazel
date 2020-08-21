@@ -1,5 +1,13 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+filegroup(
+    name = "testdata",
+    srcs = glob([
+        "_meta/testdata/*",
+    ]),
+    visibility = ["//metricbeat/module/rabbitmq:__subpackages__"],
+)
+
 go_library(
     name = "go_default_library",
     srcs = [
@@ -21,6 +29,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["metricset_test.go"],
+    data = [":testdata"],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/logp:go_default_library",

@@ -18,6 +18,12 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["state_replicaset_test.go"],
+    data = glob([
+        "_meta/test/*",
+        "_meta/testdata/*",
+    ]) + [
+        "//metricbeat/module/kubernetes:testdata",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//metricbeat/helper/prometheus/ptest:go_default_library",

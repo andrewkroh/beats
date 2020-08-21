@@ -102,6 +102,7 @@
     },
     "nilness": {
         "exclude_files": {
+            "dev-tools/mage/kubernetes/kuberemote.go": "546:17: tautological condition: non-nil != nil",
             "libbeat/autodiscover/template/config.go": "143:10: impossible condition: nil != nil",
             "libbeat/tests/compose/compose.go": "108:9: impossible condition: nil != nil",
             "libbeat/outputs/elasticsearch/client.go": "258:14: tautological condition: nil == nil",

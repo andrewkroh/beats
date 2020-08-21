@@ -14,6 +14,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["scheduler_test.go"],
+    data = glob(["_meta/test/*"]),
     embed = [":go_default_library"],
     deps = ["//metricbeat/helper/prometheus/ptest:go_default_library"],
 )

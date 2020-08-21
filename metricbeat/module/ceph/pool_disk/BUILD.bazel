@@ -21,6 +21,9 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["pool_disk_test.go"],
+    data = [
+        "//metricbeat/module/ceph:testdata",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

@@ -25,6 +25,10 @@ go_test(
         "data_test.go",
         "health_test.go",
     ],
+    data = glob([
+        "_meta/test/*",
+        "_meta/testdata/*",
+    ]),
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

@@ -35,6 +35,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["hostnamechange_test.go"],
+    data = ["_meta/kibana/7/dashboard/Metricbeat-host-overview.json"],
     embed = [":go_default_library"],
 )
 
@@ -47,6 +48,7 @@ py_test(
         "//metricbeat",
     ],
     main = "test_system.py",
+    tags = ["integration"],
     deps = [
         requirement("six"),
         "//metricbeat/tests/system:py_metricbeat_library",

@@ -22,6 +22,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["routes_test.go"],
+    data = glob(["_meta/test/*"]),
     embed = [":go_default_library"],
     deps = [
         "//metricbeat/mb/testing:go_default_library",

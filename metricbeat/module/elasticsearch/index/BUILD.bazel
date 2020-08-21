@@ -1,5 +1,13 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+filegroup(
+    name = "testdata",
+    srcs = glob([
+        "_meta/test/*",
+    ]),
+    visibility = ["//metricbeat/module/elasticsearch:__subpackages__"],
+)
+
 go_library(
     name = "go_default_library",
     srcs = [
@@ -28,6 +36,7 @@ go_test(
         "data_xpack_test.go",
         "index_test.go",
     ],
+    data = [":testdata"],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",
