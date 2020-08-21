@@ -2465,7 +2465,7 @@ def go_repositories():
     )
     go_repository(
         name = "org_golang_google_grpc",
-        build_file_proto_mode = "disable",
+        build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/grpc",
         sum = "h1:EC2SB8S04d2r73uptxphDSUG+kTKVgjRPF+N3xpxRB4=",
         version = "v1.29.1",

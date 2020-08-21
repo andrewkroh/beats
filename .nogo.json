@@ -56,6 +56,7 @@
     },
     "deepequalerrors": {
         "exclude_files": {
+            "metricbeat/module/elasticsearch/pending_tasks/data_test.go": "208:7: avoid using reflect.DeepEqual with errors",
             "external/.*": "external tools don't pass vet"
         }
     },
@@ -105,8 +106,20 @@
             "libbeat/tests/compose/compose.go": "108:9: impossible condition: nil != nil",
             "libbeat/outputs/elasticsearch/client.go": "258:14: tautological condition: nil == nil",
             "filebeat/inputsource/udp/server.go": "impossible condition: nil != nil",
+            "filebeat/input/log/harvester.go": "453:18: tautological condition: non-nil != nil",
+            "filebeat/input/log/harvester.go": "454:13: impossible condition: non-nil == nil",
             "metricbeat/helper/prometheus/prometheus.go": "154:9: tautological condition: non-nil != nil",
+            "metricbeat/scripts/mage/docs_collector.go": "251:10: impossible condition: nil != nil",
+            "metricbeat/mb/module/example_test.go": "135:42: nil dereference in field selection",
+            "metricbeat/mb/example_metricset_test.go": "55:9: impossible condition: nil != nil",
             "x-pack/auditbeat/module/system/package/package.go": "492:16/507:16/522:16: tautological condition: non-nil != nil",
+            "x-pack/metricbeat/module/azure/billing/billing.go": "52:9: impossible condition: nil != nil",
+            "x-pack/metricbeat/module/aws/utils.go": "186:26: impossible condition: non-nil == nil",
+            "x-pack/filebeat/input/httpjson/rate_limiter.go": " 46:10: impossible condition: nil != nil",
+            "x-pack/elastic-agent/pkg/core/app/process_cred.go": "59:9: impossible condition: nil != nil",
+            "x-pack/functionbeat/manager/aws/event_stack_poller.go": "124:17: tautological condition: nil == nil",
+            "heartbeat/monitors/active/icmp/icmp.go": "125:10: tautological condition: nil == nil",
+            "heartbeat/monitors/active/http/http.go": "105:10: impossible condition: nil != nil",
             "_cgo_gotypes.go": "rules_go_work",
             "external/.*": "external tools don't pass vet"
         }
@@ -156,6 +169,8 @@
     "stringintconv": {
         "exclude_files": {
             "x-pack/filebeat/input/netflow/decoder/template/test_helpers.go": "conversion from int to string yields a string of one rune",
+            "x-pack/functionbeat/provider/aws/aws/kinesis.go": "73:41: conversion from startingPosition (uint) to string yields a string of one rune",
+            "x-pack/dockerlogbeat/pipelinemanager/clientLogReader_test.go": "87:54: conversion from int64 to string yields a string of one rune",
             "external/.*": "external tools don't pass vet"
         }
     },
@@ -166,6 +181,7 @@
     },
     "testinggoroutine": {
         "exclude_files": {
+            "metricset_test.go": "261:5: call to (*T).Fatal from a non-test goroutine",
             "libbeat/processors/dns/dns_test.go": "call to (*T).Fatal from a non-test goroutine",
             "external/.*": "external tools don't pass vet"
         }
