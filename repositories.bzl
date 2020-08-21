@@ -689,16 +689,15 @@ def go_repositories():
         name = "com_github_elastic_go_concert",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/elastic/go-concert",
-        sum = "h1:f0F4WOi8tBOFIgwA7YbHRQ+Ok8vR+/qFrG7vYvbpX5Q=",
-        version = "v0.0.3",
+        sum = "h1:pzgYCmJ/xMJsW8PSk33inAWZ065hrwSeP79TpwAbsLE=",
+        version = "v0.0.4",
     )
     go_repository(
         name = "com_github_elastic_go_libaudit_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/elastic/go-libaudit/v2",
-        replace = "github.com/andrewkroh/go-libaudit/v2",
-        sum = "h1:Cf4l+XsA3K3xVrMbpuzy+0h8+ruikxc+YGKxXsmg3nU=",
-        version = "v2.0.0-20200812143808-b355e3d3e9ad",
+        sum = "h1:g83cmsDT0V4Aa6WuuGI9L6WC4fpo2zZjLwOlqBkSna4=",
+        version = "v2.0.2",
     )
     go_repository(
         name = "com_github_elastic_go_licenser",

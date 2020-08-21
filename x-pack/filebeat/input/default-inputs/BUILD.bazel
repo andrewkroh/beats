@@ -13,6 +13,7 @@ go_library(
         "//libbeat/logp:go_default_library",
         "//x-pack/filebeat/input/cloudfoundry:go_default_library",
         "//x-pack/filebeat/input/http_endpoint:go_default_library",
+        "//x-pack/filebeat/input/httpjson:go_default_library",
         "//x-pack/filebeat/input/o365audit:go_default_library",
     ],
 )

@@ -9,7 +9,6 @@ go_library(
         "//x-pack/filebeat/input/awscloudwatch:go_default_library",
         "//x-pack/filebeat/input/azureeventhub:go_default_library",
         "//x-pack/filebeat/input/googlepubsub:go_default_library",
-        "//x-pack/filebeat/input/httpjson:go_default_library",
         "//x-pack/filebeat/input/netflow:go_default_library",
         "//x-pack/filebeat/input/s3:go_default_library",
         "//x-pack/filebeat/module/activemq:go_default_library",
