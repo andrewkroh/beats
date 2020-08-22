@@ -137,6 +137,9 @@ go_test(
         "beat_test.go",
         "locker_test.go",
     ],
+    data = [
+        "//libbeat/cmd/test:testdata",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/cfgfile:go_default_library",

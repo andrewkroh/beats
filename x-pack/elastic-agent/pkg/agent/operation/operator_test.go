@@ -23,6 +23,9 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	downloadPath = getAbsPath("tests/downloads")
+	installPath = getAbsPath("tests/scripts")
+
 	// init supported with test cases
 	configurableSpec := program.Spec{
 		Name: "configurable",

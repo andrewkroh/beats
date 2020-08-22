@@ -24,6 +24,9 @@ go_binary(
 go_test(
     name = "go_default_test",
     srcs = ["main_test.go"],
+    data = [
+        "//filebeat/module/postgresql/log:fileset_files",
+    ],
     embed = [":go_default_library"],
     deps = ["@com_github_stretchr_testify//assert:go_default_library"],
 )

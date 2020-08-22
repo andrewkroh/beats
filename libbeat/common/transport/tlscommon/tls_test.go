@@ -143,9 +143,9 @@ func TestApplyEmptyConfig(t *testing.T) {
 
 func TestApplyWithConfig(t *testing.T) {
 	tmp, err := LoadTLSConfig(mustLoad(t, `
-    certificate: ca_test.pem
-    key: ca_test.key
-    certificate_authorities: [ca_test.pem]
+    certificate: testdata/ca_test.pem
+    key: testdata/ca_test.key
+    certificate_authorities: [testdata/ca_test.pem]
     verification_mode: none
     cipher_suites:
       - "ECDHE-ECDSA-AES-256-CBC-SHA"
@@ -199,7 +199,7 @@ key: mykey.pem
 	t.Run("when CA is explicitly set", func(t *testing.T) {
 
 		yamlStr := `
-    certificate_authorities: [ca_test.pem]
+    certificate_authorities: [testdata/ca_test.pem]
     certificate: mycert.pem
     key: mykey.pem
 `
@@ -229,9 +229,9 @@ key: mykey.pem
 
 func TestApplyWithServerConfig(t *testing.T) {
 	yamlStr := `
-    certificate: ca_test.pem
-    key: ca_test.key
-    certificate_authorities: [ca_test.pem]
+    certificate: testdata/ca_test.pem
+    key: testdata/ca_test.key
+    certificate_authorities: [testdata/ca_test.pem]
     verification_mode: none
     client_authentication: optional
     cipher_suites:

@@ -1,0 +1,7 @@
+filegroup(
+    name = "module_files",
+    srcs = [
+        "module.yml",
+    ],
+    visibility = ["//filebeat:__subpackages__"],
+)

@@ -17,3 +17,11 @@ go_binary(
     embed = [":go_default_library"],
     visibility = ["//visibility:public"],
 )
+
+genrule(
+    name = "normalized_binary",
+    srcs = [":configurable-1.0-darwin-x86_64"],
+    outs = ["configurable"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//x-pack/elastic-agent/pkg/agent/operation:__pkg__"],
+)

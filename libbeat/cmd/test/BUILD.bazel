@@ -1,5 +1,13 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
+filegroup(
+    name = "testdata",
+    srcs = glob([
+        "filebeat_test.yml",
+    ]),
+    visibility = ["//libbeat/cmd:__subpackages__"],
+)
+
 go_library(
     name = "go_default_library",
     srcs = [

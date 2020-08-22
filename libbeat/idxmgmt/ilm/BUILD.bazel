@@ -27,6 +27,7 @@ go_test(
         "ilm_test.go",
         "mockapihandler_test.go",
     ],
+    data = glob(["testfiles/*"]),
     embed = [":go_default_library"],
     deps = [
         "//libbeat/beat:go_default_library",

@@ -1,5 +1,14 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
+filegroup(
+    name = "packaging_data",
+    srcs = glob([
+        "packages.yml",
+        "templates/**",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
 go_test(
     name = "go_default_test",
     srcs = ["package_test.go"],

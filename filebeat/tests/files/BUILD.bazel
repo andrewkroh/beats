@@ -1,0 +1,19 @@
+filegroup(
+    name = "config_files",
+    srcs = glob([
+        "config*.yml",
+    ]),
+    visibility = ["//filebeat/config:__subpackages__"],
+)
+
+filegroup(
+    name = "log_files",
+    srcs = glob([
+        "logs/*.log",
+        "logs/*.gz",
+    ]),
+    visibility = [
+        "//filebeat/config:__subpackages__",
+        "//filebeat/input/log:__subpackages__",
+    ],
+)

@@ -124,6 +124,10 @@ func TestSetUIDSetGIDBits(t *testing.T) {
 
 	if runtime.GOOS == "windows" {
 		t.Skip("No setuid/setgid bits on Windows")
+	} else if os.Getenv("TEST_TARGET") != "" {
+		// TODO: Investigate further since a skipped test doesn't help anything.
+		// https://github.com/bazelbuild/bazel/blob/6230d42537132fb7a8a882cefd1b36984681a3f0/src/main/tools/process-tools.cc#L38-L58
+		t.Skip("Bazel sandbox prevents setuid/setgid")
 	}
 
 	for _, flags := range []os.FileMode{

@@ -78,7 +78,7 @@ func getConfigFiles(path string) (configFiles []string, err error) {
 	// Check if path is valid file or dir
 	stat, err := os.Stat(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to stat %v: %w", path, err)
 	}
 
 	// Create empty slice for config file list

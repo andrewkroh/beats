@@ -1,5 +1,14 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
+filegroup(
+    name = "module_files",
+    srcs = [
+        "//filebeat/module/apache/access:fileset_files",
+        "//filebeat/module/apache/error:fileset_files",
+    ],
+    visibility = ["//filebeat:__subpackages__"],
+)
+
 go_library(
     name = "go_default_library",
     srcs = ["fields.go"],

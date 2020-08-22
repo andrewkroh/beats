@@ -45,7 +45,9 @@ go_test(
         "respbody_test.go",
         "task_test.go",
     ],
-    data = glob(["testdata/**"]),
+    data = glob(["testdata/**"]) + [
+        "//heartbeat/monitors/active:testdata",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//heartbeat/hbtest:go_default_library",

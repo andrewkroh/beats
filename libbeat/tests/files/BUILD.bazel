@@ -1,0 +1,7 @@
+filegroup(
+    name = "config_files",
+    srcs = glob([
+        "config*.yml",
+    ]),
+    visibility = ["//libbeat/cfgfile:__pkg__"],
+)

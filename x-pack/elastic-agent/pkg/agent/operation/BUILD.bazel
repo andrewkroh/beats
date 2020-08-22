@@ -51,6 +51,10 @@ go_test(
         "monitoring_test.go",
         "operator_test.go",
     ],
+    data = [
+        "//x-pack/elastic-agent/pkg/agent/operation/tests/scripts/configurable-1.0-darwin-x86_64:normalized_binary",
+        "//x-pack/elastic-agent/pkg/agent/operation/tests/scripts/serviceable-1.0-darwin-x86_64:normalized_binary",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/logp:go_default_library",

@@ -37,6 +37,9 @@ go_test(
         "tcp_test.go",
         "tls_test.go",
     ],
+    data = [
+        "//heartbeat/monitors/active:testdata",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//heartbeat/hbtest:go_default_library",

@@ -28,6 +28,10 @@ go_test(
         "config_test.go",
         "logs_test.go",
     ],
+    data = [
+        "//filebeat/module/apache:module_files",
+        "//filebeat/module/apache2:module_files",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

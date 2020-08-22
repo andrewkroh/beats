@@ -19,9 +19,7 @@ package dissect
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"os"
 	"regexp"
 	"testing"
 
@@ -129,27 +127,21 @@ type dissectTest struct {
 	Fail     bool   `json:"fail"`
 }
 
-var tests []dissectTest
-
-func init() {
+func loadTestData(t testing.TB) []dissectTest {
 	content, err := ioutil.ReadFile("testdata/dissect_tests.json")
 	if err != nil {
-		fmt.Printf("could not read the content of 'dissect_tests', error: %s", err)
-		os.Exit(1)
+		t.Fatalf("could not read the content of 'dissect_tests', error: %v", err)
 	}
 
+	var tests []dissectTest
 	if err := json.Unmarshal(content, &tests); err != nil {
-		fmt.Printf("could not parse the content of 'dissect_tests', error: %s", err)
-		os.Exit(1)
+		t.Fatalf("could not parse the content of 'dissect_tests', error: %f", err)
 	}
+	return tests
 }
 
 func TestDissect(t *testing.T) {
-	if len(tests) == 0 {
-		t.Error("No test cases were loaded")
-	}
-
-	for _, test := range tests {
+	for _, test := range loadTestData(t) {
 		if test.Skip {
 			continue
 		}
@@ -179,7 +171,7 @@ var results Map
 var o [][]string
 
 func BenchmarkDissect(b *testing.B) {
-	for _, test := range tests {
+	for _, test := range loadTestData(b) {
 		if test.Skip {
 			continue
 		}

@@ -8,7 +8,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
@@ -28,8 +27,8 @@ import (
 	"github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/core/server"
 )
 
-var downloadPath = getAbsPath("tests/downloads")
-var installPath = getAbsPath("tests/scripts")
+var downloadPath string
+var installPath string
 
 func getTestOperator(t *testing.T, downloadPath string, installPath string, p *app.Descriptor) *Operator {
 	operatorCfg := &configuration.SettingsConfig{
@@ -104,8 +103,11 @@ func getProgram(binary, version string) *app.Descriptor {
 }
 
 func getAbsPath(path string) string {
-	_, filename, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(filename), path)
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		panic(err)
+	}
+	return abs
 }
 
 func createFile(t *testing.T, path string) {

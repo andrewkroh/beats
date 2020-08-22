@@ -1,0 +1,11 @@
+filegroup(
+    name = "fileset_files",
+    srcs = glob([
+        "config/*.js",
+        "config/*.yml",
+        "ingest/pipeline.json",
+        "ingest/pipeline.yml",
+        "manifest.yml",
+    ]),
+    visibility = ["//filebeat:__subpackages__"],
+)

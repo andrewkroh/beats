@@ -47,6 +47,9 @@ go_test(
         "input_test.go",
         "prospector_windows_test.go",
     ],
+    data = [
+        "//filebeat/tests/files:log_files",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//filebeat/channel:go_default_library",
