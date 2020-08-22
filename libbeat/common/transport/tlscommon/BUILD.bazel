@@ -9,6 +9,7 @@ go_library(
         "tls.go",
         "tls_config.go",
         "types.go",
+        "verify.go",
         "versions.go",
         "versions_default.go",
         "versions_legacy.go",
@@ -28,8 +29,10 @@ go_test(
     srcs = [
         "ca_pinning_test.go",
         "tls_test.go",
+        "verify_test.go",
         "versions_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

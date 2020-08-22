@@ -12,6 +12,7 @@ go_library(
         "//libbeat/common:go_default_library",
         "//libbeat/common/schema:go_default_library",
         "//libbeat/common/schema/mapstrstr:go_default_library",
+        "//libbeat/logp:go_default_library",
         "//metricbeat/mb:go_default_library",
         "//x-pack/libbeat/common/aws:go_default_library",
         "//x-pack/metricbeat/module/aws:go_default_library",
@@ -29,6 +30,7 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
         "//metricbeat/mb:go_default_library",
         "//x-pack/metricbeat/module/aws:go_default_library",
         "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",

@@ -1773,8 +1773,8 @@ def go_repositories():
         name = "com_github_pierrre_gotestcover",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/pierrre/gotestcover",
-        sum = "h1:/VAZ3an4jHXs+61iNHugNR1mG25MSpaxtMnwOJVEAQM=",
-        version = "v0.0.0-20160113212533-7b94f124d338",
+        sum = "h1:i5VIxp6QB8oWZ8IkK8zrDgeT6ORGIUeiN+61iETwJbI=",
+        version = "v0.0.0-20160517101806-924dca7d15f0",
     )
     go_repository(
         name = "com_github_pkg_errors",
