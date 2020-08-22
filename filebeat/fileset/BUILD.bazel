@@ -41,6 +41,17 @@ go_test(
         "modules_test.go",
         "pipelines_test.go",
     ],
+    # TODO: Unit tests should not depend on real module files.
+    data = glob(["test/**/*"]) + [
+        "//filebeat/module/auditd/log:fileset_files",
+        "//filebeat/module/mysql/error:fileset_files",
+        "//filebeat/module/mysql/slowlog:fileset_files",
+        "//filebeat/module/nginx/access:fileset_files",
+        "//filebeat/module/nginx/error:fileset_files",
+        "//filebeat/module/nginx/ingress_controller:fileset_files",
+        "//filebeat/module/system/auth:fileset_files",
+        "//filebeat/module/system/syslog:fileset_files",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/beat:go_default_library",

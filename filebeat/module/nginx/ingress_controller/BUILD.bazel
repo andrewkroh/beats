@@ -1,0 +1,9 @@
+filegroup(
+    name = "fileset_files",
+    srcs = [
+        "config/ingress_controller.yml",
+        "ingest/pipeline.yml",
+        "manifest.yml",
+    ],
+    visibility = ["//filebeat/fileset:__pkg__"],
+)

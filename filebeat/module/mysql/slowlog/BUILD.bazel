@@ -1,0 +1,9 @@
+filegroup(
+    name = "fileset_files",
+    srcs = [
+        "config/slowlog.yml",
+        "ingest/pipeline.json",
+        "manifest.yml",
+    ],
+    visibility = ["//filebeat/fileset:__pkg__"],
+)

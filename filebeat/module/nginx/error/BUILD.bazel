@@ -1,0 +1,9 @@
+filegroup(
+    name = "fileset_files",
+    srcs = [
+        "config/nginx-error.yml",
+        "ingest/pipeline.yml",
+        "manifest.yml",
+    ],
+    visibility = ["//filebeat/fileset:__pkg__"],
+)
