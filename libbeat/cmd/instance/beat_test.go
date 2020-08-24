@@ -28,6 +28,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewInstance(t *testing.T) {
@@ -79,8 +80,9 @@ func TestInitKibanaConfig(t *testing.T) {
 	assert.Equal(t, "0.9", b.Info.Version)
 
 	cfg, err := cfgfile.Load("../test/filebeat_test.yml", nil)
+	require.NoError(t, err)
 	err = cfg.Unpack(&b.Config)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	kibanaConfig, err := initKibanaConfig(b.Config)
 	assert.NoError(t, err)
