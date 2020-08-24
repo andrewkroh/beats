@@ -121,6 +121,7 @@
             "x-pack/functionbeat/manager/aws/event_stack_poller.go": "124:17: tautological condition: nil == nil",
             "heartbeat/monitors/active/icmp/icmp.go": "125:10: tautological condition: nil == nil",
             "heartbeat/monitors/active/http/http.go": "105:10: impossible condition: nil != nil",
+            "package.go": "x-pack/auditbeat/module/system/package 492:16: tautological condition: non-nil != nil",
             "_cgo_gotypes.go": "rules_go_work",
             "external/.*": "external tools don't pass vet"
         }
