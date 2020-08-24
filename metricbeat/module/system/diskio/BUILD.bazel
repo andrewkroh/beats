@@ -79,6 +79,7 @@ go_test(
         "diskstat_linux_test.go",
         "diskstat_windows_test.go",
     ],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = select({
         "@io_bazel_rules_go//go/platform:android": [

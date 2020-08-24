@@ -30,6 +30,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["entropy_test.go"],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = select({
         "@io_bazel_rules_go//go/platform:android": [

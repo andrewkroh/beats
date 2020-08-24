@@ -39,6 +39,9 @@ go_test(
         "procs_test.go",
         "procs_windows_test.go",
     ],
+    data = [
+        "//packetbeat/tests/files:testdata",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//libbeat/common:go_default_library",

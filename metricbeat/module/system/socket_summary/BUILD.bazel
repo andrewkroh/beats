@@ -31,6 +31,7 @@ go_test(
         "socket_summary_test.go",
         "sockstat_linux_test.go",
     ],
+    data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "@com_github_shirou_gopsutil//net:go_default_library",
