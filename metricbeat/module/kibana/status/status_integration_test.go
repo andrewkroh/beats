@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -31,9 +32,15 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/stretchr/testify/require"
 
+	"github.com/elastic/beats/v7/docker/containertest"
 	mbtest "github.com/elastic/beats/v7/metricbeat/mb/testing"
 	"github.com/elastic/beats/v7/metricbeat/module/kibana/mtest"
 )
+
+// NOTE: This is PoC demo code and should be improved.
+func TestMain(m *testing.M) {
+	os.Exit(containertest.RunAndCleanup(m))
+}
 
 func TestFetch(t *testing.T) {
 	pool, err := dockertest.NewPool("")
@@ -62,6 +69,9 @@ func TestFetch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not start resource: %s", err)
 	}
+	containertest.RunAtExit(func() {
+		pool.Purge(es)
+	})
 	defer pool.Purge(es)
 
 	kibanaOptions := &dockertest.RunOptions{
@@ -79,6 +89,9 @@ func TestFetch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not start resource: %s", err)
 	}
+	containertest.RunAtExit(func() {
+		pool.Purge(kibana)
+	})
 	defer pool.Purge(kibana)
 
 	endpoint := fmt.Sprintf("localhost:%s", kibana.GetPort("5601/tcp"))

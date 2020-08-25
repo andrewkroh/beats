@@ -51,6 +51,7 @@ go_test(
     gotags = ["integration"],
     tags = ["integration"],
     deps = [
+        "//docker/containertest:go_default_library",
         "//libbeat/tests/compose:go_default_library",
         "//metricbeat/mb/testing:go_default_library",
         "//metricbeat/module/kibana/mtest:go_default_library",
