@@ -85,6 +85,7 @@ container_repositories()
 
 # NOTE: container_deps has a dependency on 'python'.
 load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
+
 container_deps()
 
 load(

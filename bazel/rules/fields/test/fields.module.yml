@@ -1,0 +1,10 @@
+- key: brew
+  title: "Brew"
+  description: >
+    Module for monitoring the beer brewing process.
+  fields:
+    - name: brew
+      type: group
+      fields:
+        - name: batch_id
+          type: keyword

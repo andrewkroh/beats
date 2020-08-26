@@ -15,36 +15,39 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package main
+package fields_test
 
 import (
-	"flag"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
+	"sort"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/elastic/beats/v7/libbeat/asset"
+	"github.com/elastic/beats/v7/libbeat/mapping"
 )
 
-var (
-	inputFile  string
-	outputFile string
-)
+func TestGetFields(t *testing.T) {
+	yml, err := asset.GetFields("brewbeat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Fields YAML:\n%v", string(yml))
 
-func init() {
-	flag.StringVar(&inputFile, "i", "", "input file")
-	flag.StringVar(&outputFile, "o", "", "output file")
-}
-
-func main() {
-	flag.Parse()
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] [context_key:context_file ...]\n", os.Args[0])
-		flag.PrintDefaults()
+	fields, err := mapping.LoadFields(yml)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	fmt.Println("hello world in=", inputFile, "out", outputFile)
+	keys := fields.GetKeys()
+	sort.Strings(keys)
+	t.Logf("Fields: [%v]", strings.Join(keys, ", "))
 
-	if err := ioutil.WriteFile(outputFile, []byte("hello\n"), 0644); err != nil {
-		log.Fatal(err)
-	}
+	assert.Equal(t, keys, []string{
+		"brew.batch_id",
+		"brew.mash.temperature",
+		"tank.capacity",
+		"tank.temperature",
+	})
 }

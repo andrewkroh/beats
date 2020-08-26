@@ -21,13 +21,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetFields(t *testing.T) {
+	resetRegistry()
 
 	data := "hello world"
 	d, err := EncodeData(data)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	f := func() string {
 		return d
@@ -35,6 +37,30 @@ func TestGetFields(t *testing.T) {
 
 	SetFields("test", "foo", 1, f)
 	newData, err := GetFields("test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, data, string(newData))
+}
+
+func TestGetFieldsForModule(t *testing.T) {
+	resetRegistry()
+
+	SetFields("brewbeat", "brewing", ModuleFieldsPri, func() string {
+		data, _ := EncodeData("module: brewing\n")
+		return data
+	})
+
+	SetModuleDatasetFields("brewbeat", "brewing", "mashing", func() string {
+		data, _ := EncodeData("dataset: mashing")
+		return data
+	})
+
+	fields, err := GetFields("brewbeat")
+	require.NoError(t, err)
+	assert.Equal(t, string(fields), `module: brewing
+dataset: mashing`)
+}
+
+func resetRegistry() {
+	fieldsRegistry = map[string]map[int]map[string][]func() string{}
+	moduleDatasetRegistry = map[string]map[string]map[string]func() string{}
 }

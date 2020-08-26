@@ -1,0 +1,9 @@
+- key: add_tank_metadata
+  title: Add Tank Metadata
+  description: >
+    Adds tank metadata to events.
+  fields:
+    - name: tank.capacity
+      type: float
+    - name: tank.temperature
+      type: double

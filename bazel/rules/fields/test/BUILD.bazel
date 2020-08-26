@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+load("//bazel/rules/fields:fields.bzl", "go_embed_fields")
+
+go_embed_fields(
+    name = "add_tank_metadata_fields",
+    src = "fields.processor.yml",
+    asset_name = "add_tank_metadata",
+    beat = "brewbeat",
+    output = "fields.processor.go",
+    package = "fields",
+    type = "beat",
+)
+
+go_embed_fields(
+    name = "brew_module_fields",
+    src = "fields.module.yml",
+    asset_name = "brew",
+    beat = "brewbeat",
+    output = "fields.module.go",
+    package = "fields",
+    type = "module",
+)
+
+go_embed_fields(
+    name = "brew_mash_dataset",
+    src = "fields.dataset.yml",
+    asset_name = "mash",
+    beat = "brewbeat",
+    module = "brew",
+    output = "fields.dataset.go",
+    package = "fields",
+    type = "dataset",
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "go.embed.fields_test.go",
+        ":add_tank_metadata_fields",
+        ":brew_mash_dataset",
+        ":brew_module_fields",
+    ],
+    deps = [
+        "//libbeat/asset:go_default_library",
+        "//libbeat/mapping:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)
