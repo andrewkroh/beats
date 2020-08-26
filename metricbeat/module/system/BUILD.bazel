@@ -41,7 +41,7 @@ go_test(
 
 py_test(
     name = "py_integ_test",
-    size = "small",
+    size = "medium",
     srcs = ["test_system.py"],
     args = ["-v"],
     data = [
