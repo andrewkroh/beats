@@ -675,8 +675,8 @@ def go_repositories():
         name = "com_github_elastic_ecs",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/elastic/ecs",
-        sum = "h1:/VEIBsRU4ecq2+U3RPfKNc6bFyomP6qnthYEcQZu8GU=",
-        version = "v1.5.0",
+        sum = "h1:8NmgfnsjmKXh9hVsK3H2tZtfUptepNc3msJOAynhtmc=",
+        version = "v1.6.0",
     )
     go_repository(
         name = "com_github_elastic_elastic_agent_client_v7",
