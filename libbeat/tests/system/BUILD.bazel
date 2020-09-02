@@ -6,6 +6,7 @@ package(default_visibility = ["//visibility:public"])
 py_library(
     name = "py_libbeat_library",
     srcs = ["base.py"],
+    imports = ["."],
     data = ["//libbeat/tests/system/config:libbeat.yml.j2"],
     visibility = ["//visibility:public"],
     deps = [

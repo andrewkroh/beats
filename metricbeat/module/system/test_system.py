@@ -490,7 +490,7 @@ class Test(metricbeat.BaseTest):
         output = self.read_output()[0]
 
         assert re.match("(?i)metricbeat.test(.exe)?", output["process.name"])
-        assert re.match("(?i).*metricbeat.test(.exe)? -systemTest", output["system.process.cmdline"])
+        assert re.match("(?i).*metricbeat.test(.exe)?", output["system.process.cmdline"])
         assert isinstance(output["system.process.state"], six.string_types)
         assert isinstance(output["system.process.cpu.start_time"], six.string_types)
         self.check_username(output["user.name"])
@@ -542,3 +542,6 @@ class Test(metricbeat.BaseTest):
             observed = parts[1]
 
         assert expected == observed, "proc.username = %s, but expected %s" % (observed, expected)
+
+if __name__ == '__main__':
+    unittest.main()

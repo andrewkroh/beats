@@ -11,6 +11,7 @@ py_library(
         "compose.py",
         "tags.py",
     ],
+    imports = [".."],
     visibility = ["//visibility:public"],
     deps = [
         requirement("elasticsearch"),

@@ -4,6 +4,7 @@ load("@beats_deps//:requirements.bzl", "requirement")
 py_library(
     name = "py_metricbeat_library",
     srcs = ["metricbeat.py"],
+    imports = ["."],
     data = [
         "//metricbeat:metricbeat.yml",
         "//metricbeat:normalized_binary",
