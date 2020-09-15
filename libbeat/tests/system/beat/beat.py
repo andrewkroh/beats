@@ -281,7 +281,7 @@ class TestCase(unittest.TestCase, ComposeMixin):
 
                 try:
                     jsons.append(self.flatten_object(json.loads(
-                        line, object_pairs_hook=self.json_raise_on_duplicates), []))
+                        line, object_pairs_hook=self.json_raise_on_duplicates)))
                 except BaseException:
                     print("Fail to load the json {}".format(line))
                     raise
