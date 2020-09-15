@@ -9,6 +9,7 @@ go_library(
         "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
         "//x-pack/elastic-agent/pkg/composable:go_default_library",
         "//x-pack/elastic-agent/pkg/config:go_default_library",
+        "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
     ],
 )
 

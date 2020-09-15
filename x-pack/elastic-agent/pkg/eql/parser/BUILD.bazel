@@ -3,14 +3,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
-        "boolexp_base_listener.go",
-        "boolexp_base_visitor.go",
-        "boolexp_lexer.go",
-        "boolexp_listener.go",
-        "boolexp_parser.go",
-        "boolexp_visitor.go",
+        "eql_base_listener.go",
+        "eql_base_visitor.go",
+        "eql_lexer.go",
+        "eql_listener.go",
+        "eql_parser.go",
+        "eql_visitor.go",
     ],
-    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/boolexp/parser",
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/eql/parser",
     visibility = ["//visibility:public"],
     deps = ["@com_github_antlr_antlr4//runtime/Go/antlr:go_default_library"],
 )

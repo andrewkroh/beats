@@ -3,9 +3,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "checks.go",
+        "checks_windows.go",
         "common.go",
         "enroll.go",
-        "introspect.go",
+        "include.go",
+        "inspect.go",
         "reexec.go",
         "reexec_windows.go",
         "run.go",
@@ -27,12 +30,62 @@ go_library(
         "//x-pack/elastic-agent/pkg/agent/warn:go_default_library",
         "//x-pack/elastic-agent/pkg/basecmd:go_default_library",
         "//x-pack/elastic-agent/pkg/cli:go_default_library",
-        "//x-pack/elastic-agent/pkg/config:go_default_library",
+        "//x-pack/elastic-agent/pkg/composable/providers/agent:go_default_library",
+        "//x-pack/elastic-agent/pkg/composable/providers/env:go_default_library",
+        "//x-pack/elastic-agent/pkg/composable/providers/host:go_default_library",
+        "//x-pack/elastic-agent/pkg/composable/providers/local:go_default_library",
+        "//x-pack/elastic-agent/pkg/composable/providers/localdynamic:go_default_library",
+        "//x-pack/elastic-agent/pkg/composable/providers/path:go_default_library",
         "//x-pack/elastic-agent/pkg/core/logger:go_default_library",
         "//x-pack/elastic-agent/pkg/fleetapi:go_default_library",
         "@com_github_spf13_cobra//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
     ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
+        ],
         "@io_bazel_rules_go//go/platform:windows": [
+            "//x-pack/elastic-agent/pkg/config:go_default_library",
+            "//x-pack/elastic-agent/pkg/release:go_default_library",
             "@org_golang_x_sys//windows/svc:go_default_library",
             "@org_golang_x_sys//windows/svc/mgr:go_default_library",
         ],

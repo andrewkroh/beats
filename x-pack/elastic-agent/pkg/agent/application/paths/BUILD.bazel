@@ -5,4 +5,5 @@ go_library(
     srcs = ["paths.go"],
     importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/agent/application/paths",
     visibility = ["//visibility:public"],
+    deps = ["//x-pack/elastic-agent/pkg/config:go_default_library"],
 )

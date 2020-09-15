@@ -4,12 +4,12 @@ load("@beats_deps//:requirements.bzl", "requirement")
 py_library(
     name = "py_metricbeat_library",
     srcs = ["metricbeat.py"],
-    imports = ["."],
     data = [
         "//metricbeat:metricbeat.yml",
         "//metricbeat:normalized_binary",
         "//metricbeat/tests/system/config:metricbeat.yml.j2",
     ],
+    imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
         requirement("PyYAML"),

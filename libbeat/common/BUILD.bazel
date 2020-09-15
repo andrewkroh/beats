@@ -11,6 +11,7 @@ go_library(
         "csv.go",
         "datetime.go",
         "endpoint.go",
+        "errors.go",
         "event.go",
         "flags.go",
         "logging.go",

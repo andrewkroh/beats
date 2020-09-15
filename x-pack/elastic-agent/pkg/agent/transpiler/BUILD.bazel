@@ -8,12 +8,15 @@ go_library(
         "merge_strategy.go",
         "rules.go",
         "steps.go",
+        "vars.go",
         "visitor.go",
     ],
     importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/agent/transpiler",
     visibility = ["//visibility:public"],
     deps = [
         "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
+        "//x-pack/elastic-agent/pkg/eql:go_default_library",
+        "@com_github_elastic_go_ucfg//:go_default_library",
         "@in_gopkg_yaml_v2//:go_default_library",
     ],
 )
@@ -24,6 +27,7 @@ go_test(
         "ast_test.go",
         "rules_test.go",
         "steps_test.go",
+        "vars_test.go",
     ],
     embed = [":go_default_library"],
     deps = [

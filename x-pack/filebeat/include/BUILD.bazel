@@ -48,6 +48,7 @@ go_library(
         "//x-pack/filebeat/module/suricata:go_default_library",
         "//x-pack/filebeat/module/tomcat:go_default_library",
         "//x-pack/filebeat/module/zeek:go_default_library",
+        "//x-pack/filebeat/module/zoom:go_default_library",
         "//x-pack/filebeat/module/zscaler:go_default_library",
         "//x-pack/filebeat/processors/decode_cef:go_default_library",
     ],

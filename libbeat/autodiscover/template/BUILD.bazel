@@ -12,6 +12,7 @@ go_library(
         "//libbeat/keystore:go_default_library",
         "//libbeat/logp:go_default_library",
         "@com_github_elastic_go_ucfg//:go_default_library",
+        "@com_github_elastic_go_ucfg//parse:go_default_library",
     ],
 )
 
@@ -23,6 +24,7 @@ go_test(
         "//libbeat/common:go_default_library",
         "//libbeat/common/bus:go_default_library",
         "//libbeat/keystore:go_default_library",
+        "//libbeat/logp:go_default_library",
         "@com_github_docker_docker//pkg/ioutils:go_default_library",
         "@com_github_stretchr_testify//assert:go_default_library",
     ],

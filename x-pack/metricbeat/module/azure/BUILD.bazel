@@ -3,9 +3,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "add_metadata.go",
         "azure.go",
         "client.go",
         "client_utils.go",
+        "config.go",
         "data.go",
         "doc.go",
         "fields.go",
@@ -35,6 +37,7 @@ go_test(
         "client_test.go",
         "client_utils_test.go",
         "data_test.go",
+        "monitor_service_test.go",
     ],
     data = glob(["_meta/testdata/**"]),
     embed = [":go_default_library"],

@@ -5,8 +5,8 @@ def go_repositories():
         name = "co_elastic_go_apm",
         build_file_proto_mode = "disable_global",
         importpath = "go.elastic.co/apm",
-        sum = "h1:0nwzVIPp4PDBXSYYtN19+1W5V+sj+C25UjqxDVoKcA8=",
-        version = "v1.7.2",
+        sum = "h1:Sf+V3eV91ZuXjF3824SABFgXU+z4ZEuIX5ikDvt2lCE=",
+        version = "v1.8.1-0.20200909061013-2aef45b9cf4b",
     )
     go_repository(
         name = "co_elastic_go_apm_module_apmelasticsearch",
@@ -33,8 +33,8 @@ def go_repositories():
         name = "co_elastic_go_fastjson",
         build_file_proto_mode = "disable_global",
         importpath = "go.elastic.co/fastjson",
-        sum = "h1:ooXV/ABvf+tBul26jcVViPT3sBir0PvXgibYB1IQQzg=",
-        version = "v1.0.0",
+        sum = "h1:3MrGBWWVIxe/xvsbpghtkFoPciPhOCmjsR/HfwEeQR4=",
+        version = "v1.1.0",
     )
     go_repository(
         name = "co_elastic_go_go_licence_detector",
@@ -110,8 +110,8 @@ def go_repositories():
         name = "com_github_antlr_antlr4",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/antlr/antlr4",
-        sum = "h1:nkZ9axP+MvUFCu8JRN/MCY+DmTfs6lY7hE0QnJbxSdI=",
-        version = "v0.0.0-20200225173536-225249fdaef5",
+        sum = "h1:OE3kzLBpy7pOJEzE55j9sdgrSilUPzzj++FWvp1cmIs=",
+        version = "v0.0.0-20200820155224-be881fa6b91d",
     )
     go_repository(
         name = "com_github_apoydence_eachers",

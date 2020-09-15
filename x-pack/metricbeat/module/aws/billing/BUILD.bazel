@@ -1,11 +1,27 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_test(
     name = "go_default_test",
     srcs = ["billing_test.go"],
+    embed = [":go_default_library"],
+    deps = ["@com_github_stretchr_testify//assert:go_default_library"],
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = ["billing.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/metricbeat/module/aws/billing",
+    visibility = ["//visibility:public"],
     deps = [
+        "//libbeat/common:go_default_library",
+        "//libbeat/logp:go_default_library",
         "//metricbeat/mb:go_default_library",
+        "//x-pack/libbeat/common/aws:go_default_library",
         "//x-pack/metricbeat/module/aws:go_default_library",
-        "//x-pack/metricbeat/module/aws/cloudwatch:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/cloudwatch:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/cloudwatch/cloudwatchiface:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/costexplorer:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/costexplorer/costexploreriface:go_default_library",
     ],
 )

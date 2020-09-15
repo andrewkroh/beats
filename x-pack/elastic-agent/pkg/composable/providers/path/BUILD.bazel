@@ -2,10 +2,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
-    srcs = ["env.go"],
-    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/composable/providers/env",
+    srcs = ["path.go"],
+    importpath = "github.com/elastic/beats/v7/x-pack/elastic-agent/pkg/composable/providers/path",
     visibility = ["//visibility:public"],
     deps = [
+        "//x-pack/elastic-agent/pkg/agent/application/paths:go_default_library",
         "//x-pack/elastic-agent/pkg/agent/errors:go_default_library",
         "//x-pack/elastic-agent/pkg/composable:go_default_library",
         "//x-pack/elastic-agent/pkg/config:go_default_library",
@@ -15,9 +16,10 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["env_test.go"],
+    srcs = ["path_test.go"],
     embed = [":go_default_library"],
     deps = [
+        "//x-pack/elastic-agent/pkg/agent/application/paths:go_default_library",
         "//x-pack/elastic-agent/pkg/composable:go_default_library",
         "//x-pack/elastic-agent/pkg/composable/testing:go_default_library",
         "@com_github_stretchr_testify//assert:go_default_library",

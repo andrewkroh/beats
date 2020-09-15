@@ -11,6 +11,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev-tools/mage:go_default_library",
+        "//dev-tools/mage/gotool:go_default_library",
         "@com_github_magefile_mage//mg:go_default_library",
     ],
 )
