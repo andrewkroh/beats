@@ -19,9 +19,6 @@ package beat
 
 import (
 	"github.com/elastic/beats/v7/libbeat/common"
-	"github.com/elastic/beats/v7/libbeat/instrumentation"
-	"github.com/elastic/beats/v7/libbeat/keystore"
-	"github.com/elastic/beats/v7/libbeat/management"
 )
 
 // Creator initializes and configures a new Beater instance used to execute
@@ -47,31 +44,6 @@ type Beater interface {
 	// Stop is invoked to signal that the Run method should finish its execution.
 	// It will be invoked at most once.
 	Stop()
-}
-
-// Beat contains the basic beat data and the publisher client used to publish
-// events.
-type Beat struct {
-	Info      Info     // beat metadata.
-	Publisher Pipeline // Publisher pipeline
-
-	InSetupCmd bool // this is set to true when the `setup` command is called
-
-	OverwritePipelinesCallback OverwritePipelinesCallback // ingest pipeline loader callback
-	// XXX: remove Config from public interface.
-	//      It's currently used by filebeat modules to setup the Ingest Node
-	//      pipeline and ML jobs.
-	Config *BeatConfig // Common Beat configuration data.
-
-	BeatConfig *common.Config // The beat's own configuration section
-
-	Fields []byte // Data from fields.yml
-
-	Manager management.Manager // manager
-
-	Keystore keystore.Keystore
-
-	Instrumentation instrumentation.Instrumentation // instrumentation holds an APM agent for capturing and reporting traces
 }
 
 // BeatConfig struct contains the basic configuration of every beat
