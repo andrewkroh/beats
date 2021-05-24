@@ -97,6 +97,33 @@ func TestNewSQSReceiver(t *testing.T) {
 	assert.True(t, errors.Is(err, context.Canceled))
 
 	assert.Len(t, sqsAPI.deleted, 1)
+
+	t.Run("receive one", func(t *testing.T) {
+	})
+	t.Run("receive error and retry", func(t *testing.T) {
+	})
+}
+
+func TestSqsProcessor_Process(t *testing.T) {
+	t.Run("invalid SQS JSON body does not retry", func(t *testing.T) {
+	})
+	t.Run("zero S3 events in body", func(t *testing.T) {
+	})
+	t.Run("visibility is extended after half expires", func(t *testing.T) {
+	})
+	t.Run("all s3 objects are processed", func(t *testing.T) {
+	})
+	t.Run("message deleted on success", func(t *testing.T) {
+	})
+	t.Run("visibility timeout set to 0 on retryable failure", func(t *testing.T) {
+	})
+}
+
+func TestSqsProcessor_getS3Notifications(t *testing.T) {
+	t.Run("s3 key is url unescaped", func(t *testing.T) {
+	})
+	t.Run("non-ObjectCreated event types are ignored", func(t *testing.T) {
+	})
 }
 
 func newSQSMessage() sqs.Message {
