@@ -1,3 +1,7 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package awss3
 
 import (
@@ -6,8 +10,8 @@ import (
 )
 
 type sem struct {
-	mutex *sync.Mutex
-	cond sync.Cond
+	mutex     *sync.Mutex
+	cond      sync.Cond
 	available int
 }
 
@@ -15,7 +19,7 @@ func newSem(n int) *sem {
 	var m sync.Mutex
 	return &sem{
 		available: n,
-		mutex: &m,
+		mutex:     &m,
 		cond: sync.Cond{
 			L: &m,
 		},
@@ -67,3 +71,9 @@ func (s *sem) Release(n int) {
 	s.available += n
 }
 
+func (s *sem) Available() int {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return s.available
+}

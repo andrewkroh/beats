@@ -1,183 +1,143 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package awss3
 
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
-	"github.com/pkg/errors"
+	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/elastic/beats/v7/libbeat/logp"
+	"github.com/gofrs/uuid"
+
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+
+	"github.com/elastic/beats/v7/libbeat/logp"
 )
 
-var _ sqsAPI = (*mockSQS)(nil)
+//go:generate mockgen -source=sqs.go -destination=mock_sqs_test.go -package awss3 -mock_names=sqsAPI=MockSQSAPI,sqsProcessor=MockSQSProcessor sqsAPI,sqsProcessor
+//go:generate mockgen -source=sqs_s3_event.go -destination=mock_sqs_s3_event_test.go -package awss3 -mock_names=s3ObjectHandler=MockS3ObjectHandler s3ObjectHandler
 
-type mockSQS struct {
-	t          testing.TB
-	queue      []sqs.Message
-	deleted    []string // receipt ID
-	visibility []struct {
-		receiptID string
-		timeout   time.Duration
-	}
-	callback func()
-}
+const testTimeout = 10 * time.Second
 
-func (m *mockSQS) pop() *sqs.Message {
-	if len(m.queue) == 0 {
-		return nil
-	}
-	msg := m.queue[len(m.queue)-1]
-	m.queue = m.queue[:len(m.queue)-1]
-	return &msg
-}
-
-func (m *mockSQS) push(msg *sqs.Message) {
-	m.queue = append([]sqs.Message{*msg}, m.queue...)
-}
-
-func (m *mockSQS) ReceiveMessage(ctx context.Context, maxMessages int) ([]sqs.Message, error) {
-	if len(m.queue) == 0 {
-		time.Sleep(time.Second)
-	}
-
-	var out []sqs.Message
-	for i := 0; i < maxMessages; i++ {
-		msg := m.pop()
-		if msg == nil {
-			break
-		}
-		out = append(out, *msg)
-	}
-
-	m.t.Log("ReceiveMessage returning", len(out), "messages.")
-	return out, nil
-}
-
-func (m *mockSQS) DeleteMessage(ctx context.Context, msg *sqs.Message) error {
-	m.t.Log("DeleteMessage", *msg.ReceiptHandle)
-	m.deleted = append(m.deleted, *msg.ReceiptHandle)
-	m.callback()
-	return nil
-}
-
-func (m *mockSQS) ChangeMessageVisibility(ctx context.Context, msg *sqs.Message, timeout time.Duration) error {
-	m.t.Log("ChangeMessageVisibility", *msg.ReceiptHandle, timeout)
-	m.visibility = append(m.visibility, struct {
-		receiptID string
-		timeout   time.Duration
-	}{receiptID: *msg.ReceiptHandle, timeout: timeout})
-	m.callback()
-	return nil
-}
-
-func TestNewSQSReceiver(t *testing.T) {
+func TestSQSReceiver(t *testing.T) {
 	logp.TestingSetup()
+	const maxMessages = 5
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	t.Run("ReceiveMessage success", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+		defer cancel()
 
-	sqsAPI := &mockSQS{
-		t: t,
-		queue: []sqs.Message{
-			newSQSMessage(),
-		},
+		ctrl, ctx := gomock.WithContext(ctx, t)
+		defer ctrl.Finish()
+		mockAPI := NewMockSQSAPI(ctrl)
+		mockMsgHandler := NewMockSQSProcessor(ctrl)
+		msg := newSQSMessage(newS3Event("log.json"))
+
+		gomock.InOrder(
+			// Initial ReceiveMessage for maxMessages.
+			mockAPI.EXPECT().
+				ReceiveMessage(gomock.Any(), gomock.Eq(maxMessages)).
+				Times(1).
+				DoAndReturn(func(_ context.Context, _ int) ([]sqs.Message, error) {
+					// Return single message.
+					return []sqs.Message{msg}, nil
+				}),
+
+			// Follow up ReceiveMessages for either maxMessages-1 or maxMessages
+			// depending on how long processing of previous message takes.
+			mockAPI.EXPECT().
+				ReceiveMessage(gomock.Any(), gomock.Any()).
+				Times(1).
+				DoAndReturn(func(_ context.Context, _ int) ([]sqs.Message, error) {
+					// Stop the test.
+					cancel()
+					return nil, nil
+				}),
+		)
+
+		// Expect the one message returned to have been processed.
+		mockMsgHandler.EXPECT().
+			ProcessSQS(gomock.Any(), gomock.Eq(&msg)).
+			Times(1).
+			Return(nil)
+
+		// Execute SQSReceiver and verify calls/state.
+		receiver := newSQSReceiver(logp.NewLogger(inputName), mockAPI, maxMessages, mockMsgHandler)
+		err := receiver.Receive(ctx)
+		assert.True(t, errors.Is(err, context.Canceled), "expected context.Canceled, but got %v", err)
+		assert.Equal(t, maxMessages, receiver.workerSem.available)
+	})
+
+	t.Run("retry after ReceiveMessage error", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), sqsRetryDelay+testTimeout)
+		defer cancel()
+
+		ctrl, ctx := gomock.WithContext(ctx, t)
+		defer ctrl.Finish()
+		mockAPI := NewMockSQSAPI(ctrl)
+		mockMsgHandler := NewMockSQSProcessor(ctrl)
+
+		gomock.InOrder(
+			// Initial ReceiveMessage gets an error.
+			mockAPI.EXPECT().
+				ReceiveMessage(gomock.Any(), gomock.Eq(maxMessages)).
+				Times(1).
+				DoAndReturn(func(_ context.Context, _ int) ([]sqs.Message, error) {
+					return nil, errors.New("fake connection error")
+				}),
+			// After waiting for sqsRetryDelay, it retries.
+			mockAPI.EXPECT().
+				ReceiveMessage(gomock.Any(), gomock.Eq(maxMessages)).
+				Times(1).
+				DoAndReturn(func(_ context.Context, _ int) ([]sqs.Message, error) {
+					cancel()
+					return nil, nil
+				}),
+		)
+
+		// Execute SQSReceiver and verify calls/state.
+		receiver := newSQSReceiver(logp.NewLogger(inputName), mockAPI, maxMessages, mockMsgHandler)
+		err := receiver.Receive(ctx)
+		assert.True(t, errors.Is(err, context.Canceled), "expected context.Canceled, but got %v", err)
+		assert.Equal(t, maxMessages, receiver.workerSem.available)
+	})
+}
+
+func newSQSMessage(events ...s3EventV2) sqs.Message {
+	body, err := json.Marshal(s3EventsV2{Records: events})
+	if err != nil {
+		panic(err)
 	}
-	sqsAPI.callback = func() {
-		if len(sqsAPI.deleted) == 1 {
-			cancel()
-		}
-	}
 
-	sqsReceiver := NewSQSReceiver(logp.NewLogger(inputName), sqsAPI, 1)
-	err := sqsReceiver.Receive(ctx)
-	assert.True(t, errors.Is(err, context.Canceled))
-
-	assert.Len(t, sqsAPI.deleted, 1)
-
-	t.Run("receive one", func(t *testing.T) {
-	})
-	t.Run("receive error and retry", func(t *testing.T) {
-	})
-}
-
-func TestSqsProcessor_Process(t *testing.T) {
-	t.Run("invalid SQS JSON body does not retry", func(t *testing.T) {
-	})
-	t.Run("zero S3 events in body", func(t *testing.T) {
-	})
-	t.Run("visibility is extended after half expires", func(t *testing.T) {
-	})
-	t.Run("all s3 objects are processed", func(t *testing.T) {
-	})
-	t.Run("message deleted on success", func(t *testing.T) {
-	})
-	t.Run("visibility timeout set to 0 on retryable failure", func(t *testing.T) {
-	})
-}
-
-func TestSqsProcessor_getS3Notifications(t *testing.T) {
-	t.Run("s3 key is url unescaped", func(t *testing.T) {
-	})
-	t.Run("non-ObjectCreated event types are ignored", func(t *testing.T) {
-	})
-}
-
-func newSQSMessage() sqs.Message {
-	body := `{
-  "Records": [
-    {
-      "eventVersion": "2.1",
-      "eventSource": "aws:s3",
-      "awsRegion": "us-east-2",
-      "eventTime": "2021-05-19T15:13:59.239Z",
-      "eventName": "ObjectCreated:CompleteMultipartUpload",
-      "userIdentity": {
-        "principalId": "AWS:AIDASDJDMBHZUCUQNNAUT"
-      },
-      "requestParameters": {
-        "sourceIPAddress": "192.168.50.2"
-      },
-      "responseElements": {
-        "x-amz-request-id": "5GD3G05EWV2R8JA3",
-        "x-amz-id-2": "5C6Ga4KyKbYprqSmLM1k1jnHLy4WwH3kab7Cv1Y6qnSR/AvXpP5wvCk3KzNV/0FsiU5O7zBaakprqg2IaI3qodUEXzd2dOsJ"
-      },
-      "s3": {
-        "s3SchemaVersion": "1.0",
-        "configurationId": "filebeat-notify-sqs",
-        "bucket": {
-          "name": "aws-logs",
-          "ownerIdentity": {
-            "principalId": "A2UXKVEZX9JVR"
-          },
-          "arn": "arn:aws:s3:::aws-logs"
-        },
-        "object": {
-          "key": "xml/logs.xml",
-          "size": 717530947,
-          "eTag": "659b0e787594bd15ccbf28156a86db87-86",
-          "sequencer": "0060A52B35612BC817"
-        }
-      }
-    }
-  ]
-}
-{
-  "id": "24785670A85E824A",
-  "queue_url": "https://sqs.us-east-2.amazonaws.com/144492464627/filebeat-test",
-  "region": "us-east-2"
-}`
-
-	hash := sha256.Sum256([]byte(body))
-	messageID := hex.EncodeToString(hash[:])
+	hash := sha256.Sum256(body)
+	id, _ := uuid.FromBytes(hash[:16])
+	messageID := id.String()
 	receipt := "receipt-" + messageID
+	bodyStr := string(body)
 
 	return sqs.Message{
-		Body:          &body,
+		Body:          &bodyStr,
 		MessageId:     &messageID,
 		ReceiptHandle: &receipt,
 	}
+}
+
+func newS3Event(key string) s3EventV2 {
+	record := s3EventV2{
+		AWSRegion:   "us-east-1",
+		EventSource: "aws:s3",
+		EventName:   "ObjectCreated:Put",
+	}
+	record.S3.Bucket.Name = "foo"
+	record.S3.Bucket.ARN = "arn:aws:s3:::foo"
+	record.S3.Object.Key = key
+	return record
 }
