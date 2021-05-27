@@ -39,15 +39,15 @@ func (m *MockS3ObjectHandler) EXPECT() *MockS3ObjectHandlerMockRecorder {
 }
 
 // ProcessS3Object mocks base method.
-func (m *MockS3ObjectHandler) ProcessS3Object(ctx context.Context, s3Object s3EventV2) error {
+func (m *MockS3ObjectHandler) ProcessS3Object(ctx context.Context, acker *eventACKTracker, s3Object s3EventV2) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessS3Object", ctx, s3Object)
+	ret := m.ctrl.Call(m, "ProcessS3Object", ctx, acker, s3Object)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessS3Object indicates an expected call of ProcessS3Object.
-func (mr *MockS3ObjectHandlerMockRecorder) ProcessS3Object(ctx, s3Object interface{}) *gomock.Call {
+func (mr *MockS3ObjectHandlerMockRecorder) ProcessS3Object(ctx, acker, s3Object interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessS3Object", reflect.TypeOf((*MockS3ObjectHandler)(nil).ProcessS3Object), ctx, s3Object)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessS3Object", reflect.TypeOf((*MockS3ObjectHandler)(nil).ProcessS3Object), ctx, acker, s3Object)
 }

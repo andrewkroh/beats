@@ -12,20 +12,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/gofrs/uuid"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
 
 	"github.com/elastic/beats/v7/libbeat/logp"
 )
 
 //go:generate mockgen -source=sqs.go -destination=mock_sqs_test.go -package awss3 -mock_names=sqsAPI=MockSQSAPI,sqsProcessor=MockSQSProcessor sqsAPI,sqsProcessor
 //go:generate mockgen -source=sqs_s3_event.go -destination=mock_sqs_s3_event_test.go -package awss3 -mock_names=s3ObjectHandler=MockS3ObjectHandler s3ObjectHandler
+//go:generate mockgen -source=s3.go -destination=mock_s3_test.go -package awss3 -mock_names=s3API=MockS3API s3API
+//go:generate mockgen -destination=mock_publisher_test.go -package=awss3 -mock_names=Client=MockBeatClient github.com/elastic/beats/v7/libbeat/beat Client
 
 const testTimeout = 10 * time.Second
+
+var errFakeConnectivityFailure = errors.New("fake connectivity failure")
 
 func TestSQSReceiver(t *testing.T) {
 	logp.TestingSetup()
@@ -91,7 +93,7 @@ func TestSQSReceiver(t *testing.T) {
 				ReceiveMessage(gomock.Any(), gomock.Eq(maxMessages)).
 				Times(1).
 				DoAndReturn(func(_ context.Context, _ int) ([]sqs.Message, error) {
-					return nil, errors.New("fake connection error")
+					return nil, errFakeConnectivityFailure
 				}),
 			// After waiting for sqsRetryDelay, it retries.
 			mockAPI.EXPECT().

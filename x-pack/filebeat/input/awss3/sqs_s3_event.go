@@ -56,7 +56,7 @@ type s3EventV2 struct {
 }
 
 type s3ObjectHandler interface {
-	ProcessS3Object(ctx context.Context, s3Object s3EventV2) error
+	ProcessS3Object(ctx context.Context, acker *eventACKTracker, s3Object s3EventV2) error
 }
 
 type sqsS3EventProcessor struct {
@@ -186,10 +186,14 @@ func (p *sqsS3EventProcessor) processS3Events(ctx context.Context, log *logp.Log
 	}
 	log.Debugf("SQS message contained %d S3 event notifications.", len(s3Events))
 
+	// Wait for all events to be ACKed before proceeding.
+	acker := newEventACKTracker(ctx)
+	defer acker.Wait()
+
 	var errs []error
 	for _, event := range s3Events {
 		// Process S3 object (download, parse, create events).
-		if err := p.s3ObjectHandler.ProcessS3Object(ctx, event); err != nil {
+		if err := p.s3ObjectHandler.ProcessS3Object(ctx, acker, event); err != nil {
 			errs = append(errs, errors.Wrapf(err,
 				"failed processing S3 event for object key %q in bucket %q",
 				event.S3.Object.Key, event.S3.Bucket.Name))
