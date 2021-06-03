@@ -20,6 +20,7 @@ import (
 type config struct {
 	APITimeout          time.Duration        `config:"api_timeout"`
 	VisibilityTimeout   time.Duration        `config:"visibility_timeout"`
+	SQSWaitTime         time.Duration        `config:"sqs.wait_time"` // The max duration for which the SQS ReceiveMessage call waits for a message to arrive in the queue before returning.
 	FIPSEnabled         bool                 `config:"fips_enabled"`
 	MaxNumberOfMessages int                  `config:"max_number_of_messages"`
 	QueueURL            string               `config:"queue_url" validate:"required"`
@@ -32,6 +33,7 @@ func defaultConfig() config {
 	c := config{
 		APITimeout:          120 * time.Second,
 		VisibilityTimeout:   300 * time.Second,
+		SQSWaitTime:         10 * time.Second,
 		FIPSEnabled:         false,
 		MaxNumberOfMessages: 5,
 	}
@@ -83,6 +85,7 @@ func (f *readerConfig) Validate() error {
 	if f.MaxBytes <= 0 {
 		return fmt.Errorf("max_bytes <%v> must be greater than 0", f.MaxBytes)
 	}
+
 	if f.ExpandEventListFromField != "" && f.ContentType != "" && f.ContentType != "application/json" {
 		return fmt.Errorf("content_type must be `application/json` when expand_event_list_from_field is used")
 	}

@@ -66,7 +66,8 @@ func TestS3ObjectProcessor(t *testing.T) {
 	})
 
 	t.Run("configured content-type", func(t *testing.T) {
-		testProcessS3Object(t, "testdata/multiline.json", "application/octet-stream", 2)
+		sel := fileSelectorConfig{ReaderConfig: readerConfig{ContentType: contentTypeJSON}}
+		testProcessS3Object(t, "testdata/multiline.json", "application/octet-stream", 2, sel)
 	})
 
 	t.Run("uncompress application/zip content", func(t *testing.T) {
@@ -78,11 +79,13 @@ func TestS3ObjectProcessor(t *testing.T) {
 	})
 
 	t.Run("split array", func(t *testing.T) {
-		testProcessS3Object(t, "testdata/events-array.json", "application/json", 2)
+		sel := fileSelectorConfig{ReaderConfig: readerConfig{ExpandEventListFromField: "Events"}}
+		testProcessS3Object(t, "testdata/events-array.json", "application/json", 2, sel)
 	})
 
 	t.Run("split array error missing key", func(t *testing.T) {
-		testProcessS3ObjectError(t, "testdata/events-array.json", "application/json", 2)
+		sel := fileSelectorConfig{ReaderConfig: readerConfig{ExpandEventListFromField: "Records"}}
+		testProcessS3ObjectError(t, "testdata/events-array.json", "application/json", 0, sel)
 	})
 
 	t.Run("events have a unique repeatable _id", func(t *testing.T) {
@@ -116,7 +119,7 @@ func TestS3ObjectProcessor(t *testing.T) {
 			GetObject(gomock.Any(), gomock.Eq(s3Event.S3.Bucket.Name), gomock.Eq(s3Event.S3.Object.Key)).
 			Return(nil, errFakeConnectivityFailure)
 
-		s3ObjProc := newS3ObjectProcessor(logp.NewLogger(inputName), mockS3API, mockPublisher)
+		s3ObjProc := newS3ObjectProcessor(logp.NewLogger(inputName), mockS3API, mockPublisher, nil)
 		ack := newEventACKTracker(ctx)
 		err := s3ObjProc.ProcessS3Object(ctx, ack, s3Event)
 		require.Error(t, err)
@@ -124,15 +127,15 @@ func TestS3ObjectProcessor(t *testing.T) {
 	})
 }
 
-func testProcessS3Object(t testing.TB, file, contentType string, numEvents int) []beat.Event {
-	return _testProcessS3Object(t, file, contentType, numEvents, false)
+func testProcessS3Object(t testing.TB, file, contentType string, numEvents int, selectors ...fileSelectorConfig) []beat.Event {
+	return _testProcessS3Object(t, file, contentType, numEvents, false, selectors)
 }
 
-func testProcessS3ObjectError(t testing.TB, file, contentType string, numEvents int) []beat.Event {
-	return _testProcessS3Object(t, file, contentType, numEvents, true)
+func testProcessS3ObjectError(t testing.TB, file, contentType string, numEvents int, selectors ...fileSelectorConfig) []beat.Event {
+	return _testProcessS3Object(t, file, contentType, numEvents, true, selectors)
 }
 
-func _testProcessS3Object(t testing.TB, file, contentType string, numEvents int, expectErr bool) []beat.Event {
+func _testProcessS3Object(t testing.TB, file, contentType string, numEvents int, expectErr bool, selectors []fileSelectorConfig) []beat.Event {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -155,14 +158,14 @@ func _testProcessS3Object(t testing.TB, file, contentType string, numEvents int,
 			Times(numEvents),
 	)
 
-	s3ObjProc := newS3ObjectProcessor(logp.NewLogger(inputName), mockS3API, mockPublisher)
+	s3ObjProc := newS3ObjectProcessor(logp.NewLogger(inputName), mockS3API, mockPublisher, selectors)
 	ack := newEventACKTracker(ctx)
 	err := s3ObjProc.ProcessS3Object(ctx, ack, s3Event)
 
 	if !expectErr {
 		require.NoError(t, err)
 		assert.Equal(t, numEvents, len(events))
-		assert.Equal(t, numEvents, ack.pendingACKs)
+		assert.EqualValues(t, numEvents, ack.pendingACKs)
 	} else {
 		require.Error(t, err)
 	}

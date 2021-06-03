@@ -49,7 +49,7 @@ type sqsReader struct {
 	log                 *logp.Logger
 }
 
-func newSQSReceiver(log *logp.Logger, sqs sqsAPI, maxMessagesInflight int, msgHandler sqsProcessor) *sqsReader {
+func newSQSReader(log *logp.Logger, sqs sqsAPI, maxMessagesInflight int, msgHandler sqsProcessor) *sqsReader {
 	return &sqsReader{
 		maxMessagesInflight: maxMessagesInflight,
 		workerSem:           newSem(maxMessagesInflight),

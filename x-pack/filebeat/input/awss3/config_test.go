@@ -25,6 +25,7 @@ func TestConfig(t *testing.T) {
 			QueueURL:            queueURL,
 			APITimeout:          120 * time.Second,
 			VisibilityTimeout:   300 * time.Second,
+			SQSWaitTime:         10 * time.Second,
 			FIPSEnabled:         false,
 			MaxNumberOfMessages: 5,
 			ReaderConfig: readerConfig{
