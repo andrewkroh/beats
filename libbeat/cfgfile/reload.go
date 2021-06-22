@@ -43,8 +43,6 @@ var (
 		},
 	}
 
-	debugf = logp.MakeDebug("cfgfile")
-
 	// configScans measures how many times the config dir was scanned for
 	// changes, configReloads measures how many times there were changes that
 	// triggered an actual reload.
@@ -102,6 +100,7 @@ type Reloader struct {
 	path     string
 	done     chan struct{}
 	wg       sync.WaitGroup
+	log      *logp.Logger
 }
 
 // NewReloader creates new Reloader instance for the given config
@@ -119,6 +118,7 @@ func NewReloader(pipeline beat.PipelineConnector, cfg *common.Config) *Reloader 
 		config:   config,
 		path:     path,
 		done:     make(chan struct{}),
+		log:      logp.NewLogger("cfgfile"),
 	}
 }
 
@@ -129,7 +129,7 @@ func (rl *Reloader) Check(runnerFactory RunnerFactory) error {
 		return nil
 	}
 
-	debugf("Checking module configs from: %s", rl.path)
+	rl.log.Debugf("Checking module configs from: %s", rl.path)
 	gw := NewGlobWatcher(rl.path)
 
 	files, _, err := gw.Scan()
@@ -143,7 +143,7 @@ func (rl *Reloader) Check(runnerFactory RunnerFactory) error {
 		return errors.Wrap(err, "loading configs")
 	}
 
-	debugf("Number of module configs found: %v", len(configs))
+	rl.log.Debugf("Number of module configs loaded: %v", len(configs))
 
 	// Initialize modules
 	for _, c := range configs {
@@ -161,7 +161,7 @@ func (rl *Reloader) Check(runnerFactory RunnerFactory) error {
 
 // Run runs the reloader
 func (rl *Reloader) Run(runnerFactory RunnerFactory) {
-	logp.Info("Config reloader started")
+	rl.log.Info("Config reloader started")
 
 	list := NewRunnerList("reload", runnerFactory, rl.pipeline)
 
@@ -187,18 +187,18 @@ func (rl *Reloader) Run(runnerFactory RunnerFactory) {
 	for {
 		select {
 		case <-rl.done:
-			logp.Info("Dynamic config reloader stopped")
+			rl.log.Info("Dynamic config reloader stopped")
 			return
 
 		case <-time.After(rl.config.Reload.Period):
-			debugf("Scan for new config files")
+			rl.log.Debugf("Scan for new config files")
 			configScans.Add(1)
 
 			files, updated, err := gw.Scan()
 			if err != nil {
 				// In most cases of error, updated == false, so will continue
 				// to next iteration below
-				logp.Err("Error fetching new config files: %v", err)
+				rl.log.Errorf("Error fetching new config files: %v", err)
 			}
 
 			// if there are no changes, skip this reload unless forceReload is set.
@@ -208,9 +208,12 @@ func (rl *Reloader) Run(runnerFactory RunnerFactory) {
 			configReloads.Add(1)
 
 			// Load all config objects
-			configs, _ := rl.loadConfigs(files)
+			configs, err := rl.loadConfigs(files)
+			if err != nil {
+				rl.log.Warnw("Failed loading config files.", "error", err)
+			}
 
-			debugf("Number of module configs found: %v", len(configs))
+			rl.log.Debugf("Number of module configs loaded: %v", len(configs))
 
 			err = list.Reload(configs)
 			// Force reload on the next iteration if and only if this one failed.
@@ -221,10 +224,10 @@ func (rl *Reloader) Run(runnerFactory RunnerFactory) {
 
 		// Path loading is enabled but not reloading. Loads files only once and then stops.
 		if !rl.config.Reload.Enabled {
-			logp.Info("Loading of config files completed.")
+			rl.log.Info("Loading of config files completed.")
 			select {
 			case <-rl.done:
-				logp.Info("Dynamic config reloader stopped")
+				rl.log.Info("Dynamic config reloader stopped")
 				return
 			}
 		}
@@ -243,38 +246,52 @@ func (rl *Reloader) Load(runnerFactory RunnerFactory) {
 
 	gw := NewGlobWatcher(rl.path)
 
-	debugf("Scan for config files")
+	rl.log.Debugf("Scan for config files")
 	files, _, err := gw.Scan()
 	if err != nil {
-		logp.Err("Error fetching new config files: %v", err)
+		rl.log.Errorf("Error fetching new config files: %v", err)
 	}
 
 	// Load all config objects
-	configs, _ := rl.loadConfigs(files)
+	configs, err := rl.loadConfigs(files)
+	if err != nil {
+		rl.log.Warnw("Failed loading config files.", "error", err)
+	}
 
-	debugf("Number of module configs found: %v", len(configs))
+	rl.log.Debugf("Number of module configs loaded: %v", len(configs))
 
 	if err := list.Reload(configs); err != nil {
-		logp.Err("Error loading configuration files: %+v", err)
+		rl.log.Errorf("Error loading configuration files: %+v", err)
 		return
 	}
 
-	logp.Info("Loading of config files completed.")
+	rl.log.Info("Loading of config files completed.")
 }
 
 func (rl *Reloader) loadConfigs(files []string) ([]*reload.ConfigWithMeta, error) {
 	// Load all config objects
-	result := []*reload.ConfigWithMeta{}
+	var result []*reload.ConfigWithMeta
 	var errs multierror.Errors
 	for _, file := range files {
-		configs, err := LoadList(file)
+		config, err := common.LoadFile(file)
 		if err != nil {
-			errs = append(errs, err)
-			logp.Err("Error loading config from file '%s', error %v", file, err)
+			errs = append(errs, fmt.Errorf("failed to load config from %s: %w", file, err))
 			continue
 		}
 
-		for _, c := range configs {
+		// Inject path variables to enable variable expansion.
+		config.SetString("path.config", -1, paths.Paths.Config)
+		config.SetString("path.home", -1, paths.Paths.Home)
+		config.SetString("path.data", -1, paths.Paths.Data)
+		config.SetString("path.logs", -1, paths.Paths.Logs)
+
+		var configList []*common.Config
+		if err = config.Unpack(&configList); err != nil {
+			errs = append(errs, fmt.Errorf("failed to unpack config list from %s: %w", file, err))
+			continue
+		}
+
+		for _, c := range configList {
 			result = append(result, &reload.ConfigWithMeta{Config: c})
 		}
 	}
