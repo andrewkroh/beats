@@ -96,7 +96,7 @@ func (r *RunnerList) Reload(configs []*reload.ConfigWithMeta) error {
 				// error is related to state, we should not log at error level
 				r.logger.Debugf("Error creating runner from config: %s", err)
 			} else {
-				r.logger.Errorf("Error creating runner from config: %s", err)
+				r.logger.Errorw("Error creating runner from config", "error", err)
 			}
 			errs = append(errs, errors.Wrap(err, "Error creating runner from config"))
 			continue
