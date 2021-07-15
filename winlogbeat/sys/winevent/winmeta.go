@@ -19,7 +19,7 @@ package winevent
 
 type WinMeta struct {
 	Keywords map[int64]string  // Keyword bit mask to keyword name.
-	Opcodes  map[uint8]string  // Opcode value to name.
+	Opcodes  map[uint16]map[uint16]string  // Opcode value to name.
 	Levels   map[uint8]string  // Level value to name.
 	Tasks    map[uint16]string // Task value to name.
 }
@@ -37,17 +37,17 @@ var defaultWinMeta = &WinMeta{
 		0x40000000000000: "Correlation Hint",
 		0x80000000000000: "Classic",
 	},
-	Opcodes: map[uint8]string{
-		0: "Info",
-		1: "Start",
-		2: "Stop",
-		3: "DCStart",
-		4: "DCStop",
-		5: "Extension",
-		6: "Reply",
-		7: "Resume",
-		8: "Suspend",
-		9: "Send",
+	Opcodes: map[uint16]map[uint16]string{
+		0: map[uint16]string{0: "Info"},
+		1: map[uint16]string{0: "Start"},
+		2: map[uint16]string{0: "Stop"},
+		3: map[uint16]string{0: "DCStart"},
+		4: map[uint16]string{0: "DCStop"},
+		5: map[uint16]string{0: "Extension"},
+		6: map[uint16]string{0: "Reply"},
+		7: map[uint16]string{0: "Resume"},
+		8: map[uint16]string{0: "Suspend"},
+		9: map[uint16]string{0: "Send"},
 	},
 	Levels: map[uint8]string{
 		0: "Information", // "Log Always", but Event Viewer shows Information.
@@ -60,4 +60,9 @@ var defaultWinMeta = &WinMeta{
 	Tasks: map[uint16]string{
 		0: "None",
 	},
+}
+
+func (m WinMeta) Opcode(opcode, task uint16) (string, bool) {
+	s, found := m.Opcodes[opcode][task]
+	return s, found
 }

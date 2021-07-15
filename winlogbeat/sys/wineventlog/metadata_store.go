@@ -92,7 +92,7 @@ func NewEmptyPublisherMetadataStore(provider string, log *logp.Logger) *Publishe
 	return &PublisherMetadataStore{
 		WinMeta: winevent.WinMeta{
 			Keywords: map[int64]string{},
-			Opcodes:  map[uint8]string{},
+			Opcodes:  map[uint16]map[uint16]string{},
 			Levels:   map[uint8]string{},
 			Tasks:    map[uint16]string{},
 		},
@@ -124,13 +124,18 @@ func (s *PublisherMetadataStore) initOpcodes() error {
 	if err != nil {
 		return err
 	}
-	s.Opcodes = make(map[uint8]string, len(opcodes))
+	s.Opcodes = make(map[uint16]map[uint16]string, len(opcodes))
 	for _, opcodeMeta := range opcodes {
 		val := opcodeMeta.Message
 		if val == "" {
 			val = opcodeMeta.Name
 		}
-		s.Opcodes[uint8(opcodeMeta.Mask)] = val
+		taskSpecific := s.Opcodes[opcodeMeta.OpcodeValue()]
+		if taskSpecific == nil {
+			taskSpecific = map[uint16]string{}
+			s.Opcodes[opcodeMeta.OpcodeValue()] = taskSpecific
+		}
+		taskSpecific[opcodeMeta.TaskValue()] = val
 	}
 	return nil
 }
@@ -166,6 +171,7 @@ func (s *PublisherMetadataStore) initTasks() error {
 		s.Tasks[uint16(taskMeta.Mask)] = val
 	}
 	return nil
+
 }
 
 func (s *PublisherMetadataStore) initEvents() error {
@@ -177,7 +183,7 @@ func (s *PublisherMetadataStore) initEvents() error {
 
 	s.Events = map[uint16]*EventMetadata{}
 	for itr.Next() {
-		evt, err := newEventMetadataFromPublisherMetadata(itr, s.Metadata)
+		evt, err := newEventMetadataFromPublisherMetadata(itr, s)
 		if err != nil {
 			s.log.Warnw("Failed to read event metadata from publisher. Continuing to next event.",
 				"error", err)
@@ -284,6 +290,11 @@ type EventMetadata struct {
 	MsgStatic   string             // Used when the message has no parameters.
 	MsgTemplate *template.Template `json:"-"` // Template that expects an array of values as its data.
 	EventData   []EventData        // Names of parameters from XML template.
+	Channel     string
+	Level       string
+	Task        string
+	Opcode      string
+	Keywords    []string
 }
 
 // newEventMetadataFromEventHandle collects metadata about an event type using
@@ -335,13 +346,15 @@ func newEventMetadataFromEventHandle(publisher *PublisherMetadata, eventHandle E
 
 // newEventMetadataFromPublisherMetadata collects metadata about an event type
 // using the publisher metadata.
-func newEventMetadataFromPublisherMetadata(itr *EventMetadataIterator, publisher *PublisherMetadata) (*EventMetadata, error) {
+func newEventMetadataFromPublisherMetadata(itr *EventMetadataIterator, store *PublisherMetadataStore) (*EventMetadata, error) {
 	em := &EventMetadata{}
 	err := multierr.Combine(
 		em.initEventID(itr),
 		em.initVersion(itr),
 		em.initEventDataTemplate(itr),
-		em.initEventMessage(itr, publisher),
+		em.initEventMessage(itr, store.Metadata),
+		em.initTask(itr, store),
+		em.initOpcode(itr, store),
 	)
 	if err != nil {
 		return nil, err
@@ -365,6 +378,42 @@ func (em *EventMetadata) initVersion(itr *EventMetadataIterator) error {
 		return err
 	}
 	em.Version = uint8(version)
+	return nil
+}
+
+func (em *EventMetadata) initTask(itr *EventMetadataIterator, s *PublisherMetadataStore) error {
+	task, err := itr.Task()
+	if err != nil {
+		return err
+	}
+
+	// The value is zero if the event definition does not specify a task.
+	if task == 0 {
+		return nil
+	}
+
+	// TODO: Why is the key in this map a uint16? Should be a uint32.
+	em.Task = s.Tasks[uint16(task)]
+	return nil
+}
+
+func (em *EventMetadata) initOpcode(itr *EventMetadataIterator, s *PublisherMetadataStore) error {
+	opcode, err := itr.Opcode()
+	if err != nil {
+		return err
+	}
+
+	// The value is zero if the event definition does not specify an opcode.
+	if opcode == 0 {
+		return nil
+	}
+
+	var found bool
+	em.Opcode, found = s.Opcode(uint16(opcode), 0)
+	if !found {
+		task, _ := itr.Task()
+		em.Opcode, _ = s.Opcode(uint16(opcode), uint16(task))
+	}
 	return nil
 }
 

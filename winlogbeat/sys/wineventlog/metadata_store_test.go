@@ -20,6 +20,7 @@
 package wineventlog
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -60,4 +61,33 @@ func TestPublisherMetadataStore(t *testing.T) {
 		assert.NotNil(t, em.MsgTemplate)
 		assert.NotEmpty(t, em.EventData)
 	})
+}
+
+func TestTaskOpcode(t *testing.T) {
+	pubs, err := Publishers()
+	require.NoError(t, err)
+
+	nextPub:
+	for _, p := range pubs {
+		s, _ := NewPublisherMetadataStore(
+			NilHandle,
+			p,
+			logp.NewLogger("metadata"))
+		if s == nil || s.Opcodes == nil {
+			continue
+		}
+
+		for _, op := range s.Opcodes {
+			for task := range op {
+				if task != 0 {
+					s.Close()
+					t.Log(p, s.Opcodes)
+					t.Log("Tasks", s.Tasks)
+					continue nextPub
+				}
+			}
+		}
+
+		s.Close()
+	}
 }

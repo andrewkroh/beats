@@ -236,6 +236,14 @@ type MetadataOpcode struct {
 	Message   string
 }
 
+func (m MetadataOpcode) OpcodeValue() uint16 {
+	return uint16(m.Mask >> 16)
+}
+
+func (m MetadataOpcode) TaskValue() uint16 {
+	return uint16(m.Mask)
+}
+
 func NewMetadataOpcodes(publisherMetadataHandle EvtHandle) ([]MetadataOpcode, error) {
 	v, err := EvtGetPublisherMetadataProperty(publisherMetadataHandle, EvtPublisherMetadataOpcodes)
 	if err != nil {

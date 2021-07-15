@@ -123,7 +123,7 @@ func testPublisherMetadata(t *testing.T, provider string) {
 
 			if testing.Verbose() {
 				for _, value := range values {
-					t.Logf("%+v", value)
+					t.Logf("%+v (opcode=%d, task=%d)", value, value.OpcodeValue(), value.TaskValue())
 				}
 			}
 		})

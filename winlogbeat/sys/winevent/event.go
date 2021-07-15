@@ -364,9 +364,9 @@ func EnrichRawValuesWithNames(publisherMeta *WinMeta, event *Event) {
 	if event.Opcode == "" {
 		// Opcode (search in defaultWinMeta first).
 		if !isClassic {
-			event.Opcode, found = defaultWinMeta.Opcodes[event.OpcodeRaw]
+			event.Opcode, found = defaultWinMeta.Opcode(uint16(event.OpcodeRaw), event.TaskRaw)
 			if !found && publisherMeta != nil {
-				event.Opcode = publisherMeta.Opcodes[event.OpcodeRaw]
+				event.Opcode, _ = publisherMeta.Opcode(uint16(event.OpcodeRaw), event.TaskRaw)
 			}
 		}
 	}
