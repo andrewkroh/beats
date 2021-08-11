@@ -1,0 +1,8 @@
+- name: mash
+  type: group
+  description: >
+    Metrics for monitoring the mashing process.
+  fields:
+    - name: temperature
+      type: double
+      description: Mash tun temperature.

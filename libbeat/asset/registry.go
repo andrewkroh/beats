@@ -22,48 +22,111 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"io/ioutil"
+	"math"
+	"regexp"
 	"sort"
+	"strings"
 )
 
-// FieldsRegistry contains a list of fields.yml files
-// As each entry is an array of bytes multiple fields.yml can be added under one path.
+const datasetFieldIndent = 8
+
+type Priority int32
+
+const (
+	Highest          Priority = 1
+	ECSFieldsPri     Priority = 5
+	LibbeatFieldsPri Priority = 10
+	BeatFieldsPri    Priority = 50
+	ModuleFieldsPri  Priority = 100
+	Lowest           Priority = math.MaxInt32
+)
+
+// fieldsRegistry contains the contents of fields.yml files.
+//
+// This is a mapping of:
+//     beatName -> asset.Priority -> fieldSetName -> string
+//
+// As each entry is an array of strings, multiple fields.yml can be added under one path.
 // This can become useful as we don't have to generate anymore the fields.yml but can
 // package each local fields.yml from things like processors.
-var FieldsRegistry = map[string]map[int]map[string][]string{}
+var fieldsRegistry = map[string]map[int]map[string][]string{}
 
-// SetFields sets the fields for a given beat and asset name
-func SetFields(beat, name string, p Priority, asset func() string) error {
-	data := asset()
+// moduleDatasetRegistry contains the contents of fields.yml files for module datasets.
+// This is a mapping of:
+//   beatName -> moduleName -> dataSetName -> string
+var moduleDatasetRegistry = map[string]map[string]map[string]string{}
+
+// RegisterFields sets the fields for a given beat and asset name.
+func RegisterFields(beat, name string, p Priority, fields string) error {
+	if _, ok := fieldsRegistry[beat]; !ok {
+		fieldsRegistry[beat] = map[int]map[string][]string{}
+	}
 
 	priority := int(p)
-
-	if _, ok := FieldsRegistry[beat]; !ok {
-		FieldsRegistry[beat] = map[int]map[string][]string{}
+	if _, ok := fieldsRegistry[beat][priority]; !ok {
+		fieldsRegistry[beat][priority] = map[string][]string{}
 	}
 
-	if _, ok := FieldsRegistry[beat][priority]; !ok {
-		FieldsRegistry[beat][priority] = map[string][]string{}
-	}
-
-	FieldsRegistry[beat][priority][name] = append(FieldsRegistry[beat][priority][name], data)
-
+	fieldsRegistry[beat][priority][name] = append(fieldsRegistry[beat][priority][name], fields)
 	return nil
 }
 
-// GetFields returns a byte array contains all fields for the given beat
-func GetFields(beat string) ([]byte, error) {
-	var fields []byte
+// RegisterModuleDatasetFields sets the fields for a given beat and asset name
+func RegisterModuleDatasetFields(beat, module, dataset string, fields string) error {
+	// The final fields data is just a simple blob of concatenated YAML
+	// data. For datasets to be "children" of the module they must be
+	// indented.
+	fields = indent(datasetFieldIndent, fields)
 
-	// Get all priorities and sort them
-	beatRegistry := FieldsRegistry[beat]
+	if _, ok := moduleDatasetRegistry[beat]; !ok {
+		moduleDatasetRegistry[beat] = map[string]map[string]string{}
+	}
+
+	if _, ok := moduleDatasetRegistry[beat][module]; !ok {
+		moduleDatasetRegistry[beat][module] = map[string]string{}
+	}
+
+	moduleDatasetRegistry[beat][module][dataset] = fields
+	return nil
+}
+
+var nonWhitespaceRegex = regexp.MustCompile(`(?m)(^.*\S.*$)`)
+
+// indent pads all non-whitespace lines with the number of spaces specified.
+func indent(spaces int, content string) string {
+	pad := strings.Repeat(" ", spaces)
+	return nonWhitespaceRegex.ReplaceAllString(content, pad+"$1")
+}
+
+func getModuleDatasetsFields(beat, module string) []string {
+	moduleDatasets := moduleDatasetRegistry[beat][module]
+
+	var datasets []string
+	for datasetName := range moduleDatasets {
+		datasets = append(datasets, datasetName)
+	}
+	sort.Strings(datasets)
+
+	var fields []string
+	for _, datasetName := range datasets {
+		fields = append(fields, moduleDatasets[datasetName])
+	}
+
+	return fields
+}
+
+// GetFields returns a byte array containing all fields for the specified beat.
+func GetFields(beat string) ([]byte, error) {
+	// Get all priorities and sort them.
+	beatRegistry := fieldsRegistry[beat]
 	priorities := make([]int, 0, len(beatRegistry))
 	for p := range beatRegistry {
 		priorities = append(priorities, p)
 	}
 	sort.Ints(priorities)
 
+	var fields []byte
 	for _, priority := range priorities {
-
 		priorityRegistry := beatRegistry[priority]
 
 		// Sort all entries with same priority alphabetically
@@ -73,22 +136,36 @@ func GetFields(beat string) ([]byte, error) {
 		}
 		sort.Strings(entries)
 
-		for _, entry := range entries {
-			list := priorityRegistry[entry]
-			for _, data := range list {
-				output, err := DecodeData(data)
-				if err != nil {
-					return nil, err
-				}
+		for _, fieldSetName := range entries {
+			list := priorityRegistry[fieldSetName]
 
-				fields = append(fields, output...)
+			// Add in dataset fields if this is a module.
+			if ModuleFieldsPri == Priority(priority) {
+				list = append(list, getModuleDatasetsFields(beat, fieldSetName)...)
+			}
+
+			for _, data := range list {
+				fields = append(fields, []byte(data)...)
 			}
 		}
 	}
 	return fields, nil
 }
 
+// SetFields sets the fields for a given beat and asset name.
+//
+// Deprecated: Switch to go:embed and the Register* methods.
+func SetFields(beat, name string, p Priority, assetProducer func() string) error {
+	data, err := DecodeData(assetProducer())
+	if err != nil {
+		return err
+	}
+	return RegisterFields(beat, name, p, string(data))
+}
+
 // EncodeData compresses the data with zlib and base64 encodes it
+//
+// Deprecated: Switch to go:embed and the Register* methods.
 func EncodeData(data string) (string, error) {
 	var zlibBuf bytes.Buffer
 	writer := zlib.NewWriter(&zlibBuf)
@@ -104,9 +181,10 @@ func EncodeData(data string) (string, error) {
 	return base64.StdEncoding.EncodeToString(zlibBuf.Bytes()), nil
 }
 
-// DecodeData base64 decodes the data and uncompresses it
+// DecodeData base64 decodes the data and uncompresses it.
+//
+// Deprecated: Switch to go:embed and the Register* methods.
 func DecodeData(data string) ([]byte, error) {
-
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return nil, err

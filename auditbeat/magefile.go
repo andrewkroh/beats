@@ -31,8 +31,6 @@ import (
 	// mage:import
 	"github.com/elastic/beats/v7/dev-tools/mage/target/common"
 	// mage:import
-	"github.com/elastic/beats/v7/dev-tools/mage/target/unittest"
-	// mage:import
 	"github.com/elastic/beats/v7/dev-tools/mage/target/integtest"
 	// mage:import
 	_ "github.com/elastic/beats/v7/dev-tools/mage/target/test"
@@ -40,8 +38,6 @@ import (
 
 func init() {
 	common.RegisterCheckDeps(Update)
-	unittest.RegisterGoTestDeps(fieldsYML)
-	integtest.RegisterGoTestDeps(fieldsYML)
 	integtest.RegisterPythonTestDeps(Dashboards)
 
 	devtools.BeatDescription = "Audit the activities of users and processes on your system."
@@ -107,29 +103,14 @@ func Config() error {
 	return devtools.Config(devtools.AllConfigTypes, auditbeat.OSSConfigFileParams(), ".")
 }
 
-// Fields generates fields.yml and fields.go files for the Beat.
+// Fields generates fields.*.go files for the Beat.
 func Fields() {
-	mg.Deps(libbeatAndAuditbeatCommonFieldsGo, moduleFieldsGo)
-	mg.Deps(fieldsYML)
+	mg.Deps(devtools.GenerateBeatFieldsEmbedGo, generateModuleFieldsEmbedGo)
 }
 
-// libbeatAndAuditbeatCommonFieldsGo generates a fields.go containing both
-// libbeat and auditbeat's common fields.
-func libbeatAndAuditbeatCommonFieldsGo() error {
-	if err := devtools.GenerateFieldsYAML(); err != nil {
-		return err
-	}
-	return devtools.GenerateAllInOneFieldsGo()
-}
-
-// moduleFieldsGo generates a fields.go for each module.
-func moduleFieldsGo() error {
-	return devtools.GenerateModuleFieldsGo("module")
-}
-
-// fieldsYML generates the fields.yml file containing all fields.
-func fieldsYML() error {
-	return devtools.GenerateFieldsYAML("module")
+// generateModuleFieldsEmbedGo generates a fields.*.go file for each module and dataset.
+func generateModuleFieldsEmbedGo() error {
+	return devtools.GenerateModuleFieldsEmbedGo("module")
 }
 
 // ExportDashboard exports a dashboard and writes it into the correct directory.
@@ -148,5 +129,6 @@ func Dashboards() error {
 
 // Docs collects the documentation.
 func Docs() {
+	mg.Deps(Build)
 	mg.Deps(auditbeat.ModuleDocs, auditbeat.FieldDocs)
 }

@@ -103,7 +103,7 @@ func Fields() {
 }
 
 func moduleFieldsGo() error {
-	return devtools.GenerateModuleFieldsGo("module")
+	return devtools.GenerateModuleFieldsEmbedGo("module")
 }
 
 // fieldsYML generates the fields.yml file containing all fields.

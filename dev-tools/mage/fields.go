@@ -18,7 +18,9 @@
 package mage
 
 import (
+	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/pkg/errors"
 
@@ -165,6 +167,132 @@ func GenerateModuleFieldsGo(moduleDir string) error {
 	moduleFieldsCmd := sh.RunCmd("go", cmd...)
 
 	return moduleFieldsCmd()
+}
+
+var (
+	moduleFieldsYmlRegex = regexp.MustCompile(`(?m)([^/]+)/_meta/fields\.yml$`)
+	datasetFieldsYmlRegex =  regexp.MustCompile(`(?m)([^/]+)/([^/]+)/_meta/fields\.yml$`)
+)
+
+func GenerateBeatFieldsEmbedGo() error {
+	const goEmbedFieldsCmdPath = "dev-tools/cmd/go_embed_fields"
+
+	beatsDir, err := ElasticBeatsDir()
+	if err != nil {
+		return err
+	}
+	goEmbedFields := sh.RunCmd("go", "run", "-mod=readonly", filepath.Join(beatsDir, goEmbedFieldsCmdPath))
+
+	args := []string{
+		"-i", "fields/_meta/fields.beat.yml",
+		"-type", "beat",
+		"-beat", BeatName,
+		"-name", BeatName,
+		"-pkg", "fields",
+		"-o", filepath.Join("fields", "fields.beat.go"),
+		"-license", toLibbeatLicenseName(BeatLicense),
+	}
+
+	if err = goEmbedFields(args...); err != nil {
+		return err
+	}
+
+	os.Remove("include/fields.go")
+	return nil
+}
+
+func GenerateModuleFieldsEmbedGo(moduleDir string) error {
+	const goEmbedFieldsCmdPath = "dev-tools/cmd/go_embed_fields"
+
+	beatsDir, err := ElasticBeatsDir()
+	if err != nil {
+		return err
+	}
+	goEmbedFields := sh.RunCmd("go", "run", "-mod=readonly", filepath.Join(beatsDir, goEmbedFieldsCmdPath))
+	goListPackageName := sh.OutCmd("go", "list", "-f={{.Name}}")
+
+	// Modules
+	moduleFieldsYmlFiles, err := FindFiles(filepath.Join(moduleDir, "*/_meta/fields.yml"))
+	if err != nil {
+		return err
+	}
+
+	for _, fieldsFile := range moduleFieldsYmlFiles {
+		matches := moduleFieldsYmlRegex.FindStringSubmatch(filepath.ToSlash(fieldsFile))
+		if len(matches) != 2 {
+			continue
+		}
+		moduleName := matches[1]
+
+		dirAbs, err := filepath.Abs(filepath.Join(".", moduleDir, moduleName))
+		if err != nil {
+			return err
+		}
+
+		pkg, err := goListPackageName(dirAbs)
+		if err != nil {
+			return err
+		}
+
+		args := []string{
+			"-i", fieldsFile,
+			"-type", "module",
+			"-beat", BeatName,
+			"-name", moduleName,
+			"-pkg", pkg,
+			"-o", filepath.Join(moduleDir, moduleName, "fields.module.go"),
+			"-license", toLibbeatLicenseName(BeatLicense),
+		}
+
+		if err = goEmbedFields(args...); err != nil {
+			return err
+		}
+
+		os.Remove(filepath.Join(moduleDir, moduleName, "fields.go"))
+	}
+
+	// Module Datasets
+	datasetFieldsYmlFiles, err := FindFiles(filepath.Join(moduleDir, "*/*/_meta/fields.yml"))
+	if err != nil {
+		return err
+	}
+
+	for _, fieldsFile := range datasetFieldsYmlFiles {
+		matches := datasetFieldsYmlRegex.FindStringSubmatch(filepath.ToSlash(fieldsFile))
+		if len(matches) != 3 {
+			continue
+		}
+		moduleName := matches[1]
+		datasetName := matches[2]
+
+		dirAbs, err := filepath.Abs(filepath.Join(".", moduleDir, moduleName, datasetName))
+		if err != nil {
+			return err
+		}
+
+		pkg, err := goListPackageName(dirAbs)
+		if err != nil {
+			return err
+		}
+
+		args := []string{
+			"-i", fieldsFile,
+			"-type", "dataset",
+			"-beat", BeatName,
+			"-module", moduleName,
+			"-name", datasetName,
+			"-pkg", pkg,
+			"-o", filepath.Join(moduleDir, moduleName, datasetName, "fields.dataset.go"),
+			"-license", toLibbeatLicenseName(BeatLicense),
+			"-v",
+		}
+
+		if err = goEmbedFields(args...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GenerateModuleIncludeListGo generates an include/list.go file containing

@@ -1,0 +1,3 @@
+go_embed_fields
+go_embed_fields.exe
+test/fields.*.go

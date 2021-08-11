@@ -25,9 +25,14 @@ import (
 	"github.com/elastic/beats/v7/libbeat/cmd"
 	"github.com/elastic/beats/v7/libbeat/cmd/instance"
 	"github.com/elastic/beats/v7/libbeat/common"
+	"github.com/elastic/beats/v7/libbeat/fields/ecs"
+	"github.com/elastic/beats/v7/libbeat/fields/libbeat"
 	"github.com/elastic/beats/v7/libbeat/publisher/processing"
 	"github.com/elastic/beats/v7/metricbeat/beater"
 	"github.com/elastic/beats/v7/metricbeat/mb/module"
+
+	// Register beat fields.
+	_ "github.com/elastic/beats/v7/auditbeat/fields"
 )
 
 const (
@@ -78,5 +83,8 @@ func Initialize(settings instance.Settings) *cmd.BeatsRootCmd {
 }
 
 func init() {
+	libbeat.MustRegisterFields(Name)
+	ecs.MustRegisterFields(Name)
+
 	RootCmd = Initialize(AuditbeatSettings())
 }

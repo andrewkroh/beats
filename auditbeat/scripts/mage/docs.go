@@ -18,6 +18,7 @@
 package mage
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,12 +92,13 @@ func ModuleDocs() error {
 // FieldDocs generates docs/fields.asciidoc containing all fields
 // (including x-pack).
 func FieldDocs() error {
-	inputs := []string{
-		devtools.OSSBeatDir("module"),
-		devtools.XPackBeatDir("module"),
+	fieldsYmlData, err := sh.Output("./"+devtools.BeatName+devtools.BinaryExt, "export", "fields")
+	if err != nil {
+		return err
 	}
+
 	output := devtools.CreateDir("build/fields/fields.all.yml")
-	if err := devtools.GenerateFieldsYAMLTo(output, inputs...); err != nil {
+	if err = ioutil.WriteFile(output, []byte(fieldsYmlData), 0644); err != nil {
 		return err
 	}
 	return devtools.Docs.FieldDocs(output)

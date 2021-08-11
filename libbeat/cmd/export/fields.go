@@ -15,27 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package cmd
+package export
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
-	"github.com/elastic/beats/v7/libbeat/cmd/export"
 	"github.com/elastic/beats/v7/libbeat/cmd/instance"
 )
 
-func genExportCmd(settings instance.Settings) *cobra.Command {
-	exportCmd := &cobra.Command{
-		Use:   "export",
-		Short: "Export current config or index template",
+// GenFieldsCmd returns a command that outputs the fields YAML data embedded in
+// the Beat.
+func GenFieldsCmd(settings instance.Settings) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "fields",
+		Short: "Export fields YAML to stdout",
+		Run: func(cmd *cobra.Command, args []string) {
+			b, err := instance.NewInitializedBeat(settings)
+			if err != nil {
+				fatalfInitCmd(err)
+			}
+
+			if _, err = os.Stdout.Write(b.Fields); err != nil {
+				fatalf("Error writing fields YAML to stdout: %+v", err)
+			}
+		},
 	}
 
-	exportCmd.AddCommand(export.GenExportConfigCmd(settings))
-	exportCmd.AddCommand(export.GenFieldsCmd(settings))
-	exportCmd.AddCommand(export.GenTemplateConfigCmd(settings))
-	exportCmd.AddCommand(export.GenIndexPatternConfigCmd(settings))
-	exportCmd.AddCommand(export.GenDashboardCmd(settings))
-	exportCmd.AddCommand(export.GenGetILMPolicyCmd(settings))
-
-	return exportCmd
+	return cmd
 }
