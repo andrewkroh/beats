@@ -533,7 +533,7 @@ class TestCase(unittest.TestCase, ComposeMixin):
                                      'export', 'fields'],
                                     stdout=subprocess.PIPE)
             if result.returncode != 0:
-                raise AssertionError("export fields field with exit code {}: {}".format(result.returncode, result.stderr))
+                raise AssertionError("export fields field with exit code {}".format(result.returncode))
             raw_yaml = result.stdout.decode('utf_8')
 
             # Remove the 'PASS' added by the test coverage wrapper.
@@ -544,12 +544,13 @@ class TestCase(unittest.TestCase, ComposeMixin):
         # Validate all fields.
         self.fields.assert_fields_are_documented(evt)
 
-    def flatten_object(self, obj, prefix=""):
+    def flatten_object(self, obj, dict_fields, prefix=""):
         result = {}
         for key, value in obj.items():
-            if isinstance(value, dict):
+            if isinstance(value, dict) and prefix + key not in dict_fields:
                 new_prefix = prefix + key + "."
-                result.update(self.flatten_object(value, new_prefix))
+                result.update(self.flatten_object(value, dict_fields,
+                                                  new_prefix))
             else:
                 result[prefix + key] = value
         return result
@@ -723,8 +724,7 @@ class BeatFields:
 
     def assert_fields_are_documented(self, evt):
         """
-        Assert that all keys present in evt are documented in fields.yml.
-        This reads from the global fields.yml, means `make collect` has to be run before the check.
+        Assert that all keys present in evt are documented in fields.yml files.
         """
         flat = self.flatten_object(evt)
         for key in flat.keys():
