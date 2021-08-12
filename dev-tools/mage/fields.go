@@ -18,6 +18,7 @@
 package mage
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -201,6 +202,53 @@ func GenerateBeatFieldsEmbedGo() error {
 	return nil
 }
 
+func GenerateFieldsEmbedGo(packageDirAndNamePairs ...string) error {
+	for i := 0; i <= len(packageDirAndNamePairs)/2; i += 2 {
+		dir, name := packageDirAndNamePairs[i], packageDirAndNamePairs[i+1]
+		if err := generateFieldsEmbedGo(dir, name); err != nil {
+			return fmt.Errorf("failed to generate fields.go for %v: %w", dir, err)
+		}
+	}
+	return nil
+}
+
+func generateFieldsEmbedGo(packageDir, name string) error {
+	const goEmbedFieldsCmdPath = "dev-tools/cmd/go_embed_fields"
+
+	beatsDir, err := ElasticBeatsDir()
+	if err != nil {
+		return err
+	}
+	goEmbedFields := sh.RunCmd("go", "run", "-mod=readonly", filepath.Join(beatsDir, goEmbedFieldsCmdPath))
+	goListPackageName := sh.OutCmd("go", "list", "-f={{.Name}}")
+
+	dirAbs, err := filepath.Abs(filepath.Join(".", packageDir))
+	if err != nil {
+		return err
+	}
+
+	pkg, err := goListPackageName(dirAbs)
+	if err != nil {
+		return err
+	}
+
+	args := []string{
+		"-i", filepath.Join(packageDir, "_meta/fields.yml"),
+		"-type", "beat",
+		"-beat", BeatName,
+		"-name", name,
+		"-pkg", pkg,
+		"-o", filepath.Join(packageDir, "fields.go"),
+		"-license", toLibbeatLicenseName(BeatLicense),
+	}
+
+	if err = goEmbedFields(args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GenerateModuleFieldsEmbedGo(moduleDir string) error {
 	const goEmbedFieldsCmdPath = "dev-tools/cmd/go_embed_fields"
 
@@ -224,14 +272,19 @@ func GenerateModuleFieldsEmbedGo(moduleDir string) error {
 		}
 		moduleName := matches[1]
 
+		os.Remove(filepath.Join(moduleDir, moduleName, "fields.go"))
+
 		dirAbs, err := filepath.Abs(filepath.Join(".", moduleDir, moduleName))
 		if err != nil {
 			return err
 		}
 
-		pkg, err := goListPackageName(dirAbs)
-		if err != nil {
-			return err
+		pkg := moduleName
+		if goFiles, err := filepath.Glob(filepath.Join(dirAbs, "*.go")); len(goFiles) > 0 {
+			pkg, err = goListPackageName(dirAbs)
+			if err != nil {
+				return err
+			}
 		}
 
 		args := []string{
@@ -240,7 +293,7 @@ func GenerateModuleFieldsEmbedGo(moduleDir string) error {
 			"-beat", BeatName,
 			"-name", moduleName,
 			"-pkg", pkg,
-			"-o", filepath.Join(moduleDir, moduleName, "fields.module.go"),
+			"-o", filepath.Join(moduleDir, moduleName, "fields.go"),
 			"-license", toLibbeatLicenseName(BeatLicense),
 		}
 
@@ -248,7 +301,6 @@ func GenerateModuleFieldsEmbedGo(moduleDir string) error {
 			return err
 		}
 
-		os.Remove(filepath.Join(moduleDir, moduleName, "fields.go"))
 	}
 
 	// Module Datasets
@@ -270,9 +322,12 @@ func GenerateModuleFieldsEmbedGo(moduleDir string) error {
 			return err
 		}
 
-		pkg, err := goListPackageName(dirAbs)
-		if err != nil {
-			return err
+		pkg := datasetName
+		if goFiles, err := filepath.Glob(filepath.Join(dirAbs, "*.go")); len(goFiles) > 0 {
+			pkg, err = goListPackageName(dirAbs)
+			if err != nil {
+				return err
+			}
 		}
 
 		args := []string{
@@ -282,7 +337,7 @@ func GenerateModuleFieldsEmbedGo(moduleDir string) error {
 			"-module", moduleName,
 			"-name", datasetName,
 			"-pkg", pkg,
-			"-o", filepath.Join(moduleDir, moduleName, datasetName, "fields.dataset.go"),
+			"-o", filepath.Join(moduleDir, moduleName, datasetName, "fields.go"),
 			"-license", toLibbeatLicenseName(BeatLicense),
 			"-v",
 		}

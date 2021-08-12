@@ -90,27 +90,24 @@ func TestPackages() error {
 	return devtools.TestPackages()
 }
 
-// Fields generates the fields.yml file and a fields.go for each module, input,
-// and processor.
+// Fields generates fields.*.go files for the Beat.
 func Fields() {
-	mg.Deps(fieldsYML, moduleFieldsGo, inputFieldsGo, processorsFieldsGo)
+	mg.Deps(generateFieldsEmbedGo, generateModuleFieldsEmbedGo)
 }
 
-func inputFieldsGo() error {
-	return devtools.GenerateModuleFieldsGo("input")
+// generateFieldsEmbedGo generates a fields.go file for inputs and processors.
+func generateFieldsEmbedGo() error {
+	return devtools.GenerateFieldsEmbedGo(
+		"input/netflow",
+		"input/awscloudwatch",
+		"input/awss3",
+		"processors/decode_cef",
+	)
 }
 
-func moduleFieldsGo() error {
-	return devtools.GenerateModuleFieldsGo("module")
-}
-
-func processorsFieldsGo() error {
-	return devtools.GenerateModuleFieldsGo("processors")
-}
-
-// fieldsYML generates a fields.yml based on filebeat + x-pack/filebeat/modules.
-func fieldsYML() error {
-	return devtools.GenerateFieldsYAML(devtools.OSSBeatDir("module"), "module", "input", "processors")
+// generateModuleFieldsEmbedGo generates a fields.*.go file for each module and dataset.
+func generateModuleFieldsEmbedGo() error {
+	return devtools.GenerateModuleFieldsEmbedGo("module")
 }
 
 // Dashboards collects all the dashboards and generates index patterns.
@@ -172,7 +169,7 @@ func GoIntegTest(ctx context.Context) error {
 // Use TESTING_FILEBEAT_FILESETS=fileset[,fileset] to limit what fileset to test.
 func PythonIntegTest(ctx context.Context) error {
 	if !devtools.IsInIntegTestEnv() {
-		mg.Deps(Fields)
+		//mg.Deps(Fields)
 	}
 	runner, err := devtools.NewDockerIntegrationRunner(append(devtools.ListMatchingEnvVars("TESTING_FILEBEAT_", "PYTEST_"), "GENERATE")...)
 	if err != nil {

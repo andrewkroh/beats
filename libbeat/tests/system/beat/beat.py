@@ -118,25 +118,17 @@ class TestCase(unittest.TestCase, ComposeMixin):
 
     @classmethod
     def setUpClass(self):
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setFormatter(logging.Formatter(
-            '%(asctime)s [%(filename)s:%(lineno)d] %(levelname)s - %(message)s'))
-        logger.addHandler(stream_handler)
-        self.logger = logger
 
+        # Path to test binary
         if not hasattr(self, 'beat_name'):
-            raise ValueError('beat_name is a required attribute')
+            self.beat_name = "beat"
 
         if not hasattr(self, 'beat_path'):
             self.beat_path = "."
-        self.logger.debug("beat_path: {}".format(self.beat_path))
 
         # Path to test binary
         if not hasattr(self, 'test_binary'):
-            self.test_binary = os.path.abspath(os.path.join(self.beat_path, self.beat_name + ".test"))
-        self.logger.debug("test_binary: {}".format(self.test_binary))
+            self.test_binary = os.path.abspath(self.beat_path + "/" + self.beat_name + ".test")
 
         if not hasattr(self, 'template_paths'):
             self.template_paths = [
@@ -144,11 +136,9 @@ class TestCase(unittest.TestCase, ComposeMixin):
                 os.path.abspath(os.path.join(self.beat_path, "../libbeat"))
             ]
 
-        test_outputs_dir = os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR")
-        if test_outputs_dir is None:
-            test_outputs_dir = os.environ.get("TEST_TMPDIR")
-        self.logger.debug("test_outputs_dir: {}".format(test_outputs_dir))
-        self.build_path = test_outputs_dir
+        # Create build path
+        build_dir = self.beat_path + "/build"
+        self.build_path = build_dir + "/system-tests/"
 
         # Start the containers needed to run these tests
         self.compose_up_with_retries()
@@ -215,7 +205,7 @@ class TestCase(unittest.TestCase, ComposeMixin):
         if output is None:
             output = self.beat_name + ".log"
 
-        args = [cmd]
+        args = [cmd, "-systemTest"]
         if os.getenv("TEST_COVERAGE") == "true":
             args += [
                 "-test.coverprofile",
@@ -332,7 +322,7 @@ class TestCase(unittest.TestCase, ComposeMixin):
 
         # create working dir
         self.working_dir = os.path.abspath(os.path.join(
-            self.build_path, self.id()))
+            self.build_path + "run", self.id()))
         if os.path.exists(self.working_dir):
             shutil.rmtree(self.working_dir)
         os.makedirs(self.working_dir)
@@ -538,13 +528,17 @@ class TestCase(unittest.TestCase, ComposeMixin):
         """Asserts that all fields in the event are documented in fields.yml."""
         if not hasattr(self, 'fields'):
             # Use 'beat export fields' to initialize a BeatFields object.
-            result = subprocess.run([self.test_binary, '-c',
-                                     os.path.join(self.beat_name, self.beat_name+".yml"),
+            result = subprocess.run([self.test_binary, '-systemTest', '-c',
+                                     os.path.join(self.beat_path, self.beat_name+".yml"),
                                      'export', 'fields'],
                                     stdout=subprocess.PIPE)
             if result.returncode != 0:
-                raise AssertionError("export fields field with exit code {}".format(result.returncode))
+                raise AssertionError("export fields field with exit code {}: {}".format(result.returncode, result.stderr))
             raw_yaml = result.stdout.decode('utf_8')
+
+            # Remove the 'PASS' added by the test coverage wrapper.
+            raw_yaml = re.sub(r'^PASS', '', raw_yaml, 0, re.MULTILINE)
+
             self.fields = BeatFields(raw_yaml)
 
         # Validate all fields.
@@ -669,10 +663,13 @@ class BeatFields:
         aliases = []
 
         for item in doc:
-            subfields, subdictfields, subaliases = self.extract_fields(item["fields"], "")
-            fields.extend(subfields)
-            dictfields.extend(subdictfields)
-            aliases.extend(subaliases)
+            try:
+                subfields, subdictfields, subaliases = self.extract_fields(item["fields"], "")
+                fields.extend(subfields)
+                dictfields.extend(subdictfields)
+                aliases.extend(subaliases)
+            except TypeError:
+                raise Exception("Failed on '{}'".format(raw_yaml))
 
         return fields, dictfields, aliases
 
