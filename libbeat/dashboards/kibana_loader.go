@@ -44,16 +44,18 @@ type KibanaLoader struct {
 	hostname      string
 	msgOutputter  MessageOutputter
 	defaultLogger *logp.Logger
+
+	loadedAssets map[string]bool
 }
 
 // NewKibanaLoader creates a new loader to load Kibana files
-func NewKibanaLoader(ctx context.Context, cfg *common.Config, dashboardsConfig *Config, hostname string, msgOutputter MessageOutputter) (*KibanaLoader, error) {
+func NewKibanaLoader(ctx context.Context, cfg *common.Config, dashboardsConfig *Config, hostname string, msgOutputter MessageOutputter, beatname string) (*KibanaLoader, error) {
 
 	if cfg == nil || !cfg.Enabled() {
 		return nil, fmt.Errorf("Kibana is not configured or enabled")
 	}
 
-	client, err := getKibanaClient(ctx, cfg, dashboardsConfig.Retry, 0)
+	client, err := getKibanaClient(ctx, cfg, dashboardsConfig.Retry, 0, beatname)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating Kibana client: %v", err)
 	}
@@ -65,6 +67,7 @@ func NewKibanaLoader(ctx context.Context, cfg *common.Config, dashboardsConfig *
 		hostname:      hostname,
 		msgOutputter:  msgOutputter,
 		defaultLogger: logp.NewLogger("dashboards"),
+		loadedAssets:  make(map[string]bool, 0),
 	}
 
 	version := client.GetVersion()
@@ -73,15 +76,15 @@ func NewKibanaLoader(ctx context.Context, cfg *common.Config, dashboardsConfig *
 	return &loader, nil
 }
 
-func getKibanaClient(ctx context.Context, cfg *common.Config, retryCfg *Retry, retryAttempt uint) (*kibana.Client, error) {
-	client, err := kibana.NewKibanaClient(cfg)
+func getKibanaClient(ctx context.Context, cfg *common.Config, retryCfg *Retry, retryAttempt uint, beatname string) (*kibana.Client, error) {
+	client, err := kibana.NewKibanaClient(cfg, beatname)
 	if err != nil {
 		if retryCfg.Enabled && (retryCfg.Maximum == 0 || retryCfg.Maximum > retryAttempt) {
 			select {
 			case <-ctx.Done():
 				return nil, err
 			case <-time.After(retryCfg.Interval):
-				return getKibanaClient(ctx, cfg, retryCfg, retryAttempt+1)
+				return getKibanaClient(ctx, cfg, retryCfg, retryAttempt+1, beatname)
 			}
 		}
 		return nil, fmt.Errorf("Error creating Kibana client: %v", err)
@@ -150,24 +153,18 @@ func (loader KibanaLoader) ImportDashboard(file string) error {
 		return fmt.Errorf("fail to read dashboard from file %s: %v", file, err)
 	}
 
-	content = ReplaceIndexInDashboardObject(loader.config.Index, content)
+	content = loader.formatDashboardAssets(content)
 
-	content = ReplaceStringInDashboard("CHANGEME_HOSTNAME", loader.hostname, content)
-
-	err = loader.importReferences(file, content)
+	dashboardWithReferences, err := loader.addReferences(file, content)
 	if err != nil {
-		return fmt.Errorf("error loading references of dashboard: %+v", err)
+		return fmt.Errorf("error getting references of dashboard: %+v", err)
 	}
 
-	var obj common.MapStr
-	err = json.Unmarshal(content, &obj)
-	if err != nil {
-		return err
-	}
-
-	if err := loader.client.ImportMultiPartFormFile(importAPI, params, correctExtension(file), obj.String()); err != nil {
+	if err := loader.client.ImportMultiPartFormFile(importAPI, params, correctExtension(file), dashboardWithReferences); err != nil {
 		return fmt.Errorf("error dashboard asset: %+v", err)
 	}
+
+	loader.loadedAssets[file] = true
 	return nil
 }
 
@@ -179,25 +176,52 @@ type dashboardReference struct {
 	Type string `json:"type"`
 }
 
-func (loader KibanaLoader) importReferences(path string, dashboard []byte) error {
+func (loader KibanaLoader) addReferences(path string, dashboard []byte) (string, error) {
 	var d dashboardObj
 	err := json.Unmarshal(dashboard, &d)
 	if err != nil {
-		return fmt.Errorf("failed to parse dashboard references: %+v", err)
+		return "", fmt.Errorf("failed to parse dashboard references: %+v", err)
 	}
 
 	base := filepath.Dir(path)
+	var result string
 	for _, ref := range d.References {
 		if ref.Type == "index-pattern" {
 			continue
 		}
 		referencePath := filepath.Join(base, "..", ref.Type, ref.ID+".json")
-		err := loader.ImportDashboard(referencePath)
-		if err != nil {
-			return fmt.Errorf("error loading reference of %s: %s %s: %+v", path, ref.Type, ref.ID, err)
+		if _, ok := loader.loadedAssets[referencePath]; ok {
+			continue
 		}
+		refContents, err := ioutil.ReadFile(referencePath)
+		if err != nil {
+			return "", fmt.Errorf("fail to read referenced asset from file %s: %v", referencePath, err)
+		}
+		refContents = loader.formatDashboardAssets(refContents)
+		refContentsWithReferences, err := loader.addReferences(referencePath, refContents)
+		if err != nil {
+			return "", fmt.Errorf("failed to get references of %s: %+v", referencePath, err)
+		}
+
+		result += refContentsWithReferences
+		loader.loadedAssets[referencePath] = true
 	}
-	return nil
+
+	var res common.MapStr
+	err = json.Unmarshal(dashboard, &res)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert asset: %+v", err)
+	}
+	result += res.String() + "\n"
+
+	return result, nil
+}
+
+func (loader KibanaLoader) formatDashboardAssets(content []byte) []byte {
+	content = ReplaceIndexInDashboardObject(loader.config.Index, content)
+	content = EncodeJSONObjects(content)
+	content = ReplaceStringInDashboard("CHANGEME_HOSTNAME", loader.hostname, content)
+	return content
 }
 
 func correctExtension(file string) string {

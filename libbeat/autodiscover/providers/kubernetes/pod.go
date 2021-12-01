@@ -15,6 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+//go:build !aix
+// +build !aix
+
 package kubernetes
 
 import (
@@ -79,7 +82,7 @@ func NewPodEventer(uuid uuid.UUID, cfg *common.Config, client k8s.Interface, pub
 
 	logger.Debugf("Initializing a new Kubernetes watcher using node: %v", config.Node)
 
-	watcher, err := kubernetes.NewWatcher(client, &kubernetes.Pod{}, kubernetes.WatchOptions{
+	watcher, err := kubernetes.NewNamedWatcher("pod", client, &kubernetes.Pod{}, kubernetes.WatchOptions{
 		SyncTimeout:  config.SyncPeriod,
 		Node:         config.Node,
 		Namespace:    config.Namespace,
@@ -97,14 +100,11 @@ func NewPodEventer(uuid uuid.UUID, cfg *common.Config, client k8s.Interface, pub
 		options.Namespace = config.Namespace
 	}
 	metaConf := config.AddResourceMetadata
-	if metaConf == nil {
-		metaConf = metadata.GetDefaultResourceMetadataConfig()
-	}
-	nodeWatcher, err := kubernetes.NewWatcher(client, &kubernetes.Node{}, options, nil)
+	nodeWatcher, err := kubernetes.NewNamedWatcher("node", client, &kubernetes.Node{}, options, nil)
 	if err != nil {
 		logger.Errorf("couldn't create watcher for %T due to error %+v", &kubernetes.Node{}, err)
 	}
-	namespaceWatcher, err := kubernetes.NewWatcher(client, &kubernetes.Namespace{}, kubernetes.WatchOptions{
+	namespaceWatcher, err := kubernetes.NewNamedWatcher("namespace", client, &kubernetes.Namespace{}, kubernetes.WatchOptions{
 		SyncTimeout: config.SyncPeriod,
 	}, nil)
 	if err != nil {
