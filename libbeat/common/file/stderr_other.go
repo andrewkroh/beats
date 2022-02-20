@@ -15,9 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-//go:build !windows
-// +build !windows
-// +build !js
+//go:build !windows && !js
+// +build !windows,!js
 
 package file
 
