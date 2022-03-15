@@ -8,6 +8,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -26,7 +27,7 @@ import (
 	// mage:import
 	_ "github.com/elastic/beats/v7/dev-tools/mage/target/unittest"
 	// mage:import
-	_ "github.com/elastic/beats/v7/dev-tools/mage/target/test"
+	"github.com/elastic/beats/v7/dev-tools/mage/target/test"
 )
 
 // NpcapVersion specifies the version of the OEM Npcap installer to bundle with
@@ -36,6 +37,8 @@ const NpcapVersion = "1.60"
 
 func init() {
 	common.RegisterCheckDeps(Update)
+
+	test.RegisterDeps(TestSystem)
 
 	devtools.BeatDescription = "Packetbeat analyzes network traffic and sends the data to Elasticsearch."
 	devtools.BeatLicense = "Elastic License"
@@ -138,4 +141,15 @@ func Package() {
 // TestPackages tests the generated packages (i.e. file modes, owners, groups).
 func TestPackages() error {
 	return devtools.TestPackages()
+}
+
+func TestSystem(ctx context.Context) error {
+	// TODO: For Windows verify that the environment is setup properly (npcap installer
+	// moved into place, winpcap uninstalled, etc).
+
+	mg.Deps(devtools.BuildSystemTestBinary)
+
+	args := devtools.DefaultGoTestIntegrationArgs()
+	args.Packages = []string{"./tests/system/..."}
+	return devtools.GoTest(ctx, args)
 }
