@@ -25,5 +25,5 @@ package wineventlog
 
 // Use golang.org/x/sys/windows/mkwinsyscall instead of adriansr/mksyscall
 // below once https://github.com/golang/go/issues/42373 is fixed.
-//go:generate go get github.com/adriansr/mkwinsyscall
-//go:generate $GOPATH/bin/mkwinsyscall.exe -systemdll -output zsyscall_windows.go syscall_windows.go
+//go:generate go install github.com/adriansr/mkwinsyscall@latest
+//go:generate $GOPATH/bin/mkwinsyscall.exe -trace -systemdll -output zsyscall_windows.go syscall_windows.go

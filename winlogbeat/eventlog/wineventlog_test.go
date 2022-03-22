@@ -21,9 +21,10 @@
 package eventlog
 
 import (
-	"io"
+	"fmt"
+	"github.com/elastic/beats/v7/libbeat/logp"
+	"github.com/stretchr/testify/require"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -40,7 +41,7 @@ import (
 const (
 	// Names that are registered by the test for logging events.
 	providerName   = "WinlogbeatTestGo"
-	sourceName     = "Integration Test"
+	sourceName     = "IntegrationTestLib"
 	customXMLQuery = `<QueryList>
     <Query Id="0" Path="WinlogbeatTestGo">
         <Select Path="WinlogbeatTestGo">*</Select>
@@ -51,7 +52,7 @@ const (
 
 	// EventCreate.exe has valid event IDs in the range of 1-1000 where each
 	// event message requires a single parameter.
-	eventCreateMsgFile = "%SystemRoot%\\System32\\EventCreate.exe"
+	eventCreateMsgFile = "%SystemRoot%\\System32\\winhttp.dll"
 )
 
 func TestWinEventLogConfig_Validate(t *testing.T) {
@@ -165,122 +166,158 @@ func TestWinEventLogConfig_Validate(t *testing.T) {
 }
 
 func TestWindowsEventLogAPI(t *testing.T) {
+	logp.TestingSetup()
 	testWindowsEventLog(t, winEventLogAPIName)
 }
 
 func TestWindowsEventLogAPIExperimental(t *testing.T) {
+	logp.TestingSetup()
 	testWindowsEventLog(t, winEventLogExpAPIName)
 }
 
 func testWindowsEventLog(t *testing.T, api string) {
-	writer, teardown := createLog(t)
-	defer teardown()
+	//writer, teardown := createLog(t)
+	////defer teardown()
+	//_ = teardown
+	//
+	//setLogSize(t, providerName, gigabyte)
+	//
+	//// Publish large test messages.
+	//const messageSize = 256 // Originally 31800, such a large value resulted in an empty eventlog under Win10.
+	//const totalEvents = 1000
+	//for i := 3; i < totalEvents; i++ {
+	//	// Event IDs must range on [1,1000] for eventcreate.exe.
+	//	eventID := 1
+	//
+	//	safeWriteEvent(t, writer, eventlog.Info, uint32(eventID), []string{strconv.Itoa(i) + " " + randomSentence(messageSize)})
+	//}
 
-	setLogSize(t, providerName, gigabyte)
-
-	// Publish large test messages.
-	const messageSize = 256 // Originally 31800, such a large value resulted in an empty eventlog under Win10.
-	const totalEvents = 1000
-	for i := 0; i < totalEvents; i++ {
-		safeWriteEvent(t, writer, eventlog.Info, uint32(i%1000), []string{strconv.Itoa(i) + " " + randomSentence(messageSize)})
-	}
+	//time.Sleep(2 * time.Second)
 
 	openLog := func(t testing.TB, config map[string]interface{}) EventLog {
 		return openLog(t, api, nil, config)
 	}
 
-	// Test reading from an event log using a custom XML query.
-	t.Run("custom_xml_query", func(t *testing.T) {
-		cfg := map[string]interface{}{
-			"id":        "custom-xml-query",
-			"xml_query": customXMLQuery,
-		}
-
-		log := openLog(t, cfg)
-		defer log.Close()
-
-		var eventCount int
-
-		for eventCount < totalEvents {
-			records, err := log.Read()
-			if err != nil {
-				t.Fatal("read error", err)
-			}
-			if len(records) == 0 {
-				t.Fatal("read returned 0 records")
-			}
-
-			t.Logf("Read() returned %d events.", len(records))
-			eventCount += len(records)
-		}
-
-		assert.Equal(t, totalEvents, eventCount)
-	})
-
-	t.Run("batch_read_size_config", func(t *testing.T) {
-		const batchReadSize = 2
-
-		log := openLog(t, map[string]interface{}{"name": providerName, "batch_read_size": batchReadSize})
+	t.Run("has message", func(t *testing.T) {
+		log := openLog(t, map[string]interface{}{"name": providerName, "batch_read_size": 1, "provider": []string{"IntegTest"}})
 		defer log.Close()
 
 		records, err := log.Read()
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NotEmpty(t, records)
+		require.NoError(t, err)
 
-		assert.Len(t, records, batchReadSize)
+		r := records[0]
+		fmt.Println(r.Provider.Name)
+		fmt.Println("RenderErr", r.RenderErr)
+		require.NotEmpty(t, r.Message, "message field is empty")
+		fmt.Println(r.Message)
 	})
 
-	// Test reading from an event log using a large batch_read_size parameter.
-	// When combined with large messages this causes EvtNext to fail with
-	// RPC_S_INVALID_BOUND error. The reader should recover from the error.
-	t.Run("large_batch_read", func(t *testing.T) {
-		log := openLog(t, map[string]interface{}{"name": providerName, "batch_read_size": 1024})
-		defer log.Close()
-
-		var eventCount int
-
-		for eventCount < totalEvents {
-			records, err := log.Read()
-			if err != nil {
-				t.Fatal("read error", err)
-			}
-			if len(records) == 0 {
-				t.Fatal("read returned 0 records")
-			}
-
-			t.Logf("Read() returned %d events.", len(records))
-			eventCount += len(records)
-		}
-
-		assert.Equal(t, totalEvents, eventCount)
-	})
-
-	t.Run("evtx_file", func(t *testing.T) {
-		path, err := filepath.Abs("../sys/wineventlog/testdata/sysmon-9.01.evtx")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		log := openLog(t, map[string]interface{}{
-			"name":           path,
-			"no_more_events": "stop",
-		})
-		defer log.Close()
-
-		records, err := log.Read()
-
-		// This implementation returns the EOF on the next call.
-		if err == nil && api == winEventLogAPIName {
-			_, err = log.Read()
-		}
-
-		if assert.Error(t, err, "no_more_events=stop requires io.EOF to be returned") {
-			assert.Equal(t, io.EOF, err)
-		}
-
-		assert.Len(t, records, 32)
-	})
+	//t.Run("event id not found in message file", func(t *testing.T) {
+	//	// TODO: Test with eventcreate.exe and event ID 0 or >1000.
+	//	log := openLog(t, map[string]interface{}{"name": providerName, "batch_read_size": 1})
+	//	defer log.Close()
+	//
+	//	records, err := log.Read()
+	//	require.NotEmpty(t, records)
+	//	require.NoError(t, err)
+	//
+	//	r := records[0]
+	//	require.NotEmpty(t, r.Message, "message is empty")
+	//})
+	//
+	//// Test reading from an event log using a custom XML query.
+	//t.Run("custom_xml_query", func(t *testing.T) {
+	//	cfg := map[string]interface{}{
+	//		"id":        "custom-xml-query",
+	//		"xml_query": customXMLQuery,
+	//	}
+	//
+	//	log := openLog(t, cfg)
+	//	defer log.Close()
+	//
+	//	var eventCount int
+	//
+	//	for eventCount < totalEvents {
+	//		records, err := log.Read()
+	//		if err != nil {
+	//			t.Fatal("read error", err)
+	//		}
+	//		if len(records) == 0 {
+	//			t.Fatal("read returned 0 records")
+	//		}
+	//
+	//		t.Logf("Read() returned %d events.", len(records))
+	//		eventCount += len(records)
+	//	}
+	//
+	//	assert.Equal(t, totalEvents, eventCount)
+	//})
+	//
+	//t.Run("batch_read_size_config", func(t *testing.T) {
+	//	const batchReadSize = 2
+	//
+	//	log := openLog(t, map[string]interface{}{"name": providerName, "batch_read_size": batchReadSize})
+	//	defer log.Close()
+	//
+	//	records, err := log.Read()
+	//	if err != nil {
+	//		t.Fatal(err)
+	//	}
+	//
+	//	assert.Len(t, records, batchReadSize)
+	//})
+	//
+	//// Test reading from an event log using a large batch_read_size parameter.
+	//// When combined with large messages this causes EvtNext to fail with
+	//// RPC_S_INVALID_BOUND error. The reader should recover from the error.
+	//t.Run("large_batch_read", func(t *testing.T) {
+	//	log := openLog(t, map[string]interface{}{"name": providerName, "batch_read_size": 1024})
+	//	defer log.Close()
+	//
+	//	var eventCount int
+	//
+	//	for eventCount < totalEvents {
+	//		records, err := log.Read()
+	//		if err != nil {
+	//			t.Fatal("read error", err)
+	//		}
+	//		if len(records) == 0 {
+	//			t.Fatal("read returned 0 records")
+	//		}
+	//
+	//		t.Logf("Read() returned %d events.", len(records))
+	//		eventCount += len(records)
+	//	}
+	//
+	//	assert.Equal(t, totalEvents, eventCount)
+	//})
+	//
+	//t.Run("evtx_file", func(t *testing.T) {
+	//	path, err := filepath.Abs("../sys/wineventlog/testdata/sysmon-9.01.evtx")
+	//	if err != nil {
+	//		t.Fatal(err)
+	//	}
+	//
+	//	log := openLog(t, map[string]interface{}{
+	//		"name":           path,
+	//		"no_more_events": "stop",
+	//	})
+	//	defer log.Close()
+	//
+	//	records, err := log.Read()
+	//
+	//	// This implementation returns the EOF on the next call.
+	//	if err == nil && api == winEventLogAPIName {
+	//		_, err = log.Read()
+	//	}
+	//
+	//	if assert.Error(t, err, "no_more_events=stop requires io.EOF to be returned") {
+	//		assert.Equal(t, io.EOF, err)
+	//	}
+	//
+	//	assert.Len(t, records, 32)
+	//})
 }
 
 // ---- Utility Functions -----

@@ -22,18 +22,19 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/elastic/beats/v7/libbeat/common"
 	"io"
 	"reflect"
 	"runtime"
 	"sort"
 	"syscall"
 
-	"github.com/elastic/beats/v7/libbeat/common"
-
 	"golang.org/x/sys/windows"
 
 	"github.com/elastic/beats/v7/winlogbeat/sys"
 )
+
+const sizeOfWideChar = 2
 
 // Errors
 var (
@@ -147,7 +148,7 @@ func EvtQuery(session EvtHandle, path string, query string, flags EvtQueryFlag) 
 // Subscribe creates a new subscription to an event log channel.
 func Subscribe(
 	session EvtHandle,
-	event windows.Handle,
+	signalEvent windows.Handle,
 	channelPath string,
 	query string,
 	bookmark EvtHandle,
@@ -170,7 +171,7 @@ func Subscribe(
 		}
 	}
 
-	eventHandle, err := _EvtSubscribe(session, uintptr(event), cp, q, bookmark,
+	eventHandle, err := _EvtSubscribe(session, uintptr(signalEvent), cp, q, bookmark,
 		0, 0, flags)
 	if err != nil {
 		return 0, err
@@ -239,18 +240,27 @@ func RenderEvent(
 	}
 
 	// Only a single string is returned when rendering XML.
-	err = FormatEventString(EvtFormatMessageXml,
-		eventHandle, providerName, EvtHandle(publisherHandle), lang, renderBuf, out)
-
-	// Recover by rendering the XML without the RenderingInfo (message string).
+	buf := new(bytes.Buffer)
+	err = FormatEventString(EvtFormatMessageXml, eventHandle, providerName, EvtHandle(publisherHandle), lang, buf)
+	fmt.Printf("%d\n", err)
+	fmt.Println("FormatEventString Error:", err)
+	fmt.Println(buf.String())
 	if err != nil {
-		// Do not try to recover from InsufficientBufferErrors because these
-		// can be retried with a larger buffer.
-		if _, ok := err.(sys.InsufficientBufferError); ok {
+		// Recover by rendering the XML without the RenderingInfo (message string).
+		buf := new(bytes.Buffer)
+		if err = RenderEventXML(eventHandle, renderBuf, buf); err == nil {
+			fmt.Println(buf.String())
+		} else {
 			return err
 		}
 
-		err = RenderEventXML(eventHandle, renderBuf, out)
+		buf = new(bytes.Buffer)
+		if err = FormatEventString(EvtFormatMessageEvent, eventHandle, providerName, EvtHandle(publisherHandle), lang, buf); err == nil {
+			fmt.Println(buf.String())
+		} else {
+			return err
+
+		}
 	}
 
 	return err
@@ -378,46 +388,38 @@ func FormatEventString(
 	publisher string,
 	publisherHandle EvtHandle,
 	lang uint32,
-	buffer []byte,
 	out io.Writer,
 ) error {
 	// Open a publisher handle if one was not provided.
-	ph := publisherHandle
-	if ph == 0 {
-		ph, err := OpenPublisherMetadata(0, publisher, lang)
+	pub := publisherHandle
+	if pub == NilHandle {
+		var err error
+		pub, err = OpenPublisherMetadata(0, publisher, lang)
 		if err != nil {
 			return err
 		}
-		defer _EvtClose(ph)
+		defer pub.Close()
 	}
 
-	// Create a buffer if one was not provided.
 	var bufferUsed uint32
-	if buffer == nil {
-		err := _EvtFormatMessage(ph, eventHandle, 0, 0, 0, messageFlag,
-			0, nil, &bufferUsed)
-		if err != nil && err != ERROR_INSUFFICIENT_BUFFER {
-			return err
-		}
-
-		bufferUsed *= 2
-		buffer = make([]byte, bufferUsed)
-		bufferUsed = 0
+	err := _EvtFormatMessage(pub, eventHandle, 0, 0, 0, messageFlag, 0, nil, &bufferUsed)
+	if !errors.Is(err, windows.ERROR_INSUFFICIENT_BUFFER) {
+		return fmt.Errorf("failed in EvtFormatMessage checking required buffer size: %w", err)
 	}
 
-	err := _EvtFormatMessage(ph, eventHandle, 0, 0, 0, messageFlag,
-		uint32(len(buffer)/2), &buffer[0], &bufferUsed)
-	bufferUsed *= 2
-	if err == ERROR_INSUFFICIENT_BUFFER {
-		return sys.InsufficientBufferError{err, int(bufferUsed)}
-	}
+	// Get a buffer from the pool and adjust its length.
+	bb := sys.NewPooledByteBuffer()
+	defer bb.Free()
+	bb.Reserve(int(bufferUsed * sizeOfWideChar))
+
+	err = _EvtFormatMessage(pub, eventHandle, 0, 0, 0, messageFlag, uint32(bb.Len()), bb.PtrAt(0), &bufferUsed)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed in EvtFormatMessage: %w", err)
 	}
 
 	// This assumes there is only a single string value to read. This will
 	// not work to read keys (when messageFlag == EvtFormatMessageKeyword).
-	return common.UTF16ToUTF8Bytes(buffer[:bufferUsed], out)
+	return common.UTF16ToUTF8Bytes(bb.Bytes(), out)
 }
 
 // Publishers returns a sort list of event publishers on the local computer.
@@ -530,8 +532,7 @@ func evtRenderProviderName(renderBuf []byte, eventHandle EvtHandle) (string, err
 
 func renderXML(eventHandle EvtHandle, flag EvtRenderFlag, renderBuf []byte, out io.Writer) error {
 	var bufferUsed, propertyCount uint32
-	err := _EvtRender(0, eventHandle, flag, uint32(len(renderBuf)),
-		&renderBuf[0], &bufferUsed, &propertyCount)
+	err := _EvtRender(0, eventHandle, flag, uint32(len(renderBuf)), &renderBuf[0], &bufferUsed, &propertyCount)
 	if err == ERROR_INSUFFICIENT_BUFFER {
 		return sys.InsufficientBufferError{err, int(bufferUsed)}
 	}

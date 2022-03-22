@@ -19,6 +19,8 @@ package wineventlog
 
 import (
 	"bytes"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/sys/windows"
 	"os"
 	"path/filepath"
 	"testing"
@@ -84,6 +86,7 @@ func TestReadEvtx(t *testing.T) {
 			if err = RenderEventXML(h, buf, out); err != nil {
 				t.Fatal(err)
 			}
+
 			Close(h)
 			count++
 		}
@@ -119,4 +122,109 @@ func TestPublishers(t *testing.T) {
 	for _, p := range publishers {
 		t.Log(p)
 	}
+}
+
+func TestSubscribe(t *testing.T) {
+	signalEvent, err := windows.CreateEvent(nil, 0, 0, nil)
+	require.NoError(t, err)
+	defer windows.CloseHandle(signalEvent)
+
+	subscription, err := Subscribe(NilHandle, signalEvent, "Application", "", NilHandle, EvtSubscribeStartAtOldestRecord)
+	require.NoError(t, err)
+	require.NotZero(t, subscription)
+	subscription.Close()
+}
+
+func TestEvtSeek(t *testing.T) {
+	log := openLog(t, security4752File)
+	defer log.Close()
+
+	err := EvtSeek(log, 1, NilHandle, EvtSeekRelativeToFirst)
+	require.NoError(t, err)
+}
+
+func TestEventHandles(t *testing.T) {
+	log := openLog(t, security4752File)
+	defer log.Close()
+
+	eventHandles, err := EventHandles(log, 1)
+	require.NoError(t, err)
+	require.Len(t, eventHandles, 1)
+
+	eventHandles[0].Close()
+}
+
+func TestRenderEvent(t *testing.T) {
+	log := openLog(t, security4752File)
+	defer log.Close()
+
+	evt := mustNextHandle(t, log)
+	renderBuf := make([]byte, 2<<14)
+
+	t.Run("no publisher metadata", func(t *testing.T) {
+		outputBuf := new(bytes.Buffer)
+
+		err := RenderEvent(evt, 0, renderBuf, nil, outputBuf)
+		require.NoError(t, err)
+
+		t.Log(outputBuf.String())
+		assert.Contains(t, outputBuf.String(), "<Event", "</Message>", "</Event>")
+	})
+}
+
+func TestRenderEventXML(t *testing.T) {
+	log := openLog(t, security4752File)
+	defer log.Close()
+
+	evt := mustNextHandle(t, log)
+	renderBuf := make([]byte, 2<<14)
+
+	outputBuf := new(bytes.Buffer)
+
+	err := RenderEventXML(evt, renderBuf, outputBuf)
+	require.NoError(t, err)
+
+	t.Log(outputBuf.String())
+
+	assert.Contains(t, outputBuf.String(), "<Event", "</Message>", "</Event>")
+}
+
+func TestFormatEventString(t *testing.T) {
+	log := openLog(t, security4752File)
+	defer log.Close()
+
+	evt := mustNextHandle(t, log)
+
+	outputBuf := new(bytes.Buffer)
+	err := FormatEventString(EvtFormatMessageXml, evt, "Microsoft-Windows-Security-Auditing", NilHandle, 0, outputBuf)
+	require.NoError(t, err)
+
+	t.Log(outputBuf.String())
+	assert.Contains(t, outputBuf.String(), "<Event", "</Message>", "</Event>")
+}
+
+func TestRenderBookmarkXML(t *testing.T) {
+	log := openLog(t, security4752File)
+	defer log.Close()
+
+	evtHandle := mustNextHandle(t, log)
+	defer evtHandle.Close()
+
+	bookmark, err := CreateBookmarkFromEvent(evtHandle)
+	require.NoError(t, err)
+	defer bookmark.Close()
+
+	renderBuf := make([]byte, 2<<14)
+	outputBuf := new(bytes.Buffer)
+	err = RenderBookmarkXML(bookmark, renderBuf, outputBuf)
+	require.NoError(t, err)
+
+	assert.Contains(t, outputBuf.String(), "<BookmarkList", "</BookmarkList>")
+}
+
+func TestOpenPublisherMetadata(t *testing.T) {
+	p, err := OpenPublisherMetadata(NilHandle, "Microsoft-Windows-Security-Auditing", 0)
+	require.NoError(t, err)
+	require.NotZero(t, p)
+	p.Close()
 }

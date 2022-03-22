@@ -192,7 +192,10 @@ require (
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.57
 )
 
-require github.com/shirou/gopsutil/v3 v3.21.12
+require (
+	github.com/davecgh/go-spew v1.1.1
+	github.com/shirou/gopsutil/v3 v3.21.12
+)
 
 require (
 	cloud.google.com/go v0.97.0 // indirect
@@ -212,10 +215,9 @@ require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/containerd/containerd v1.5.9 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dimchansky/utfbom v1.1.0 // indirect
-	github.com/docker/distribution v2.8.0+incompatible // indirect
+	github.com/docker/distribution v2.8.0-beta.1+incompatible // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
@@ -303,3 +305,5 @@ replace (
 	github.com/insomniacslk/dhcp => github.com/elastic/dhcp v0.0.0-20200227161230-57ec251c7eb3 // indirect
 	github.com/tonistiigi/fifo => github.com/containerd/fifo v0.0.0-20190816180239-bda0ff6ed73c
 )
+
+exclude github.com/docker/distributions v2.8.0+incompatible

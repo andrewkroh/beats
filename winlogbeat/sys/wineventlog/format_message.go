@@ -89,7 +89,7 @@ func evtFormatMessage(metadataHandle EvtHandle, eventHandle EvtHandle, messageID
 	defer bb.Free()
 	bb.Reserve(int(bufferUsed * 2))
 
-	err = _EvtFormatMessage(metadataHandle, eventHandle, messageID, valuesCount, valuesPtr, messageFlag, uint32(bb.Len()/2), bb.PtrAt(0), &bufferUsed)
+	err = _EvtFormatMessage(metadataHandle, eventHandle, messageID, valuesCount, valuesPtr, messageFlag, uint32(bb.Len()), bb.PtrAt(0), &bufferUsed)
 	if err != nil {
 		switch err {
 		// Ignore some errors so it can tolerate missing or mismatched parameter values.
