@@ -5,9 +5,8 @@
 package decode_cef
 
 import (
+	"errors"
 	"strings"
-
-	"github.com/pkg/errors"
 
 	"github.com/elastic/beats/v7/x-pack/filebeat/processors/decode_cef/cef"
 )
@@ -22,7 +21,7 @@ var ecsExtensionMapping = map[string]mappedField{
 	"agentDnsDomain":               {Target: "agent.name"},
 	"agentHostName":                {Target: "agent.name"},
 	"agentId":                      {Target: "agent.id"},
-	"agentMacAddress":              {Target: "agent.mac"},
+	"agentMacAddress":              {Target: "agent.mac", Translate: formatMAC},
 	"agentReceiptTime":             {Target: "event.created"},
 	"agentType":                    {Target: "agent.type"},
 	"agentVersion":                 {Target: "agent.version"},
@@ -36,7 +35,7 @@ var ecsExtensionMapping = map[string]mappedField{
 	"destinationGeoLatitude":       {Target: "destination.geo.location.lat"},
 	"destinationGeoLongitude":      {Target: "destination.geo.location.lon"},
 	"destinationHostName":          {Target: "destination.domain"},
-	"destinationMacAddress":        {Target: "destination.mac"},
+	"destinationMacAddress":        {Target: "destination.mac", Translate: formatMAC},
 	"destinationPort":              {Target: "destination.port"},
 	"destinationProcessId":         {Target: "destination.process.pid"},
 	"destinationProcessName":       {Target: "destination.process.name"},
@@ -57,13 +56,13 @@ var ecsExtensionMapping = map[string]mappedField{
 			case "1":
 				return "outbound", nil
 			default:
-				return nil, errors.Errorf("deviceDirection must be 0 or 1")
+				return nil, errors.New("deviceDirection must be 0 or 1")
 			}
 		},
 	},
 	"deviceDnsDomain":          {Target: "observer.hostname"},
 	"deviceHostName":           {Target: "observer.hostname"},
-	"deviceMacAddress":         {Target: "observer.mac"},
+	"deviceMacAddress":         {Target: "observer.mac", Translate: formatMAC},
 	"devicePayloadId":          {Target: "event.id"},
 	"deviceProcessId":          {Target: "process.pid"},
 	"deviceProcessName":        {Target: "process.name"},
@@ -99,7 +98,7 @@ var ecsExtensionMapping = map[string]mappedField{
 	"sourceGeoLatitude":       {Target: "source.geo.location.lat"},
 	"sourceGeoLongitude":      {Target: "source.geo.location.lon"},
 	"sourceHostName":          {Target: "source.domain"},
-	"sourceMacAddress":        {Target: "source.mac"},
+	"sourceMacAddress":        {Target: "source.mac", Translate: formatMAC},
 	"sourcePort":              {Target: "source.port"},
 	"sourceProcessId":         {Target: "source.process.pid"},
 	"sourceProcessName":       {Target: "source.process.name"},
@@ -117,4 +116,8 @@ var ecsExtensionMapping = map[string]mappedField{
 		},
 	},
 	"type": {Target: "event.kind"},
+}
+
+func formatMAC(in *cef.Field) (interface{}, error) {
+	return strings.ReplaceAll(strings.ToUpper(in.String), ":", "-"), nil
 }

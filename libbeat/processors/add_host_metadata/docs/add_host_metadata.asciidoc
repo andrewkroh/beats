@@ -65,7 +65,7 @@ The fields added to the event look like the following:
          "name":"Mac OS X"
       },
       "ip": ["192.168.0.1", "10.0.0.1"],
-      "mac": ["00:25:96:12:34:56", "72:00:06:ff:79:f1"],
+      "mac": ["00-25-96-12-34-56", "72-00-06-FF-79-F1"],
       "geo": {
           "continent_name": "North America",
           "country_iso_code": "US",

@@ -60,7 +60,7 @@ The fields added to the event look like the following:
       "fe80::64b2:c3ff:fe5b:b974",
     ],
     "mac" : [
-      "dc:c1:02:6f:1b:ed",
+      "DC-C1-02-6F-1B-ED",
     ],
     "geo": {
       "continent_name": "North America",

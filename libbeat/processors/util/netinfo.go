@@ -22,6 +22,8 @@ import (
 	"sort"
 
 	"github.com/joeshaw/multierror"
+
+	"github.com/elastic/beats/v7/libbeat/common/mac"
 )
 
 // GetNetInfo returns lists of IPs and MACs for the machine it is executed on.
@@ -41,10 +43,9 @@ func GetNetInfo() (ipList []string, hwList []string, err error) {
 			continue
 		}
 
-		hw := i.HardwareAddr.String()
 		// Skip empty hardware addresses
-		if hw != "" {
-			hwList = append(hwList, hw)
+		if len(i.HardwareAddr) > 0 {
+			hwList = append(hwList, mac.FormatRFC7042(i.HardwareAddr))
 		}
 
 		addrs, err := i.Addrs()

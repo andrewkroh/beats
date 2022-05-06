@@ -26,6 +26,7 @@ import (
 	"github.com/elastic/beats/v7/libbeat/beat"
 	"github.com/elastic/beats/v7/libbeat/common"
 	"github.com/elastic/beats/v7/libbeat/common/flowhash"
+	"github.com/elastic/beats/v7/libbeat/common/mac"
 	"github.com/elastic/beats/v7/packetbeat/procs"
 	"github.com/elastic/beats/v7/packetbeat/protos/applayer"
 	"github.com/elastic/elastic-agent-libs/mapstr"
@@ -245,8 +246,8 @@ func createEvent(
 
 	// add ethernet layer meta data
 	if src, dst, ok := f.id.EthAddr(); ok {
-		source["mac"] = net.HardwareAddr(src).String()
-		dest["mac"] = net.HardwareAddr(dst).String()
+		source["mac"] = mac.FormatRFC7042(src)
+		dest["mac"] = mac.FormatRFC7042(dst)
 	}
 
 	// add vlan
