@@ -24,20 +24,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastic/go-lookslike/isdef"
-
-	"github.com/elastic/go-lookslike"
+	"github.com/stretchr/testify/require"
 
 	"github.com/elastic/beats/v7/libbeat/common"
 	"github.com/elastic/beats/v7/libbeat/logp"
 	"github.com/elastic/beats/v7/packetbeat/procs"
+	"github.com/elastic/go-lookslike"
+	"github.com/elastic/go-lookslike/isdef"
 )
 
 // Use `go test -data` to update sample event files.
 var dataFlag = flag.Bool("data", false, "Write updated data.json files")
 
 func TestCreateEvent(t *testing.T) {
-	logp.TestingSetup()
+	require.NoError(t, logp.TestingSetup())
 
 	// Build biflow event.
 	start := time.Unix(1542292881, 0)
@@ -116,13 +116,15 @@ func TestCreateEvent(t *testing.T) {
 
 	// Write the event to disk if -data is used.
 	if *dataFlag {
-		event.Fields.Put("@timestamp", common.Time(end))
+		_, err := event.Fields.Put("@timestamp", common.Time(end))
+		require.NoError(t, err)
+
 		output, err := json.MarshalIndent(&event.Fields, "", "  ")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := ioutil.WriteFile("../_meta/sample_outputs/flow.json", output, 0o644); err != nil {
+		if err := ioutil.WriteFile("../_meta/sample_outputs/flow.json", output, 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}

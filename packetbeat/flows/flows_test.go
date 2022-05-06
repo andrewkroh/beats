@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/elastic/beats/v7/libbeat/beat"
 	"github.com/elastic/beats/v7/libbeat/logp"
@@ -43,7 +44,7 @@ func (f *flowsChan) PublishFlows(events []beat.Event) {
 }
 
 func TestFlowsCounting(t *testing.T) {
-	logp.TestingSetup()
+	require.NoError(t, logp.TestingSetup())
 
 	mac1 := []byte{1, 2, 3, 4, 5, 6}
 	mac2 := []byte{6, 5, 4, 3, 2, 1}
@@ -136,9 +137,9 @@ func TestFlowsCounting(t *testing.T) {
 	event := events[0].Fields
 	t.Logf("event: %v", event)
 
-	source := event["source"].(mapstr.M)
-	dest := event["destination"].(mapstr.M)
-	network := event["network"].(mapstr.M)
+	source := event["source"].(mapstr.M)    //nolint:errcheck // Bad linter! Panic is a check.
+	dest := event["destination"].(mapstr.M) //nolint:errcheck // Bad linter! Panic is a check.
+	network := event["network"].(mapstr.M)  //nolint:errcheck // Bad linter! Panic is a check.
 
 	// validate generated event
 	assert.Equal(t, "01-02-03-04-05-06", source["mac"])

@@ -104,7 +104,7 @@ func makeWorker(
 	align int64,
 ) (*worker, error) {
 	return newWorker(func(w *worker) {
-		defer processor.execute(w, false, true, true)
+		defer processor.execute(false, true, true)
 
 		if align > 0 {
 			// round time to nearest 10 seconds for alignment
@@ -134,13 +134,13 @@ func makeWorker(
 				nPeriod = ticksPeriod
 			}
 
-			processor.execute(w, handleTimeout, handleReports, false)
+			processor.execute(handleTimeout, handleReports, false)
 			return nil
 		})
 	}), nil
 }
 
-func (fw *flowsProcessor) execute(w *worker, checkTimeout, handleReports, lastReport bool) {
+func (fw *flowsProcessor) execute(checkTimeout, handleReports, lastReport bool) {
 	if !checkTimeout && !handleReports {
 		return
 	}
@@ -184,7 +184,7 @@ func (fw *flowsProcessor) execute(w *worker, checkTimeout, handleReports, lastRe
 
 			if reportFlow {
 				debugf("report flow")
-				fw.report(w, ts, flow, isOver, intNames, uintNames, floatNames)
+				fw.report(ts, flow, isOver, intNames, uintNames, floatNames)
 			}
 		}
 	}
@@ -193,7 +193,6 @@ func (fw *flowsProcessor) execute(w *worker, checkTimeout, handleReports, lastRe
 }
 
 func (fw *flowsProcessor) report(
-	w *worker,
 	ts time.Time,
 	flow *biFlow,
 	isOver bool,
@@ -364,10 +363,10 @@ func createEvent(
 		}
 
 		if v, found := stats["bytes"]; found {
-			totalBytes += v.(uint64)
+			totalBytes += v.(uint64) //nolint:errcheck // Bad linter! Panic is a check.
 		}
 		if v, found := stats["packets"]; found {
-			totalPackets += v.(uint64)
+			totalPackets += v.(uint64) //nolint:errcheck // Bad linter! Panic is a check.
 		}
 	}
 	if f.stats[1] != nil {
@@ -382,10 +381,10 @@ func createEvent(
 		}
 
 		if v, found := stats["bytes"]; found {
-			totalBytes += v.(uint64)
+			totalBytes += v.(uint64) //nolint:errcheck // Bad linter! Panic is a check.
 		}
 		if v, found := stats["packets"]; found {
-			totalPackets += v.(uint64)
+			totalPackets += v.(uint64) //nolint:errcheck // Bad linter! Panic is a check.
 		}
 	}
 	if communityID.Protocol > 0 && len(communityID.SourceIP) > 0 && len(communityID.DestinationIP) > 0 {
@@ -482,6 +481,7 @@ func encodeStats(
 	return report
 }
 
+//nolint:unparam // This may be used with more keys than "ip" in the future.
 func putOrAppendString(m mapstr.M, key, value string) {
 	old, found := m[key]
 	if !found {
@@ -515,7 +515,7 @@ func putOrAppendUint64(m mapstr.M, key string, value uint64) {
 		case uint32:
 			m[key] = []uint64{uint64(v), value}
 		case uint64:
-			m[key] = []uint64{uint64(v), value}
+			m[key] = []uint64{v, value}
 		case []uint64:
 			m[key] = append(v, value)
 		}
