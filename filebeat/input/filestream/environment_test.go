@@ -36,12 +36,12 @@ import (
 	input "github.com/elastic/beats/v7/filebeat/input/v2"
 	v2 "github.com/elastic/beats/v7/filebeat/input/v2"
 	"github.com/elastic/beats/v7/libbeat/beat"
-	"github.com/elastic/beats/v7/libbeat/common"
 	"github.com/elastic/beats/v7/libbeat/common/acker"
 	"github.com/elastic/beats/v7/libbeat/common/transform/typeconv"
-	"github.com/elastic/beats/v7/libbeat/logp"
 	"github.com/elastic/beats/v7/libbeat/statestore"
 	"github.com/elastic/beats/v7/libbeat/statestore/storetest"
+	conf "github.com/elastic/elastic-agent-libs/config"
+	"github.com/elastic/elastic-agent-libs/logp"
 	"github.com/elastic/go-concert/unison"
 )
 
@@ -79,7 +79,7 @@ func (e *inputTestingEnvironment) mustCreateInput(config map[string]interface{})
 	e.grp = unison.TaskGroup{}
 	manager := e.getManager()
 	manager.Init(&e.grp, v2.ModeRun)
-	c := common.MustNewConfigFrom(config)
+	c := conf.MustNewConfigFrom(config)
 	inp, err := manager.Create(c)
 	if err != nil {
 		e.t.Fatalf("failed to create input using manager: %+v", err)
@@ -91,7 +91,7 @@ func (e *inputTestingEnvironment) createInput(config map[string]interface{}) (v2
 	e.grp = unison.TaskGroup{}
 	manager := e.getManager()
 	manager.Init(&e.grp, v2.ModeRun)
-	c := common.MustNewConfigFrom(config)
+	c := conf.MustNewConfigFrom(config)
 	inp, err := manager.Create(c)
 	if err != nil {
 		return nil, err
@@ -203,11 +203,16 @@ func (e *inputTestingEnvironment) requireOffsetInRegistry(filename, inputID stri
 	}
 
 	id := getIDFromPath(filepath, inputID, fi)
-	entry, err := e.getRegistryState(id)
-	if err != nil {
-		e.t.Fatalf(err.Error())
-	}
+	var entry registryEntry
+	require.Eventually(e.t, func() bool {
+		entry, err = e.getRegistryState(id)
+		if err != nil {
+			return true
+		}
 
+		return expectedOffset == entry.Cursor.Offset
+	}, time.Second, time.Millisecond)
+	require.NoError(e.t, err)
 	require.Equal(e.t, expectedOffset, entry.Cursor.Offset)
 }
 
@@ -325,6 +330,17 @@ func (e *inputTestingEnvironment) waitUntilEventCount(count int) {
 		}
 		if count < sum {
 			e.t.Fatalf("too many events; expected: %d, actual: %d", count, sum)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// waitUntilAtLeastEventCount waits until at least count events arrive to the client.
+func (e *inputTestingEnvironment) waitUntilAtLeastEventCount(count int) {
+	for {
+		sum := len(e.pipeline.GetAllEvents())
+		if count <= sum {
+			return
 		}
 		time.Sleep(10 * time.Millisecond)
 	}

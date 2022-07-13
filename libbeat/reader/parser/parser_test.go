@@ -25,11 +25,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/elastic/beats/v7/libbeat/common"
 	"github.com/elastic/beats/v7/libbeat/reader"
 	"github.com/elastic/beats/v7/libbeat/reader/multiline"
 	"github.com/elastic/beats/v7/libbeat/reader/readfile"
 	"github.com/elastic/beats/v7/libbeat/reader/readfile/encoding"
+	"github.com/elastic/elastic-agent-libs/config"
+	"github.com/elastic/elastic-agent-libs/mapstr"
 )
 
 func TestParsersConfigSuffix(t *testing.T) {
@@ -83,7 +84,7 @@ func TestParsersConfigSuffix(t *testing.T) {
 	for name, test := range tests {
 		test := test
 		t.Run(name, func(t *testing.T) {
-			cfg := common.MustNewConfigFrom(test.parsers)
+			cfg := config.MustNewConfigFrom(test.parsers)
 			var parsersConfig testParsersConfig
 			err := cfg.Unpack(&parsersConfig)
 			require.NoError(t, err)
@@ -305,7 +306,7 @@ func TestParsersConfigAndReading(t *testing.T) {
 	for name, test := range tests {
 		test := test
 		t.Run(name, func(t *testing.T) {
-			cfg := common.MustNewConfigFrom(test.parsers)
+			cfg := config.MustNewConfigFrom(test.parsers)
 			var parsersConfig testParsersConfig
 			err := cfg.Unpack(&parsersConfig)
 			require.NoError(t, err)
@@ -336,7 +337,7 @@ func TestJSONParsersWithFields(t *testing.T) {
 		config          map[string]interface{}
 		expectedMessage reader.Message
 	}{
-		"no postprocesser, no processing": {
+		"no postprocessor, no processing": {
 			message: reader.Message{
 				Content: []byte("line 1"),
 			},
@@ -345,10 +346,10 @@ func TestJSONParsersWithFields(t *testing.T) {
 				Content: []byte("line 1"),
 			},
 		},
-		"JSON post processer with keys_under_root": {
+		"JSON post processor with keys_under_root": {
 			message: reader.Message{
 				Content: []byte("{\"key\":\"value\"}"),
-				Fields:  common.MapStr{},
+				Fields:  mapstr.M{},
 			},
 			config: map[string]interface{}{
 				"parsers": []map[string]interface{}{
@@ -361,15 +362,15 @@ func TestJSONParsersWithFields(t *testing.T) {
 			},
 			expectedMessage: reader.Message{
 				Content: []byte(""),
-				Fields: common.MapStr{
+				Fields: mapstr.M{
 					"key": "value",
 				},
 			},
 		},
-		"JSON post processer with document ID": {
+		"JSON post processor with document ID": {
 			message: reader.Message{
 				Content: []byte("{\"key\":\"value\", \"my-id-field\":\"my-id\"}"),
-				Fields:  common.MapStr{},
+				Fields:  mapstr.M{},
 			},
 			config: map[string]interface{}{
 				"parsers": []map[string]interface{}{
@@ -383,18 +384,18 @@ func TestJSONParsersWithFields(t *testing.T) {
 			},
 			expectedMessage: reader.Message{
 				Content: []byte(""),
-				Fields: common.MapStr{
+				Fields: mapstr.M{
 					"key": "value",
 				},
-				Meta: common.MapStr{
+				Meta: mapstr.M{
 					"_id": "my-id",
 				},
 			},
 		},
-		"JSON post processer with overwrite keys and under root": {
+		"JSON post processor with overwrite keys and under root": {
 			message: reader.Message{
 				Content: []byte("{\"key\": \"value\"}"),
-				Fields: common.MapStr{
+				Fields: mapstr.M{
 					"key":       "another-value",
 					"other-key": "other-value",
 				},
@@ -411,9 +412,138 @@ func TestJSONParsersWithFields(t *testing.T) {
 			},
 			expectedMessage: reader.Message{
 				Content: []byte(""),
-				Fields: common.MapStr{
+				Fields: mapstr.M{
 					"key":       "value",
 					"other-key": "other-value",
+				},
+			},
+		},
+		"JSON post processor with type in message": {
+			message: reader.Message{
+				Content: []byte(`{"timestamp":"2016-04-05T18:47:18.444Z","level":"INFO","logger":"iapi.logger","thread":"JobCourier4","appInfo":{"appname":"SessionManager","appid":"Pooler","host":"demohost.mydomain.com","ip":"192.168.128.113","pid":13982},"userFields":{"ApplicationId":"PROFAPP_001","RequestTrackingId":"RetrieveTBProfileToken-6066477"},"source":"DataAccess\/FetchActiveSessionToken.process","msg":"FetchActiveSessionToken process ended", "type": "test"}`),
+				Fields:  mapstr.M{},
+			},
+			config: map[string]interface{}{
+				"parsers": []map[string]interface{}{
+					map[string]interface{}{
+						"ndjson": map[string]interface{}{
+							"target":         "",
+							"overwrite_keys": true,
+							"add_error_key":  true,
+							"message_key":    "msg",
+						},
+					},
+				},
+			},
+			expectedMessage: reader.Message{
+				Content: []byte("FetchActiveSessionToken process ended"),
+				Fields: mapstr.M{
+					"appInfo": mapstr.M{
+						"appname": "SessionManager",
+						"appid":   "Pooler",
+						"host":    "demohost.mydomain.com",
+						"ip":      "192.168.128.113",
+						"pid":     int64(13982),
+					},
+					"level":  "INFO",
+					"logger": "iapi.logger",
+					"userFields": mapstr.M{
+						"ApplicationId":     "PROFAPP_001",
+						"RequestTrackingId": "RetrieveTBProfileToken-6066477",
+					},
+					"msg":       "FetchActiveSessionToken process ended",
+					"source":    "DataAccess/FetchActiveSessionToken.process",
+					"thread":    "JobCourier4",
+					"type":      "test",
+					"timestamp": "2016-04-05T18:47:18.444Z",
+				},
+			},
+		},
+		"JSON post processor on invalid type in message": {
+			message: reader.Message{
+				Content: []byte(`{"timestamp":"2016-04-05T18:47:18.444Z","level":"INFO","logger":"iapi.logger","thread":"JobCourier4","appInfo":{"appname":"SessionManager","appid":"Pooler","host":"demohost.mydomain.com","ip":"192.168.128.113","pid":13982},"userFields":{"ApplicationId":"PROFAPP_001","RequestTrackingId":"RetrieveTBProfileToken-6066477"},"source":"DataAccess\/FetchActiveSessionToken.process","msg":"FetchActiveSessionToken process ended", "type": 5}`),
+				Fields:  mapstr.M{},
+			},
+			config: map[string]interface{}{
+				"parsers": []map[string]interface{}{
+					map[string]interface{}{
+						"ndjson": map[string]interface{}{
+							"target":         "",
+							"overwrite_keys": true,
+							"add_error_key":  true,
+							"message_key":    "msg",
+						},
+					},
+				},
+			},
+			expectedMessage: reader.Message{
+				Content: []byte("FetchActiveSessionToken process ended"),
+				Fields: mapstr.M{
+					"appInfo": mapstr.M{
+						"appname": "SessionManager",
+						"appid":   "Pooler",
+						"host":    "demohost.mydomain.com",
+						"ip":      "192.168.128.113",
+						"pid":     int64(13982),
+					},
+					"level":  "INFO",
+					"logger": "iapi.logger",
+					"userFields": mapstr.M{
+						"ApplicationId":     "PROFAPP_001",
+						"RequestTrackingId": "RetrieveTBProfileToken-6066477",
+					},
+					"msg":       "FetchActiveSessionToken process ended",
+					"source":    "DataAccess/FetchActiveSessionToken.process",
+					"thread":    "JobCourier4",
+					"timestamp": "2016-04-05T18:47:18.444Z",
+					"error": mapstr.M{
+						"message": "type not overwritten (not string)",
+						"type":    "json",
+					},
+				},
+			},
+		},
+		"JSON post processor on invalid struct under type in message": {
+			message: reader.Message{
+				Content: []byte(`{"timestamp":"2016-04-05T18:47:18.444Z","level":"INFO","logger":"iapi.logger","thread":"JobCourier4","appInfo":{"appname":"SessionManager","appid":"Pooler","host":"demohost.mydomain.com","ip":"192.168.128.113","pid":13982},"userFields":{"ApplicationId":"PROFAPP_001","RequestTrackingId":"RetrieveTBProfileToken-6066477"},"source":"DataAccess\/FetchActiveSessionToken.process","msg":"FetchActiveSessionToken process ended", "type": {"hello": "shouldn't work"}}`),
+				Fields:  mapstr.M{},
+			},
+			config: map[string]interface{}{
+				"parsers": []map[string]interface{}{
+					map[string]interface{}{
+						"ndjson": map[string]interface{}{
+							"target":         "",
+							"overwrite_keys": true,
+							"add_error_key":  true,
+							"message_key":    "msg",
+						},
+					},
+				},
+			},
+			expectedMessage: reader.Message{
+				Content: []byte("FetchActiveSessionToken process ended"),
+				Fields: mapstr.M{
+					"appInfo": mapstr.M{
+						"appname": "SessionManager",
+						"appid":   "Pooler",
+						"host":    "demohost.mydomain.com",
+						"ip":      "192.168.128.113",
+						"pid":     int64(13982),
+					},
+					"level":  "INFO",
+					"logger": "iapi.logger",
+					"userFields": mapstr.M{
+						"ApplicationId":     "PROFAPP_001",
+						"RequestTrackingId": "RetrieveTBProfileToken-6066477",
+					},
+					"msg":       "FetchActiveSessionToken process ended",
+					"source":    "DataAccess/FetchActiveSessionToken.process",
+					"thread":    "JobCourier4",
+					"timestamp": "2016-04-05T18:47:18.444Z",
+					"error": mapstr.M{
+						"message": "type not overwritten (not string)",
+						"type":    "json",
+					},
 				},
 			},
 		},
@@ -422,7 +552,7 @@ func TestJSONParsersWithFields(t *testing.T) {
 	for name, test := range tests {
 		test := test
 		t.Run(name, func(t *testing.T) {
-			cfg := common.MustNewConfigFrom(test.config)
+			cfg := config.MustNewConfigFrom(test.config)
 			var parsersConfig testParsersConfig
 			err := cfg.Unpack(&parsersConfig)
 			require.NoError(t, err)
@@ -459,25 +589,25 @@ func TestContainerParser(t *testing.T) {
 			expectedMessages: []reader.Message{
 				reader.Message{
 					Content: []byte("Fetching main repository github.com/elastic/beats...\n"),
-					Fields: common.MapStr{
+					Fields: mapstr.M{
 						"stream": "stdout",
 					},
 				},
 				reader.Message{
 					Content: []byte("Fetching dependencies...\n"),
-					Fields: common.MapStr{
+					Fields: mapstr.M{
 						"stream": "stdout",
 					},
 				},
 				reader.Message{
 					Content: []byte("Execute /scripts/packetbeat_before_build.sh\n"),
-					Fields: common.MapStr{
+					Fields: mapstr.M{
 						"stream": "stdout",
 					},
 				},
 				reader.Message{
 					Content: []byte("patching file vendor/github.com/tsg/gopacket/pcap/pcap.go\n"),
-					Fields: common.MapStr{
+					Fields: mapstr.M{
 						"stream": "stdout",
 					},
 				},
@@ -498,7 +628,7 @@ func TestContainerParser(t *testing.T) {
 			expectedMessages: []reader.Message{
 				reader.Message{
 					Content: []byte("2017-09-12 22:32:21.212 [INFO][88] table.go 710: Invalidating dataplane cache\n"),
-					Fields: common.MapStr{
+					Fields: mapstr.M{
 						"stream": "stdout",
 					},
 				},
@@ -519,13 +649,13 @@ func TestContainerParser(t *testing.T) {
 			expectedMessages: []reader.Message{
 				reader.Message{
 					Content: []byte("Fetching main repository github.com/elastic/beats...\n"),
-					Fields: common.MapStr{
+					Fields: mapstr.M{
 						"stream": "stdout",
 					},
 				},
 				reader.Message{
 					Content: []byte("Execute /scripts/packetbeat_before_build.sh\n"),
-					Fields: common.MapStr{
+					Fields: mapstr.M{
 						"stream": "stdout",
 					},
 				},
@@ -536,7 +666,7 @@ func TestContainerParser(t *testing.T) {
 	for name, test := range tests {
 		test := test
 		t.Run(name, func(t *testing.T) {
-			cfg := common.MustNewConfigFrom(test.parsers)
+			cfg := config.MustNewConfigFrom(test.parsers)
 			var parsersConfig testParsersConfig
 			err := cfg.Unpack(&parsersConfig)
 			require.NoError(t, err)
@@ -557,7 +687,7 @@ func TestContainerParser(t *testing.T) {
 }
 
 type testParsersConfig struct {
-	Parsers []common.ConfigNamespace `struct:"parsers"`
+	Parsers []config.Namespace `struct:"parsers"`
 }
 
 func testReader(lines string) reader.Reader {

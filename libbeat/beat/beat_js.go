@@ -18,10 +18,10 @@
 package beat
 
 import (
-	"github.com/elastic/beats/v7/libbeat/common"
 	"github.com/elastic/beats/v7/libbeat/common/reload"
-	"github.com/elastic/beats/v7/libbeat/keystore"
 	"github.com/elastic/beats/v7/libbeat/management"
+	"github.com/elastic/elastic-agent-libs/config"
+	"github.com/elastic/elastic-agent-libs/keystore"
 )
 
 // Beat contains the basic beat data and the publisher client used to publish
@@ -44,7 +44,7 @@ type Beat struct {
 	// is responsible for reconfiguring Publisher.
 	OutputConfigReloader reload.Reloadable
 
-	BeatConfig *common.Config // The beat's own configuration section
+	BeatConfig *config.C // The beat's own configuration section
 
 	Fields []byte // Data from fields.yml
 

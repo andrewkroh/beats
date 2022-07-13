@@ -21,15 +21,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/elastic/beats/v7/libbeat/common"
-	"github.com/elastic/beats/v7/libbeat/logp"
+	kubernetes2 "github.com/elastic/beats/v7/libbeat/autodiscover/providers/kubernetes"
 	"github.com/elastic/beats/v7/metricbeat/mb"
 	"github.com/elastic/beats/v7/metricbeat/module/kubernetes"
 	"github.com/elastic/beats/v7/metricbeat/module/kubernetes/util"
+	"github.com/elastic/elastic-agent-libs/logp"
+	"github.com/elastic/elastic-agent-libs/mapstr"
 )
 
-func eventMapping(content []byte, perfMetrics *util.PerfMetricsCache, logger *logp.Logger) ([]common.MapStr, error) {
-	events := []common.MapStr{}
+func eventMapping(content []byte, perfMetrics *util.PerfMetricsCache, logger *logp.Logger) ([]mapstr.M, error) {
+	events := []mapstr.M{}
 
 	var summary kubernetes.Summary
 	err := json.Unmarshal(content, &summary)
@@ -58,45 +59,45 @@ func eventMapping(content []byte, perfMetrics *util.PerfMetricsCache, logger *lo
 			memLimit += perfMetrics.ContainerMemLimit.GetWithDefault(cuid, nodeMem)
 		}
 
-		podEvent := common.MapStr{
-			mb.ModuleDataKey: common.MapStr{
+		podEvent := mapstr.M{
+			mb.ModuleDataKey: mapstr.M{
 				"namespace": pod.PodRef.Namespace,
-				"node": common.MapStr{
+				"node": mapstr.M{
 					"name": node.NodeName,
 				},
 			},
 			"name": pod.PodRef.Name,
 			"uid":  pod.PodRef.UID,
 
-			"cpu": common.MapStr{
-				"usage": common.MapStr{
+			"cpu": mapstr.M{
+				"usage": mapstr.M{
 					"nanocores": usageNanoCores,
 				},
 			},
 
-			"memory": common.MapStr{
-				"usage": common.MapStr{
+			"memory": mapstr.M{
+				"usage": mapstr.M{
 					"bytes": usageMem,
 				},
-				"available": common.MapStr{
+				"available": mapstr.M{
 					"bytes": availMem,
 				},
-				"working_set": common.MapStr{
+				"working_set": mapstr.M{
 					"bytes": workingSet,
 				},
-				"rss": common.MapStr{
+				"rss": mapstr.M{
 					"bytes": rss,
 				},
 				"page_faults":       pageFaults,
 				"major_page_faults": majorPageFaults,
 			},
 
-			"network": common.MapStr{
-				"rx": common.MapStr{
+			"network": mapstr.M{
+				"rx": mapstr.M{
 					"bytes":  pod.Network.RxBytes,
 					"errors": pod.Network.RxErrors,
 				},
-				"tx": common.MapStr{
+				"tx": mapstr.M{
 					"bytes":  pod.Network.TxBytes,
 					"errors": pod.Network.TxErrors,
 				},
@@ -104,7 +105,7 @@ func eventMapping(content []byte, perfMetrics *util.PerfMetricsCache, logger *lo
 		}
 
 		if pod.StartTime != "" {
-			util.ShouldPut(podEvent, "start_time", pod.StartTime, logger)
+			kubernetes2.ShouldPut(podEvent, "start_time", pod.StartTime, logger)
 		}
 
 		if coresLimit > nodeCores {
@@ -116,31 +117,31 @@ func eventMapping(content []byte, perfMetrics *util.PerfMetricsCache, logger *lo
 		}
 
 		if nodeCores > 0 {
-			util.ShouldPut(podEvent, "cpu.usage.node.pct", float64(usageNanoCores)/1e9/nodeCores, logger)
+			kubernetes2.ShouldPut(podEvent, "cpu.usage.node.pct", float64(usageNanoCores)/1e9/nodeCores, logger)
 		}
 
 		if coresLimit > 0 {
-			util.ShouldPut(podEvent, "cpu.usage.limit.pct", float64(usageNanoCores)/1e9/coresLimit, logger)
+			kubernetes2.ShouldPut(podEvent, "cpu.usage.limit.pct", float64(usageNanoCores)/1e9/coresLimit, logger)
 		}
 
 		if usageMem > 0 {
 			if nodeMem > 0 {
-				util.ShouldPut(podEvent, "memory.usage.node.pct", float64(usageMem)/nodeMem, logger)
+				kubernetes2.ShouldPut(podEvent, "memory.usage.node.pct", float64(usageMem)/nodeMem, logger)
 			}
 			if memLimit > 0 {
-				util.ShouldPut(podEvent, "memory.usage.limit.pct", float64(usageMem)/memLimit, logger)
-				util.ShouldPut(podEvent, "memory.working_set.limit.pct", float64(workingSet)/memLimit, logger)
+				kubernetes2.ShouldPut(podEvent, "memory.usage.limit.pct", float64(usageMem)/memLimit, logger)
+				kubernetes2.ShouldPut(podEvent, "memory.working_set.limit.pct", float64(workingSet)/memLimit, logger)
 			}
 		}
 
 		if workingSet > 0 && usageMem == 0 {
 			if nodeMem > 0 {
-				util.ShouldPut(podEvent, "memory.usage.node.pct", float64(workingSet)/nodeMem, logger)
+				kubernetes2.ShouldPut(podEvent, "memory.usage.node.pct", float64(workingSet)/nodeMem, logger)
 			}
 			if memLimit > 0 {
-				util.ShouldPut(podEvent, "memory.usage.limit.pct", float64(workingSet)/memLimit, logger)
+				kubernetes2.ShouldPut(podEvent, "memory.usage.limit.pct", float64(workingSet)/memLimit, logger)
 
-				util.ShouldPut(podEvent, "memory.working_set.limit.pct", float64(workingSet)/memLimit, logger)
+				kubernetes2.ShouldPut(podEvent, "memory.working_set.limit.pct", float64(workingSet)/memLimit, logger)
 			}
 		}
 
@@ -150,17 +151,17 @@ func eventMapping(content []byte, perfMetrics *util.PerfMetricsCache, logger *lo
 }
 
 // ecsfields maps pod events fields to container ecs fields
-func ecsfields(podEvent common.MapStr, logger *logp.Logger) common.MapStr {
-	ecsfields := common.MapStr{}
+func ecsfields(podEvent mapstr.M, logger *logp.Logger) mapstr.M {
+	ecsfields := mapstr.M{}
 
 	egressBytes, err := podEvent.GetValue("network.tx.bytes")
 	if err == nil {
-		util.ShouldPut(ecsfields, "network.egress.bytes", egressBytes, logger)
+		kubernetes2.ShouldPut(ecsfields, "network.egress.bytes", egressBytes, logger)
 	}
 
 	ingressBytes, err := podEvent.GetValue("network.rx.bytes")
 	if err == nil {
-		util.ShouldPut(ecsfields, "network.ingress.bytes", ingressBytes, logger)
+		kubernetes2.ShouldPut(ecsfields, "network.ingress.bytes", ingressBytes, logger)
 	}
 
 	return ecsfields

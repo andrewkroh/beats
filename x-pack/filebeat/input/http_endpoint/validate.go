@@ -7,7 +7,7 @@ package http_endpoint
 import (
 	"bytes"
 	"crypto/hmac"
-	"crypto/sha1" //nolint:gosec // HMAC-SHA1 is allowed, but it also supports HMAC-SHA256.
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/elastic/beats/v7/libbeat/logp"
+	"github.com/elastic/elastic-agent-libs/logp"
 )
 
 var (

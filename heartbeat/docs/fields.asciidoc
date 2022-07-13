@@ -3,6 +3,8 @@
 This file is generated! See _meta/fields.yml and scripts/generate_fields_docs.py
 ////
 
+:edit_url:
+
 [[exported-fields]]
 = Exported fields
 
@@ -453,6 +455,32 @@ Time range this ping reported starting at the instant the check was started, end
 
 
 type: date_range
+
+--
+
+*`monitor.origin`*::
++
+--
+The origin of this monitor configuration, usually either "ui", or "project"
+
+
+type: keyword
+
+--
+
+[float]
+=== project
+
+Project info for this monitor
+
+
+
+*`monitor.project.name`*::
++
+--
+Project name
+
+type: keyword
 
 --
 
@@ -16623,3 +16651,4 @@ example: 3
 
 --
 
+:edit_url!:

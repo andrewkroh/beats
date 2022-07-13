@@ -24,12 +24,13 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/elastic/beats/v7/libbeat/common"
-	"github.com/elastic/beats/v7/libbeat/logp"
 	"github.com/elastic/beats/v7/metricbeat/module/kubernetes/util"
+	"github.com/elastic/elastic-agent-libs/logp"
+	"github.com/elastic/elastic-agent-libs/mapstr"
 )
 
 const testFile = "../_meta/test/stats_summary.json"
@@ -43,7 +44,7 @@ func TestEventMapping(t *testing.T) {
 	body, err := ioutil.ReadAll(f)
 	assert.NoError(t, err, "cannot read test file "+testFile)
 
-	cache := util.NewPerfMetricsCache()
+	cache := util.NewPerfMetricsCache(120 * time.Second)
 	cache.NodeCoresAllocatable.Set("gke-beats-default-pool-a5b33e2e-hdww", 2)
 	cache.NodeMemAllocatable.Set("gke-beats-default-pool-a5b33e2e-hdww", 146227200)
 	cache.ContainerMemLimit.Set(util.ContainerUID("default", "nginx-deployment-2303442956-pcqfc", "nginx"), 14622720)
@@ -78,7 +79,7 @@ func TestEventMapping(t *testing.T) {
 	}
 }
 
-func testValue(t *testing.T, event common.MapStr, field string, expected interface{}) {
+func testValue(t *testing.T, event mapstr.M, field string, expected interface{}) {
 	data, err := event.GetValue(field)
 	assert.NoError(t, err, "Could not read field "+field)
 	assert.EqualValues(t, expected, data, "Wrong value for field "+field)
