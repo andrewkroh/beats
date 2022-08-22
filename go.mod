@@ -206,6 +206,7 @@ require (
 	github.com/elastic/elastic-agent-shipper-client v0.2.0
 	github.com/elastic/elastic-agent-system-metrics v0.4.4
 	github.com/elastic/go-elasticsearch/v8 v8.2.0
+	github.com/elastic/go-unified-logging v0.0.0-20220822033448-1c08112b1d2b
 	github.com/pierrec/lz4/v4 v4.1.15
 	github.com/shirou/gopsutil/v3 v3.21.12
 	go.elastic.co/apm/module/apmelasticsearch/v2 v2.0.0
