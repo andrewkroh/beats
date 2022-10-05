@@ -26,6 +26,7 @@ import (
 	"github.com/elastic/beats/v7/libbeat/mapping"
 	"github.com/elastic/beats/v7/libbeat/processors"
 	"github.com/elastic/beats/v7/libbeat/processors/actions"
+	"github.com/elastic/beats/v7/libbeat/processors/cache/backend"
 	"github.com/elastic/beats/v7/libbeat/processors/timeseries"
 	"github.com/elastic/elastic-agent-libs/config"
 	"github.com/elastic/elastic-agent-libs/logp"
@@ -55,7 +56,8 @@ type builder struct {
 	timeseriesFields mapping.Fields
 
 	// global pipeline processors
-	processors *group
+	processors      *group
+	cacheComponents []backend.Backend
 
 	drop       bool // disabled is set if outputs have been disabled via CLI
 	alwaysCopy bool
@@ -98,13 +100,22 @@ func MakeDefaultSupport(
 	modifiers ...modifier,
 ) SupportFactory {
 	return func(info beat.Info, log *logp.Logger, beatCfg *config.C) (Supporter, error) {
+		// These are the "global" values.
 		cfg := struct {
-			mapstr.EventMetadata `config:",inline"`      // Fields and tags to add to each event.
-			Processors           processors.PluginConfig `config:"processors"`
-			TimeSeries           bool                    `config:"timeseries.enabled"`
+			mapstr.EventMetadata `config:",inline"`        // Fields and tags to add to each event.
+			CacheComponents      []backend.ComponentConfig `config:"cache_components"`
+			Processors           processors.PluginConfig   `config:"processors"`
+			TimeSeries           bool                      `config:"timeseries.enabled"`
 		}{}
 		if err := beatCfg.Unpack(&cfg); err != nil {
 			return nil, err
+		}
+
+		fmt.Println("AKROH running MakeDefaultSupport cache_components=", cfg.CacheComponents)
+
+		// TODO: Add a way to Close cache components.
+		if err := backend.Registry.ConfigureComponents(cfg.CacheComponents); err != nil {
+			return nil, fmt.Errorf("error initializing cache_components: %v", err)
 		}
 
 		processors, err := processors.New(cfg.Processors)
@@ -175,6 +186,8 @@ func WithObserverMeta() modifier {
 	})
 }
 
+// newBuilder constructs a new builder that is initialized "global"
+// configuration.
 func newBuilder(
 	info beat.Info,
 	log *logp.Logger,
@@ -238,8 +251,8 @@ func newBuilder(
 	return b, nil
 }
 
-// Create combines the builder configuration with the client settings
-// in order to build the event processing pipeline.
+// Create combines the global configuration from the builder with the client
+// settings in order to build the event processing pipeline.
 //
 // Processing order (C=client, P=pipeline)
 //  1. (P) generalize/normalize event
@@ -364,6 +377,9 @@ func (b *builder) Create(cfg beat.ProcessingConfig, drop bool) (beat.Processor, 
 func (b *builder) Close() error {
 	if b.processors != nil {
 		return b.processors.Close()
+	}
+	if b.cacheComponents != nil {
+		// TODO: Close all cache components declared globally.
 	}
 	return nil
 }

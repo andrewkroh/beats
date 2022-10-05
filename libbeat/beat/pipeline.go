@@ -18,6 +18,7 @@
 package beat
 
 import (
+	"github.com/elastic/beats/v7/libbeat/processors/cache/backend"
 	"time"
 
 	"github.com/elastic/elastic-agent-libs/mapstr"
@@ -113,7 +114,8 @@ type ProcessingConfig struct {
 
 	// Processors passes additional processor to the client, to be executed before
 	// the pipeline processors.
-	Processor ProcessorList
+	Processor       ProcessorList
+	CacheComponents []backend.ComponentConfig
 
 	// KeepNull determines whether published events will keep null values or omit them.
 	KeepNull bool

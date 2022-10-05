@@ -20,6 +20,7 @@ package processor
 import (
 	"github.com/dop251/goja"
 	"github.com/pkg/errors"
+	"runtime"
 
 	"github.com/elastic/beats/v7/libbeat/processors"
 	"github.com/elastic/beats/v7/libbeat/processors/script/javascript"
@@ -153,7 +154,9 @@ func newNativeProcessor(constructor processors.Constructor, call gojaCall) (proc
 	}
 
 	if closer, ok := p.(processors.Closer); ok {
-		closer.Close()
+		runtime.SetFinalizer(p, func() {
+			closer.Close()
+		})
 		// Script processor doesn't support releasing resources of stateful processors,
 		// what can lead to leaks, so prevent use of these processors. They shouldn't
 		// be registered. If this error happens, a processor that needs to be closed is

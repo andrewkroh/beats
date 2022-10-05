@@ -23,6 +23,7 @@ import (
 	"github.com/elastic/beats/v7/libbeat/common/fmtstr"
 	"github.com/elastic/beats/v7/libbeat/processors"
 	"github.com/elastic/beats/v7/libbeat/processors/add_formatted_index"
+	"github.com/elastic/beats/v7/libbeat/processors/cache/backend"
 	"github.com/elastic/beats/v7/libbeat/publisher/pipetool"
 	conf "github.com/elastic/elastic-agent-libs/config"
 	"github.com/elastic/elastic-agent-libs/mapstr"
@@ -39,9 +40,10 @@ type onCreateWrapper func(cfgfile.RunnerFactory, beat.PipelineConnector, *conf.C
 // for the publisher pipeline.
 type commonInputConfig struct {
 	// event processing
-	mapstr.EventMetadata `config:",inline"`      // Fields and tags to add to events.
-	Processors           processors.PluginConfig `config:"processors"`
-	KeepNull             bool                    `config:"keep_null"`
+	mapstr.EventMetadata `config:",inline"` // Fields and tags to add to events.
+	Processors           processors.PluginConfig   `config:"processors"`
+	CacheComponents      []backend.ComponentConfig `config:"cache_components"`
+	KeepNull             bool                      `config:"keep_null"`
 
 	PublisherPipeline struct {
 		DisableHost bool `config:"disable_host"` // Disable addition of host.name.
@@ -135,6 +137,11 @@ func newCommonConfigEditor(
 			return nil, err
 		}
 		indexProcessor = add_formatted_index.New(timestampFormat)
+	}
+
+	// Register cache_components that are local to an input.
+	if err := backend.Registry.ConfigureComponents(config.CacheComponents); err != nil {
+		return nil, err
 	}
 
 	userProcessors, err := processors.New(config.Processors)

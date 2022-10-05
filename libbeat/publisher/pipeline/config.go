@@ -32,6 +32,7 @@ type Config struct {
 	// Event processing configurations
 	mapstr.EventMetadata `config:",inline"`      // Fields and tags to add to each event.
 	Processors           processors.PluginConfig `config:"processors"`
+	// TODO: Add a way to configure cache_components.
 
 	// Event queue
 	Queue config.Namespace `config:"queue"`

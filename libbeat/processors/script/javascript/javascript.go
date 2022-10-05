@@ -19,6 +19,7 @@ package javascript
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -194,6 +195,15 @@ func (p *jsProcessor) runWithStats(s *session, event *beat.Event) (*beat.Event, 
 
 func (p *jsProcessor) String() string {
 	return "script=[type=javascript, id=" + p.Tag + ", sources=" + p.sourceFile + "]"
+}
+
+func (p *jsProcessor) Close() error {
+	close(p.sessionPool.C)
+	for s := range p.sessionPool.C {
+		s.vm = nil
+		fmt.Println("Closing session")
+	}
+	return nil
 }
 
 // hasMeta reports whether path contains any of the magic characters
