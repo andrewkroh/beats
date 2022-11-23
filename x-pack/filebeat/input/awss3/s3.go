@@ -15,12 +15,15 @@ import (
 	"github.com/gofrs/uuid"
 	"go.uber.org/multierr"
 
+	"github.com/elastic/beats/v7/libbeat/beat"
 	"github.com/elastic/beats/v7/libbeat/statestore"
 	awscommon "github.com/elastic/beats/v7/x-pack/libbeat/common/aws"
 	"github.com/elastic/elastic-agent-libs/logp"
 	"github.com/elastic/elastic-agent-libs/monitoring"
 	"github.com/elastic/go-concert/timed"
 )
+
+const maxCircuitBreaker = 5
 
 type commitWriteState struct {
 	time.Time
@@ -51,6 +54,7 @@ type s3Poller struct {
 	s3                   s3API
 	log                  *logp.Logger
 	metrics              *inputMetrics
+	client               beat.Client
 	s3ObjectHandler      s3ObjectHandlerFactory
 	states               *states
 	store                *statestore.Store
@@ -61,6 +65,7 @@ type s3Poller struct {
 func newS3Poller(log *logp.Logger,
 	metrics *inputMetrics,
 	s3 s3API,
+	client beat.Client,
 	s3ObjectHandler s3ObjectHandlerFactory,
 	states *states,
 	store *statestore.Store,
@@ -69,7 +74,8 @@ func newS3Poller(log *logp.Logger,
 	awsRegion string,
 	provider string,
 	numberOfWorkers int,
-	bucketPollInterval time.Duration) *s3Poller {
+	bucketPollInterval time.Duration,
+) *s3Poller {
 	if metrics == nil {
 		metrics = newInputMetrics(monitoring.NewRegistry(), "")
 	}
@@ -84,6 +90,7 @@ func newS3Poller(log *logp.Logger,
 		s3:                   s3,
 		log:                  log,
 		metrics:              metrics,
+		client:               client,
 		s3ObjectHandler:      s3ObjectHandler,
 		states:               states,
 		store:                store,
@@ -151,8 +158,24 @@ func (p *s3Poller) GetS3Objects(ctx context.Context, s3ObjectPayloadChan chan<- 
 
 	bucketName := getBucketNameFromARN(p.bucket)
 
+	circuitBreaker := 0
 	paginator := p.s3.ListObjectsPaginator(bucketName, p.listPrefix)
-	for paginator.Next(ctx) {
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			if !paginator.HasMorePages() {
+				break
+			}
+
+			p.log.Warnw("Error when paginating listing.", "error", err)
+			circuitBreaker++
+			if circuitBreaker >= maxCircuitBreaker {
+				p.log.Warnw(fmt.Sprintf("%d consecutive error when paginating listing, breaking the circuit.", circuitBreaker), "error", err)
+				break
+			}
+			continue
+		}
+
 		listingID, err := uuid.NewV4()
 		if err != nil {
 			p.log.Warnw("Error generating UUID for listing page.", "error", err)
@@ -164,8 +187,6 @@ func (p *s3Poller) GetS3Objects(ctx context.Context, s3ObjectPayloadChan chan<- 
 		lock := new(sync.Mutex)
 		lock.Lock()
 		p.workersListingMap.Store(listingID.String(), lock)
-
-		page := paginator.CurrentPage()
 
 		totProcessableObjects := 0
 		totListedObjects := len(page.Contents)
@@ -198,7 +219,7 @@ func (p *s3Poller) GetS3Objects(ctx context.Context, s3ObjectPayloadChan chan<- 
 
 			acker := awscommon.NewEventACKTracker(ctx)
 
-			s3Processor := p.s3ObjectHandler.Create(ctx, p.log, acker, event)
+			s3Processor := p.s3ObjectHandler.Create(ctx, p.log, p.client, acker, event)
 			if s3Processor == nil {
 				p.log.Debugw("empty s3 processor.", "state", state)
 				continue
@@ -236,10 +257,6 @@ func (p *s3Poller) GetS3Objects(ctx context.Context, s3ObjectPayloadChan chan<- 
 		for s3ObjectPayload := range s3ObjectPayloadChanByPage {
 			s3ObjectPayloadChan <- s3ObjectPayload
 		}
-	}
-
-	if err := paginator.Err(); err != nil {
-		p.log.Warnw("Error when paginating listing.", "error", err)
 	}
 }
 
