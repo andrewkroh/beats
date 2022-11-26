@@ -36,18 +36,28 @@ func NewInputRegistry(inputType, id string, optionalParent ...*monitoring.Regist
 	}
 
 	// Use the default registry unless one was provided (this would be for testing).
-	rootRegistry := monitoring.GetNamespace("inputs").GetRegistry()
-	if len(optionalParent) > 0 {
+	var rootRegistry *monitoring.Registry
+	if len(optionalParent) == 0 {
+		rootRegistry = inputsRegistry()
+	} else {
 		rootRegistry = optionalParent[0]
 	}
 
 	// Sanitize dots from the id because they created nested objects within
 	// the monitoring registry, and we want a consistent flat level of nesting
-	key := strings.ReplaceAll(id, ".", "_")
+	key := sanitizeID(id)
 
 	reg = rootRegistry.NewRegistry(key)
 	monitoring.NewString(reg, "input").Set(inputType)
 	monitoring.NewString(reg, "id").Set(id)
 
 	return reg, func() { rootRegistry.Remove(key) }
+}
+
+func sanitizeID(id string) string {
+	return strings.ReplaceAll(id, ".", "_")
+}
+
+func inputsRegistry() *monitoring.Registry {
+	return monitoring.GetNamespace("inputs").GetRegistry()
 }
