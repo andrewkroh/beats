@@ -82,6 +82,9 @@ type s3EventV2 struct {
 			Key string `json:"key"`
 		} `json:"object"`
 	} `json:"s3"`
+
+	// Metadata (not part of official AWS change notification schema).
+	sqsMetadata map[string]interface{}
 }
 
 type sqsS3EventProcessor struct {
@@ -94,6 +97,7 @@ type sqsS3EventProcessor struct {
 	warnOnce             sync.Once
 	metrics              *inputMetrics
 	script               *script
+	includeSQSMetadata   []string
 }
 
 func newSQSS3EventProcessor(
@@ -106,6 +110,7 @@ func newSQSS3EventProcessor(
 	pipeline beat.Pipeline,
 	s3 s3ObjectHandlerFactory,
 	maxWorkers int,
+	includeSQSMetadata []string,
 ) *sqsS3EventProcessor {
 	if metrics == nil {
 		metrics = newInputMetrics("", monitoring.NewRegistry(), maxWorkers)
@@ -119,6 +124,7 @@ func newSQSS3EventProcessor(
 		log:                  log,
 		metrics:              metrics,
 		script:               script,
+		includeSQSMetadata:   includeSQSMetadata,
 	}
 }
 
@@ -147,7 +153,7 @@ func (p *sqsS3EventProcessor) ProcessSQS(ctx context.Context, msg *types.Message
 		}
 	}
 
-	handles, processingErr := p.processS3Events(ctx, log, *msg.Body)
+	handles, processingErr := p.processS3Events(ctx, log, msg)
 
 	// Stop keepalive routine before changing visibility.
 	keepaliveCancel()
@@ -229,11 +235,12 @@ func (p *sqsS3EventProcessor) keepalive(ctx context.Context, log *logp.Logger, w
 	}
 }
 
-func (p *sqsS3EventProcessor) getS3Notifications(body string) ([]s3EventV2, error) {
+func (p *sqsS3EventProcessor) getS3Notifications(msg *types.Message) ([]s3EventV2, error) {
 	// Check if a parsing script is defined. If so, it takes precedence over
-	// format autodetection.
+	// format auto-detection.
+	body := *msg.Body
 	if p.script != nil {
-		return p.script.run(body)
+		return p.script.run(*msg.Body)
 	}
 
 	// NOTE: If AWS introduces a V3 schema this will need updated to handle that schema.
@@ -258,10 +265,10 @@ func (p *sqsS3EventProcessor) getS3Notifications(body string) ([]s3EventV2, erro
 		return nil, errors.New("the message is an invalid S3 notification: missing Records field")
 	}
 
-	return p.getS3Info(events)
+	return p.getS3Info(msg, events)
 }
 
-func (p *sqsS3EventProcessor) getS3Info(events s3EventsV2) ([]s3EventV2, error) {
+func (p *sqsS3EventProcessor) getS3Info(msg *types.Message, events s3EventsV2) ([]s3EventV2, error) {
 	out := make([]s3EventV2, 0, len(events.Records))
 	for _, record := range events.Records {
 		if !p.isObjectCreatedEvents(record) {
@@ -281,6 +288,7 @@ func (p *sqsS3EventProcessor) getS3Info(events s3EventsV2) ([]s3EventV2, error) 
 			return nil, fmt.Errorf("url unescape failed for '%v': %w", record.S3.Object.Key, err)
 		}
 		record.S3.Object.Key = key
+		record.sqsMetadata = sqsMetadata(msg, events, p.includeSQSMetadata)
 
 		out = append(out, record)
 	}
@@ -291,8 +299,8 @@ func (*sqsS3EventProcessor) isObjectCreatedEvents(event s3EventV2) bool {
 	return event.EventSource == "aws:s3" && strings.HasPrefix(event.EventName, "ObjectCreated:")
 }
 
-func (p *sqsS3EventProcessor) processS3Events(ctx context.Context, log *logp.Logger, body string) ([]s3ObjectHandler, error) {
-	s3Events, err := p.getS3Notifications(body)
+func (p *sqsS3EventProcessor) processS3Events(ctx context.Context, log *logp.Logger, msg *types.Message) ([]s3ObjectHandler, error) {
+	s3Events, err := p.getS3Notifications(msg)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			// Messages that are in-flight at shutdown should be returned to SQS.
@@ -372,4 +380,33 @@ func getSQSReceiveCount(attributes map[string]string) int {
 		}
 	}
 	return -1
+}
+
+func sqsMetadata(msg *types.Message, notification s3EventsV2, includeSQSMetadata []string) map[string]interface{} {
+	if len(includeSQSMetadata) == 0 {
+		return nil
+	}
+
+	metadata := make(map[string]interface{}, len(includeSQSMetadata))
+	for _, key := range includeSQSMetadata {
+		switch key {
+		case "message_id":
+			if msg.MessageId != nil {
+				metadata[key] = *msg.MessageId
+			}
+		case "sent_timestamp":
+			if ts, found := msg.Attributes[sqsSentTimestampAttribute]; found {
+				metadata[key] = ts
+			}
+		case "topic_arn":
+			if notification.TopicArn != "" {
+				metadata[key] = notification.TopicArn
+			}
+		}
+	}
+
+	if len(metadata) == 0 {
+		return nil
+	}
+	return metadata
 }

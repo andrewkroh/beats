@@ -362,6 +362,9 @@ func (p *s3ObjectProcessor) createEvent(message string, offset int64) beat.Event
 	if len(p.s3Metadata) > 0 {
 		_, _ = event.Fields.Put("aws.s3.metadata", p.s3Metadata)
 	}
+	if len(p.s3Obj.sqsMetadata) > 0 {
+		_, _ = event.Fields.Put("aws.sqs.metadata", p.s3Obj.sqsMetadata)
+	}
 
 	return event
 }

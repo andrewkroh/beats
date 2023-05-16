@@ -25,6 +25,7 @@ type config struct {
 	SQSWaitTime         time.Duration        `config:"sqs.wait_time"`         // The max duration for which the SQS ReceiveMessage call waits for a message to arrive in the queue before returning.
 	SQSMaxReceiveCount  int                  `config:"sqs.max_receive_count"` // The max number of times a message should be received (retried) before deleting it.
 	SQSScript           *scriptConfig        `config:"sqs.notification_parsing_script"`
+	IncludeSQSMetadata  []string             `config:"sqs.include_metadata"`
 	MaxNumberOfMessages int                  `config:"max_number_of_messages"`
 	QueueURL            string               `config:"queue_url"`
 	BucketARN           string               `config:"bucket_arn"`
@@ -97,6 +98,8 @@ func (c *config) Validate() error {
 		return fmt.Errorf("api_timeout <%v> must be greater than the sqs.wait_time <%v",
 			c.APITimeout, c.SQSWaitTime)
 	}
+
+	// TODO: Validate IncludeSQSMetadata keys.
 
 	if c.AWSConfig.FIPSEnabled && c.NonAWSBucketName != "" {
 		return errors.New("fips_enabled cannot be used with a non-AWS S3 bucket.")
