@@ -47,6 +47,18 @@ def build(
         default_registry(docker_registry)
         print("Docker registry: {}".format(docker_registry))
 
+    if k8s_env == "aws":
+        # In order to push to AWS you need to run:
+        #   aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin XXXXX.dkr.ecr.us-east-2.amazonaws.com/metricbeat-debug
+        #
+        # More info at https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html
+        docker_registry = "XXXXX.dkr.ecr.us-east-2.amazonaws.com".format(
+            docker_image)
+
+        default_registry(docker_registry)
+        print("Docker registry: {}".format(docker_registry))
+
+
     print("Docker image: {}".format(docker_image))
 
     docker_file = '{}/Dockerfile.{}'.format(beat, mode)
@@ -140,7 +152,7 @@ def beat(
         k8s_env="kind",
         k8s_cluster="single",
         **kwargs):
-    if beat not in ["metricbeat", "filebeat"]:
+    if beat not in ["metricbeat", "filebeat", "heartbeat"]:
         print("Invalid beat: {}".format(beat))
         exit(-1)
     if mode not in ["run", "debug"]:
@@ -149,7 +161,7 @@ def beat(
     if arch not in ["arm64", "amd64"]:
         print("Invalid arch: {}".format(arch))
         exit(-1)
-    if k8s_env not in ["kind", "gcp"]:
+    if k8s_env not in ["kind", "gcp", "aws"]:
         print("Invalid k8s_env: {}".format(k8s_env))
         exit(-1)
     if k8s_cluster not in ["single", "multi"]:
@@ -166,8 +178,8 @@ def beat(
         print("K8s_cluter=multi and mode=run is not supported yet")
         exit(-1)
 
-    if beat == "filebeat" and k8s_cluster == "multi":
-        print("K8s_cluter=multi and beat=filebeat is not supported yet")
+    if (beat == "filebeat" or beat == "heartbeat") and k8s_cluster == "multi":
+        print("K8s_cluter=multi and (beat=filebeat or beat=heartbeat) is not supported yet")
         exit(-1)
 
     # Compile
@@ -192,8 +204,9 @@ def beat(
 
 
 beat(beat="metricbeat",
-     mode="debug",
-     arch="arm64",
-     k8s_env="kind",
-     k8s_cluster="multi",
+    #  mode="debug",
+     mode="run",
+     arch="amd64",
+     k8s_env="aws",
+     k8s_cluster="single",
      )

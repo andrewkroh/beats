@@ -31,6 +31,7 @@ import (
 	"github.com/elastic/beats/v7/libbeat/beat"
 	"github.com/elastic/beats/v7/libbeat/processors"
 	"github.com/elastic/beats/v7/libbeat/processors/checks"
+	jsprocessor "github.com/elastic/beats/v7/libbeat/processors/script/javascript/module/processor"
 	conf "github.com/elastic/elastic-agent-libs/config"
 	"github.com/elastic/elastic-agent-libs/mapstr"
 )
@@ -46,9 +47,11 @@ func init() {
 		checks.ConfigChecked(newDropFields,
 			checks.RequireFields("fields"),
 			checks.AllowedFields("fields", "when", "ignore_missing")))
+
+	jsprocessor.RegisterPlugin("DropFields", newDropFields)
 }
 
-func newDropFields(c *conf.C) (processors.Processor, error) {
+func newDropFields(c *conf.C) (beat.Processor, error) {
 	config := struct {
 		Fields        []string `config:"fields"`
 		IgnoreMissing bool     `config:"ignore_missing"`

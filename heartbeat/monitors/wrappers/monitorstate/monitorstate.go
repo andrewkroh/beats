@@ -19,6 +19,7 @@ package monitorstate
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/elastic/beats/v7/heartbeat/monitors/stdfields"
@@ -60,7 +61,7 @@ type State struct {
 	ID string `json:"id"`
 	// StartedAt is the start time of the state, should be the same for a given state ID
 	StartedAt  time.Time   `json:"started_at"`
-	DurationMs int64       `json:"duration_ms"`
+	DurationMs int64       `json:"duration_ms,string"`
 	Status     StateStatus `json:"status"`
 	Checks     int         `json:"checks"`
 	Up         int         `json:"up"`
@@ -72,6 +73,13 @@ type State struct {
 	Ends            *State `json:"ends"`
 	flappingEnabled bool
 	ctr             int
+}
+
+func (s *State) String() string {
+	if s == nil {
+		return "<monitorstate:nil>"
+	}
+	return fmt.Sprintf("<monitorstate:id=%s,started=%s,up=%d,down=%d>", s.ID, s.StartedAt, s.Up, s.Down)
 }
 
 func (s *State) incrementCounters(status StateStatus) {
@@ -162,10 +170,13 @@ func (s *State) copy() *State {
 	return &copied
 }
 
+var normalizeRunFromIDRegexp = regexp.MustCompile("[^A-Za-z0-9_-]")
+
 func LoaderDBKey(sf stdfields.StdMonitorFields, at time.Time, ctr int) string {
 	rfid := "default"
 	if sf.RunFrom != nil {
-		rfid = sf.RunFrom.ID
+		rfid = normalizeRunFromIDRegexp.ReplaceAllString(sf.RunFrom.ID, "_")
+
 	}
 	return fmt.Sprintf("%s-%x-%x", rfid, at.UnixMilli(), ctr)
 }

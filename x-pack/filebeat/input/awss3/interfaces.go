@@ -41,6 +41,7 @@ type sqsAPI interface {
 	sqsReceiver
 	sqsDeleter
 	sqsVisibilityChanger
+	sqsAttributeGetter
 }
 
 type sqsReceiver interface {
@@ -53,6 +54,10 @@ type sqsDeleter interface {
 
 type sqsVisibilityChanger interface {
 	ChangeMessageVisibility(ctx context.Context, msg *types.Message, timeout time.Duration) error
+}
+
+type sqsAttributeGetter interface {
+	GetQueueAttributes(ctx context.Context, attr []types.QueueAttributeName) (map[string]string, error)
 }
 
 type sqsProcessor interface {
@@ -69,11 +74,17 @@ type sqsProcessor interface {
 
 type s3API interface {
 	s3Getter
+	s3Mover
 	s3Lister
 }
 
 type s3Getter interface {
 	GetObject(ctx context.Context, bucket, key string) (*s3.GetObjectOutput, error)
+}
+
+type s3Mover interface {
+	CopyObject(ctx context.Context, from_bucket, to_bucket, from_key, to_key string) (*s3.CopyObjectOutput, error)
+	DeleteObject(ctx context.Context, bucket, key string) (*s3.DeleteObjectOutput, error)
 }
 
 type s3Lister interface {
@@ -99,6 +110,10 @@ type s3ObjectHandler interface {
 	// the publisher before returning (use eventACKTracker's Wait() method to
 	// determine this).
 	ProcessS3Object() error
+
+	// FinalizeS3Object finalizes processing of an S3 object after the current
+	// batch is finished.
+	FinalizeS3Object() error
 
 	// Wait waits for every event published by ProcessS3Object() to be ACKed
 	// by the publisher before returning. Internally it uses the
@@ -128,7 +143,7 @@ func (a *awsSQSAPI) ReceiveMessage(ctx context.Context, maxMessages int) ([]type
 		MaxNumberOfMessages: int32(min(maxMessages, sqsMaxNumberOfMessagesLimit)),
 		VisibilityTimeout:   int32(a.visibilityTimeout.Seconds()),
 		WaitTimeSeconds:     int32(a.longPollWaitTime.Seconds()),
-		AttributeNames:      []types.QueueAttributeName{sqsApproximateReceiveCountAttribute},
+		AttributeNames:      []types.QueueAttributeName{sqsApproximateReceiveCountAttribute, sqsSentTimestampAttribute},
 	})
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
@@ -187,6 +202,25 @@ func (a *awsSQSAPI) ChangeMessageVisibility(ctx context.Context, msg *types.Mess
 	return nil
 }
 
+func (a *awsSQSAPI) GetQueueAttributes(ctx context.Context, attr []types.QueueAttributeName) (map[string]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, a.apiTimeout)
+	defer cancel()
+
+	attributeOutput, err := a.client.GetQueueAttributes(ctx, &sqs.GetQueueAttributesInput{
+		AttributeNames: attr,
+		QueueUrl:       awssdk.String(a.queueURL),
+	})
+
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			err = fmt.Errorf("api_timeout exceeded: %w", err)
+		}
+		return nil, fmt.Errorf("sqs GetQueueAttributes failed: %w", err)
+	}
+
+	return attributeOutput.Attributes, nil
+}
+
 // ------
 // AWS S3 implementation
 // ------
@@ -226,6 +260,29 @@ func (a *awsS3API) GetObject(ctx context.Context, bucket, key string) (*s3.GetOb
 	}
 
 	return getObjectOutput, nil
+}
+
+func (a *awsS3API) CopyObject(ctx context.Context, from_bucket, to_bucket, from_key, to_key string) (*s3.CopyObjectOutput, error) {
+	copyObjectOutput, err := a.client.CopyObject(ctx, &s3.CopyObjectInput{
+		Bucket:     awssdk.String(to_bucket),
+		CopySource: awssdk.String(fmt.Sprintf("%s/%s", from_bucket, from_key)),
+		Key:        awssdk.String(to_key),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("s3 CopyObject failed: %w", err)
+	}
+	return copyObjectOutput, nil
+}
+
+func (a *awsS3API) DeleteObject(ctx context.Context, bucket, key string) (*s3.DeleteObjectOutput, error) {
+	deleteObjectOutput, err := a.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: awssdk.String(bucket),
+		Key:    awssdk.String(key),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("s3 DeleteObject failed: %w", err)
+	}
+	return deleteObjectOutput, nil
 }
 
 func (a *awsS3API) ListObjectsPaginator(bucket, prefix string) s3Pager {

@@ -126,6 +126,8 @@ func (etc *esTestContext) createTestMonitorStateInES(t *testing.T, s StateStatus
 	}
 
 	initState := newMonitorState(sf, s, 0, true)
+	// Test int64 is un/marshalled correctly
+	initState.DurationMs = 3e9
 	etc.setInitialState(t, sf, initState)
 	return sf
 }

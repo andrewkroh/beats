@@ -26,7 +26,6 @@ type limiter struct {
 	limit chan struct{}
 }
 type scheduler struct {
-	parentCtx context.Context
 	publisher cursor.Publisher
 	bucket    *storage.BucketHandle
 	src       *Source
@@ -37,11 +36,10 @@ type scheduler struct {
 }
 
 // newScheduler, returns a new scheduler instance
-func newScheduler(ctx context.Context, publisher cursor.Publisher, bucket *storage.BucketHandle, src *Source, cfg *config,
+func newScheduler(publisher cursor.Publisher, bucket *storage.BucketHandle, src *Source, cfg *config,
 	state *state, log *logp.Logger,
 ) *scheduler {
 	return &scheduler{
-		parentCtx: ctx,
 		publisher: publisher,
 		bucket:    bucket,
 		src:       src,
@@ -53,23 +51,18 @@ func newScheduler(ctx context.Context, publisher cursor.Publisher, bucket *stora
 }
 
 // Schedule, is responsible for fetching & scheduling jobs using the workerpool model
-func (s *scheduler) schedule() error {
+func (s *scheduler) schedule(ctx context.Context) error {
 	if !s.src.Poll {
-		ctxWithTimeout, cancel := context.WithTimeout(s.parentCtx, s.src.BucketTimeOut)
-		defer cancel()
-		return s.scheduleOnce(ctxWithTimeout)
+		return s.scheduleOnce(ctx)
 	}
 
 	for {
-		ctxWithTimeout, cancel := context.WithTimeout(s.parentCtx, s.src.BucketTimeOut)
-		defer cancel()
-
-		err := s.scheduleOnce(ctxWithTimeout)
+		err := s.scheduleOnce(ctx)
 		if err != nil {
 			return err
 		}
 
-		err = timed.Wait(s.parentCtx, s.src.PollInterval)
+		err = timed.Wait(ctx, s.src.PollInterval)
 		if err != nil {
 			return err
 		}
@@ -86,46 +79,57 @@ func (l *limiter) wait() {
 	l.wg.Wait()
 }
 
-// release puts pack a worker thread.
+// release puts back a worker thread.
 func (l *limiter) release() {
 	<-l.limit
 	l.wg.Done()
 }
 
-func (s *scheduler) scheduleOnce(ctxWithTimeout context.Context) error {
+func (s *scheduler) scheduleOnce(ctx context.Context) error {
 	defer s.limiter.wait()
-	pager := s.fetchObjectPager(ctxWithTimeout, s.src.MaxWorkers)
+	pager := s.fetchObjectPager(ctx, s.src.MaxWorkers)
+	var numObs, numJobs int
 	for {
 		var objects []*storage.ObjectAttrs
 		nextPageToken, err := pager.NextPage(&objects)
 		if err != nil {
 			return err
 		}
+		numObs += len(objects)
 		jobs := s.createJobs(objects, s.log)
+		s.log.Debugf("scheduler: %d objects fetched for current batch", len(objects))
 
 		// If previous checkpoint was saved then look up starting point for new jobs
-		if s.state.checkpoint().LatestEntryTime != nil {
+		if !s.state.checkpoint().LatestEntryTime.IsZero() {
 			jobs = s.moveToLastSeenJob(jobs)
 			if len(s.state.checkpoint().FailedJobs) > 0 {
-				jobs = s.addFailedJobs(ctxWithTimeout, jobs)
+				jobs = s.addFailedJobs(ctx, jobs)
 			}
 		}
+		s.log.Debugf("scheduler: %d jobs scheduled for current batch", len(jobs))
 
 		// distributes jobs among workers with the help of a limiter
 		for i, job := range jobs {
+			numJobs++
 			id := fetchJobID(i, s.src.BucketName, job.Name())
 			job := job
 			s.limiter.acquire()
 			go func() {
 				defer s.limiter.release()
-				job.do(s.parentCtx, id)
+				job.do(ctx, id)
 			}()
+		}
+
+		s.log.Debugf("scheduler: total objects read till now: %d\nscheduler: total jobs scheduled till now: %d", numObs, numJobs)
+		if len(jobs) != 0 {
+			s.log.Debugf("scheduler: first job in current batch: %s\nscheduler: last job in current batch: %s", jobs[0].Name(), jobs[len(jobs)-1].Name())
 		}
 
 		if nextPageToken == "" {
 			break
 		}
 	}
+
 	return nil
 }
 
@@ -167,7 +171,7 @@ func (s *scheduler) fetchObjectPager(ctx context.Context, pageSize int) *iterato
 }
 
 // moveToLastSeenJob, moves to the latest job position past the last seen job
-// Jobs are stored in lexicographical order always , hence the latest position can be found either on the basis of job name or timestamp
+// Jobs are stored in lexicographical order always, hence the latest position can be found either on the basis of job name or timestamp
 func (s *scheduler) moveToLastSeenJob(jobs []*job) []*job {
 	var latestJobs []*job
 	jobsToReturn := make([]*job, 0)
@@ -176,8 +180,11 @@ func (s *scheduler) moveToLastSeenJob(jobs []*job) []*job {
 	ignore := false
 
 	for _, job := range jobs {
-		switch {
-		case job.Timestamp().After(*s.state.checkpoint().LatestEntryTime):
+		switch offset, isPartial := s.state.cp.LastProcessedOffset[job.object.Name]; {
+		case isPartial:
+			job.offset = offset
+			latestJobs = append(latestJobs, job)
+		case job.Timestamp().After(s.state.checkpoint().LatestEntryTime):
 			latestJobs = append(latestJobs, job)
 		case job.Name() == s.state.checkpoint().ObjectName:
 			flag = true
@@ -198,7 +205,7 @@ func (s *scheduler) moveToLastSeenJob(jobs []*job) []*job {
 
 	// in a senario where there are some jobs which have a later time stamp
 	// but lesser lexicographic order and some jobs have greater lexicographic order
-	// than the current checkpoint
+	// than the current checkpoint or if partially completed jobs are present
 	if len(jobsToReturn) != len(jobs) && len(latestJobs) > 0 {
 		jobsToReturn = append(latestJobs, jobsToReturn...)
 	}
@@ -213,7 +220,10 @@ func (s *scheduler) addFailedJobs(ctx context.Context, jobs []*job) []*job {
 		jobMap[j.Name()] = true
 	}
 
-	for name := range s.state.checkpoint().FailedJobs {
+	failedJobs := s.state.checkpoint().FailedJobs
+	s.log.Debugf("scheduler: %d failed jobs found", len(failedJobs))
+	fj := 0
+	for name := range failedJobs {
 		if !jobMap[name] {
 			obj, err := s.bucket.Object(name).Attrs(ctx)
 			if err != nil {
@@ -223,6 +233,8 @@ func (s *scheduler) addFailedJobs(ctx context.Context, jobs []*job) []*job {
 			objectURI := "gs://" + s.src.BucketName + "/" + obj.Name
 			job := newJob(s.bucket, obj, objectURI, s.state, s.src, s.publisher, s.log, true)
 			jobs = append(jobs, job)
+			s.log.Debugf("scheduler: adding failed job number %d with name %s to job current list", fj, job.Name())
+			fj++
 		}
 	}
 	return jobs

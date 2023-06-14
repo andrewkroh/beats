@@ -24,6 +24,7 @@ import (
 	"github.com/elastic/beats/v7/libbeat/processors"
 	"github.com/elastic/beats/v7/libbeat/processors/checks"
 	jsprocessor "github.com/elastic/beats/v7/libbeat/processors/script/javascript/module/processor"
+	"github.com/elastic/beats/v7/libbeat/publisher"
 	conf "github.com/elastic/elastic-agent-libs/config"
 	"github.com/elastic/elastic-agent-libs/logp"
 )
@@ -40,11 +41,11 @@ type appendProcessorConfig struct {
 	IgnoreMissing     bool          `config:"ignore_missing"`
 	IgnoreEmptyValues bool          `config:"ignore_empty_values"`
 	FailOnError       bool          `config:"fail_on_error"`
-	AllowDuplicate    bool          `config:"allow_duplicate"` //TODO: Add functionality to remove duplicate
+	AllowDuplicate    bool          `config:"allow_duplicate"`
 }
 
 func init() {
-	processors.RegisterPlugin("append_processor",
+	processors.RegisterPlugin("append",
 		checks.ConfigChecked(NewAppendProcessor,
 			checks.RequireFields("target_field"),
 		),
@@ -52,8 +53,8 @@ func init() {
 	jsprocessor.RegisterPlugin("AppendProcessor", NewAppendProcessor)
 }
 
-// NewAppendProcessor returns a new append_processor processor.
-func NewAppendProcessor(c *conf.C) (processors.Processor, error) {
+// NewAppendProcessor returns a new append processor.
+func NewAppendProcessor(c *conf.C) (beat.Processor, error) {
 	config := appendProcessorConfig{
 		IgnoreMissing:     false,
 		IgnoreEmptyValues: false,
@@ -67,7 +68,7 @@ func NewAppendProcessor(c *conf.C) (processors.Processor, error) {
 
 	f := &appendProcessor{
 		config: config,
-		logger: logp.NewLogger("append_processor"),
+		logger: logp.NewLogger("append"),
 	}
 	return f, nil
 }
@@ -80,12 +81,14 @@ func (f *appendProcessor) Run(event *beat.Event) (*beat.Event, error) {
 
 	err := f.appendValues(f.config.TargetField, f.config.Fields, f.config.Values, event)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to append fields in append_processor processor: %w", err)
-		f.logger.Debug(errMsg.Error())
+		errMsg := fmt.Errorf("failed to append fields in append processor: %w", err)
+		if publisher.LogWithTrace() {
+			f.logger.Debug(errMsg.Error())
+		}
 		if f.config.FailOnError {
 			event = backup
 			if _, err := event.PutValue("error.message", errMsg.Error()); err != nil {
-				return nil, fmt.Errorf("failed to append fields in append_processor processor: %w", err)
+				return nil, fmt.Errorf("failed to append fields in append processor: %w", err)
 			}
 			return event, err
 		}
@@ -152,7 +155,7 @@ func (f *appendProcessor) appendValues(target string, fields []string, values []
 }
 
 func (f *appendProcessor) String() string {
-	return "append_processor=" + fmt.Sprintf("%+v", f.config.TargetField)
+	return "append=" + fmt.Sprintf("%+v", f.config.TargetField)
 }
 
 // this function will remove all the empty strings and nil values from the array

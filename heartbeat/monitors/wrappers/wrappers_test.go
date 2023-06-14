@@ -133,8 +133,12 @@ func TestSimpleJob(t *testing.T) {
 			durationUs, err := results[0].Fields.GetValue("monitor.duration.us")
 			require.NoError(t, err)
 
-			durationMs := time.Duration(durationUs.(int64) * int64(time.Microsecond)).Milliseconds()
-			expectedMonitor := logger.NewMonitorRunInfo(testMonFields.ID, testMonFields.Type, durationMs)
+			expectedMonitor := logger.MonitorRunInfo{
+				MonitorID: testMonFields.ID,
+				Type:      testMonFields.Type,
+				Duration:  durationUs.(int64),
+				Status:    "up",
+			}
 			require.ElementsMatch(t, []zap.Field{
 				logp.Any("event", map[string]string{"action": logger.ActionMonitorRun}),
 				logp.Any("monitor", &expectedMonitor),
@@ -559,7 +563,7 @@ func makeProjectBrowserJob(t *testing.T, u string, summary bool, projectErr erro
 	parsed, err := url.Parse(u)
 	require.NoError(t, err)
 	return func(event *beat.Event) (i []jobs.Job, e error) {
-		eventext.SetMeta(event, META_STEP_COUNT, 2)
+		eventext.SetMeta(event, logger.META_STEP_COUNT, 2)
 		eventext.MergeEventFields(event, mapstr.M{
 			"url": URLFields(parsed),
 			"monitor": mapstr.M{
@@ -571,28 +575,28 @@ func makeProjectBrowserJob(t *testing.T, u string, summary bool, projectErr erro
 			},
 		})
 		if summary {
-			sumFields := mapstr.M{"up": 0, "down": 0}
-			if projectErr == nil {
-				sumFields["up"] = 1
-			} else {
-				sumFields["down"] = 1
-			}
 			eventext.MergeEventFields(event, mapstr.M{
-				"summary": sumFields,
+				"event": mapstr.M{
+					"type": "heartbeat/summary",
+				},
 			})
 		}
 		return nil, projectErr
 	}
 }
 
-var browserLogValidator = func(monId string, expectedDurationUs int64, stepCount int) func(t *testing.T, events []*beat.Event, observed []observer.LoggedEntry) {
+var browserLogValidator = func(monId string, expectedDurationUs int64, stepCount int, status string) func(t *testing.T, events []*beat.Event, observed []observer.LoggedEntry) {
 	return func(t *testing.T, events []*beat.Event, observed []observer.LoggedEntry) {
 		require.Len(t, observed, 1)
 		require.Equal(t, "Monitor finished", observed[0].Message)
 
-		durationMs := expectedDurationUs / 1000
-		expectedMonitor := logger.NewMonitorRunInfo(monId, "browser", durationMs)
-		expectedMonitor.Steps = &stepCount
+		expectedMonitor := logger.MonitorRunInfo{
+			MonitorID: monId,
+			Type:      "browser",
+			Duration:  expectedDurationUs,
+			Status:    status,
+			Steps:     &stepCount,
+		}
 		require.ElementsMatch(t, []zap.Field{
 			logp.Any("event", map[string]string{"action": logger.ActionMonitorRun}),
 			logp.Any("monitor", &expectedMonitor),
@@ -652,10 +656,13 @@ func TestProjectBrowserJob(t *testing.T) {
 					lookslike.MustCompile(map[string]interface{}{
 						"monitor": map[string]interface{}{"status": "up"},
 						"summary": map[string]interface{}{"up": 1, "down": 0},
+						"event": map[string]interface{}{
+							"type": "heartbeat/summary",
+						},
 					}),
 				))},
 		nil,
-		browserLogValidator(projectMonitorValues.id, time.Second.Microseconds(), 2),
+		browserLogValidator(projectMonitorValues.id, time.Second.Microseconds(), 2, "up"),
 	})
 	testCommonWrap(t, testDef{
 		"with down summary",
@@ -673,10 +680,13 @@ func TestProjectBrowserJob(t *testing.T) {
 							"type":    isdef.IsString,
 							"message": "testerr",
 						},
+						"event": map[string]interface{}{
+							"type": "heartbeat/summary",
+						},
 					}),
 				))},
 		nil,
-		browserLogValidator(projectMonitorValues.id, time.Second.Microseconds(), 2),
+		browserLogValidator(projectMonitorValues.id, time.Second.Microseconds(), 2, "down"),
 	})
 
 	legacySFields := testBrowserMonFields
@@ -686,14 +696,10 @@ func TestProjectBrowserJob(t *testing.T) {
 
 	expectedLegacyMonFields := lookslike.MustCompile(map[string]interface{}{
 		"monitor": map[string]interface{}{
-			"type":     "browser",
-			"id":       fmt.Sprintf("%s-%s", legacyProjectMonitorValues.legacyProjectId, legacyProjectMonitorValues.id),
-			"name":     fmt.Sprintf("%s - %s", legacyProjectMonitorValues.legacyProjectName, legacyProjectMonitorValues.name),
-			"duration": mapstr.M{"us": int64(0)},
-			"project": mapstr.M{
-				"id":   legacyProjectMonitorValues.legacyProjectId,
-				"name": legacyProjectMonitorValues.legacyProjectName,
-			},
+			"type":        "browser",
+			"id":          legacyProjectMonitorValues.legacyProjectId,
+			"name":        legacyProjectMonitorValues.legacyProjectName,
+			"duration":    mapstr.M{"us": int64(0)},
 			"check_group": legacyProjectMonitorValues.checkGroup,
 			"timespan": mapstr.M{
 				"gte": hbtestllext.IsTime,

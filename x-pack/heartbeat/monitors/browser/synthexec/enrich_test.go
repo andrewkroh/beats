@@ -1,8 +1,7 @@
 // Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
-//go:build linux || darwin
-// +build linux darwin
+//go:build linux
 
 package synthexec
 
@@ -233,9 +232,8 @@ func TestEnrichSynthEvent(t *testing.T) {
 			true,
 			func(t *testing.T, e *beat.Event, je *journeyEnricher) {
 				v := lookslike.MustCompile(mapstr.M{
-					"summary": map[string]int{
-						"up":   0,
-						"down": 1,
+					"event": map[string]string{
+						"type": "heartbeat/summary",
 					},
 				})
 				testslike.Test(t, v, e.Fields)
@@ -252,9 +250,8 @@ func TestEnrichSynthEvent(t *testing.T) {
 			true,
 			func(t *testing.T, e *beat.Event, je *journeyEnricher) {
 				v := lookslike.MustCompile(mapstr.M{
-					"summary": map[string]int{
-						"up":   1,
-						"down": 0,
+					"event": map[string]string{
+						"type": "heartbeat/summary",
 					},
 				})
 				testslike.Test(t, v, e.Fields)
@@ -266,9 +263,8 @@ func TestEnrichSynthEvent(t *testing.T) {
 			false,
 			func(t *testing.T, e *beat.Event, je *journeyEnricher) {
 				v := lookslike.MustCompile(mapstr.M{
-					"summary": map[string]int{
-						"up":   1,
-						"down": 0,
+					"event": map[string]string{
+						"type": "heartbeat/summary",
 					},
 				})
 				testslike.Test(t, v, e.Fields)
@@ -482,9 +478,8 @@ func TestCreateSummaryEvent(t *testing.T) {
 		},
 		expected: mapstr.M{
 			"monitor.duration.us": int64(10),
-			"summary": mapstr.M{
-				"down": 0,
-				"up":   1,
+			"event": mapstr.M{
+				"type": "heartbeat/summary",
 			},
 		},
 		wantErr: false,
@@ -500,9 +495,8 @@ func TestCreateSummaryEvent(t *testing.T) {
 		},
 		expected: mapstr.M{
 			"monitor.duration.us": int64(10),
-			"summary": mapstr.M{
-				"down": 1,
-				"up":   0,
+			"event": mapstr.M{
+				"type": "heartbeat/summary",
 			},
 		},
 		wantErr: true,
@@ -518,9 +512,8 @@ func TestCreateSummaryEvent(t *testing.T) {
 		},
 		expected: mapstr.M{
 			"monitor.duration.us": int64(10),
-			"summary": mapstr.M{
-				"down": 0,
-				"up":   1,
+			"event": mapstr.M{
+				"type": "heartbeat/summary",
 			},
 		},
 		wantErr: true,
@@ -534,9 +527,8 @@ func TestCreateSummaryEvent(t *testing.T) {
 			streamEnricher:  newStreamEnricher(stdfields.StdMonitorFields{}),
 		},
 		expected: mapstr.M{
-			"summary": mapstr.M{
-				"down": 1,
-				"up":   0,
+			"event": mapstr.M{
+				"type": "heartbeat/summary",
 			},
 		},
 		wantErr: true,

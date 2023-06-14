@@ -73,17 +73,67 @@ type enricher struct {
 	watchersStartedLock sync.Mutex
 	namespaceWatcher    kubernetes.Watcher
 	nodeWatcher         kubernetes.Watcher
+	replicasetWatcher   kubernetes.Watcher
+	jobWatcher          kubernetes.Watcher
 	isPod               bool
 }
 
 const selector = "kubernetes"
 
+const (
+	PodResource                   = "pod"
+	ServiceResource               = "service"
+	DeploymentResource            = "deployment"
+	ReplicaSetResource            = "replicaset"
+	StatefulSetResource           = "statefulset"
+	DaemonSetResource             = "daemonset"
+	JobResource                   = "job"
+	NodeResource                  = "node"
+	CronJobResource               = "cronjob"
+	PersistentVolumeResource      = "persistentvolume"
+	PersistentVolumeClaimResource = "persistentvolumeclaim"
+	StorageClassResource          = "storageclass"
+)
+
+func getResource(resourceName string) kubernetes.Resource {
+	switch resourceName {
+	case PodResource:
+		return &kubernetes.Pod{}
+	case ServiceResource:
+		return &kubernetes.Service{}
+	case DeploymentResource:
+		return &kubernetes.Deployment{}
+	case ReplicaSetResource:
+		return &kubernetes.ReplicaSet{}
+	case StatefulSetResource:
+		return &kubernetes.StatefulSet{}
+	case DaemonSetResource:
+		return &kubernetes.DaemonSet{}
+	case JobResource:
+		return &kubernetes.Job{}
+	case CronJobResource:
+		return &kubernetes.CronJob{}
+	case PersistentVolumeResource:
+		return &kubernetes.PersistentVolume{}
+	case PersistentVolumeClaimResource:
+		return &kubernetes.PersistentVolumeClaim{}
+	case StorageClassResource:
+		return &kubernetes.StorageClass{}
+	case NodeResource:
+		return &kubernetes.Node{}
+	default:
+		return nil
+	}
+}
+
 // NewResourceMetadataEnricher returns an Enricher configured for kubernetes resource events
 func NewResourceMetadataEnricher(
 	base mb.BaseMetricSet,
-	res kubernetes.Resource,
+	resourceName string,
 	metricsRepo *MetricsRepo,
 	nodeScope bool) Enricher {
+
+	var replicaSetWatcher, jobWatcher kubernetes.Watcher
 
 	config, err := GetValidatedConfig(base)
 	if err != nil {
@@ -91,7 +141,18 @@ func NewResourceMetadataEnricher(
 		return &nilEnricher{}
 	}
 
-	watcher, nodeWatcher, namespaceWatcher := getResourceMetadataWatchers(config, res, nodeScope)
+	res := getResource(resourceName)
+	if res == nil {
+		return &nilEnricher{}
+	}
+
+	client, err := kubernetes.GetKubernetesClient(config.KubeConfig, config.KubeClientOptions)
+	if err != nil {
+		logp.Err("Error creating Kubernetes client: %s", err)
+		return &nilEnricher{}
+	}
+
+	watcher, nodeWatcher, namespaceWatcher := getResourceMetadataWatchers(config, res, client, nodeScope)
 
 	if watcher == nil {
 		return &nilEnricher{}
@@ -105,16 +166,44 @@ func NewResourceMetadataEnricher(
 	}
 	cfg, _ := conf.NewConfigFrom(&commonMetaConfig)
 
-	metaGen := metadata.NewResourceMetadataGenerator(cfg, watcher.Client())
-	podMetaGen := metadata.GetPodMetaGen(cfg, watcher, nodeWatcher, namespaceWatcher, config.AddResourceMetadata)
+	// if Resource is Pod then we need to create watchers for Replicasets and Jobs that it might belongs to
+	// in order to be able to retrieve 2nd layer Owner metadata like in case of:
+	// Deployment -> Replicaset -> Pod
+	// CronJob -> job -> Pod
+	if resourceName == PodResource {
+		if config.AddResourceMetadata.Deployment {
+			replicaSetWatcher, err = kubernetes.NewNamedWatcher("resource_metadata_enricher_rs", client, &kubernetes.ReplicaSet{}, kubernetes.WatchOptions{
+				SyncTimeout: config.SyncPeriod,
+			}, nil)
+			if err != nil {
+				logp.Err("Error creating watcher for %T due to error %+v", &kubernetes.ReplicaSet{}, err)
+				return &nilEnricher{}
+			}
+		}
+
+		if config.AddResourceMetadata.CronJob {
+			jobWatcher, err = kubernetes.NewNamedWatcher("resource_metadata_enricher_job", client, &kubernetes.Job{}, kubernetes.WatchOptions{
+				SyncTimeout: config.SyncPeriod,
+			}, nil)
+			if err != nil {
+				logp.Err("Error creating watcher for %T due to error %+v", &kubernetes.Job{}, err)
+				return &nilEnricher{}
+			}
+		}
+	}
+
+	podMetaGen := metadata.GetPodMetaGen(cfg, watcher, nodeWatcher, namespaceWatcher, replicaSetWatcher, jobWatcher, config.AddResourceMetadata)
 
 	namespaceMeta := metadata.NewNamespaceMetadataGenerator(config.AddResourceMetadata.Namespace, namespaceWatcher.Store(), watcher.Client())
 	serviceMetaGen := metadata.NewServiceMetadataGenerator(cfg, watcher.Store(), namespaceMeta, watcher.Client())
-	enricher := buildMetadataEnricher(watcher, nodeWatcher, namespaceWatcher,
+
+	metaGen := metadata.NewNamespaceAwareResourceMetadataGenerator(cfg, watcher.Client(), namespaceMeta)
+
+	enricher := buildMetadataEnricher(watcher, nodeWatcher, namespaceWatcher, replicaSetWatcher, jobWatcher,
 		// update
 		func(m map[string]mapstr.M, r kubernetes.Resource) {
 			accessor, _ := meta.Accessor(r)
-			id := join(accessor.GetNamespace(), accessor.GetName())
+			id := join(accessor.GetNamespace(), accessor.GetName()) //nolint:all
 
 			switch r := r.(type) {
 			case *kubernetes.Pod:
@@ -136,30 +225,30 @@ func NewResourceMetadataEnricher(
 				nodeStore, _ := metricsRepo.AddNodeStore(nodeName)
 				nodeStore.SetNodeMetrics(metrics)
 
-				m[id] = metaGen.Generate("node", r)
+				m[id] = metaGen.Generate(NodeResource, r)
 
 			case *kubernetes.Deployment:
-				m[id] = metaGen.Generate("deployment", r)
+				m[id] = metaGen.Generate(DeploymentResource, r)
 			case *kubernetes.Job:
-				m[id] = metaGen.Generate("job", r)
+				m[id] = metaGen.Generate(JobResource, r)
 			case *kubernetes.CronJob:
-				m[id] = metaGen.Generate("cronjob", r)
+				m[id] = metaGen.Generate(CronJobResource, r)
 			case *kubernetes.Service:
 				m[id] = serviceMetaGen.Generate(r)
 			case *kubernetes.StatefulSet:
-				m[id] = metaGen.Generate("statefulset", r)
+				m[id] = metaGen.Generate(StatefulSetResource, r)
 			case *kubernetes.Namespace:
 				m[id] = metaGen.Generate("namespace", r)
 			case *kubernetes.ReplicaSet:
-				m[id] = metaGen.Generate("replicaset", r)
+				m[id] = metaGen.Generate(ReplicaSetResource, r)
 			case *kubernetes.DaemonSet:
-				m[id] = metaGen.Generate("daemonset", r)
+				m[id] = metaGen.Generate(DaemonSetResource, r)
 			case *kubernetes.PersistentVolume:
-				m[id] = metaGen.Generate("persistentvolume", r)
+				m[id] = metaGen.Generate(PersistentVolumeResource, r)
 			case *kubernetes.PersistentVolumeClaim:
-				m[id] = metaGen.Generate("persistentvolumeclaim", r)
+				m[id] = metaGen.Generate(PersistentVolumeClaimResource, r)
 			case *kubernetes.StorageClass:
-				m[id] = metaGen.Generate("storageclass", r)
+				m[id] = metaGen.Generate(StorageClassResource, r)
 			default:
 				m[id] = metaGen.Generate(r.GetObjectKind().GroupVersionKind().Kind, r)
 			}
@@ -198,15 +287,45 @@ func NewContainerMetadataEnricher(
 	metricsRepo *MetricsRepo,
 	nodeScope bool) Enricher {
 
+	var replicaSetWatcher, jobWatcher kubernetes.Watcher
 	config, err := GetValidatedConfig(base)
 	if err != nil {
 		logp.Info("Kubernetes metricset enriching is disabled")
 		return &nilEnricher{}
 	}
 
-	watcher, nodeWatcher, namespaceWatcher := getResourceMetadataWatchers(config, &kubernetes.Pod{}, nodeScope)
+	client, err := kubernetes.GetKubernetesClient(config.KubeConfig, config.KubeClientOptions)
+	if err != nil {
+		logp.Err("Error creating Kubernetes client: %s", err)
+		return &nilEnricher{}
+	}
+
+	watcher, nodeWatcher, namespaceWatcher := getResourceMetadataWatchers(config, &kubernetes.Pod{}, client, nodeScope)
 	if watcher == nil {
 		return &nilEnricher{}
+	}
+
+	// Resource is Pod so we need to create watchers for Replicasets and Jobs that it might belongs to
+	// in order to be able to retrieve 2nd layer Owner metadata like in case of:
+	// Deployment -> Replicaset -> Pod
+	// CronJob -> job -> Pod
+	if config.AddResourceMetadata.Deployment {
+		replicaSetWatcher, err = kubernetes.NewNamedWatcher("resource_metadata_enricher_rs", client, &kubernetes.ReplicaSet{}, kubernetes.WatchOptions{
+			SyncTimeout: config.SyncPeriod,
+		}, nil)
+		if err != nil {
+			logp.Err("Error creating watcher for %T due to error %+v", &kubernetes.Namespace{}, err)
+			return &nilEnricher{}
+		}
+	}
+	if config.AddResourceMetadata.CronJob {
+		jobWatcher, err = kubernetes.NewNamedWatcher("resource_metadata_enricher_job", client, &kubernetes.Job{}, kubernetes.WatchOptions{
+			SyncTimeout: config.SyncPeriod,
+		}, nil)
+		if err != nil {
+			logp.Err("Error creating watcher for %T due to error %+v", &kubernetes.Job{}, err)
+			return &nilEnricher{}
+		}
 	}
 
 	commonMetaConfig := metadata.Config{}
@@ -216,16 +335,16 @@ func NewContainerMetadataEnricher(
 	}
 	cfg, _ := conf.NewConfigFrom(&commonMetaConfig)
 
-	metaGen := metadata.GetPodMetaGen(cfg, watcher, nodeWatcher, namespaceWatcher, config.AddResourceMetadata)
+	metaGen := metadata.GetPodMetaGen(cfg, watcher, nodeWatcher, namespaceWatcher, replicaSetWatcher, jobWatcher, config.AddResourceMetadata)
 
-	enricher := buildMetadataEnricher(watcher, nodeWatcher, namespaceWatcher,
+	enricher := buildMetadataEnricher(watcher, nodeWatcher, namespaceWatcher, replicaSetWatcher, jobWatcher,
 		// update
 		func(m map[string]mapstr.M, r kubernetes.Resource) {
 			pod, ok := r.(*kubernetes.Pod)
 			if !ok {
 				base.Logger().Debugf("Error while casting event: %s", ok)
 			}
-			meta := metaGen.Generate(pod)
+			pmeta := metaGen.Generate(pod)
 
 			statuses := make(map[string]*kubernetes.PodContainerStatus)
 			mapStatuses := func(s []kubernetes.PodContainerStatus) {
@@ -241,6 +360,7 @@ func NewContainerMetadataEnricher(
 			podStore, _ := nodeStore.AddPodStore(podId)
 
 			for _, container := range append(pod.Spec.Containers, pod.Spec.InitContainers...) {
+				cmeta := mapstr.M{}
 				metrics := NewContainerMetrics()
 
 				if cpu, ok := container.Resources.Limits["cpu"]; ok {
@@ -262,14 +382,15 @@ func NewContainerMetadataEnricher(
 					// which is in the form of <container.runtime>://<container.id>
 					split := strings.Index(s.ContainerID, "://")
 					if split != -1 {
-						kubernetes2.ShouldPut(meta, "container.id", s.ContainerID[split+3:], base.Logger())
+						kubernetes2.ShouldPut(cmeta, "container.id", s.ContainerID[split+3:], base.Logger())
 
-						kubernetes2.ShouldPut(meta, "container.runtime", s.ContainerID[:split], base.Logger())
+						kubernetes2.ShouldPut(cmeta, "container.runtime", s.ContainerID[:split], base.Logger())
 					}
 				}
 
 				id := join(pod.GetObjectMeta().GetNamespace(), pod.GetObjectMeta().GetName(), container.Name)
-				m[id] = meta
+				cmeta.DeepUpdate(pmeta)
+				m[id] = cmeta
 			}
 		},
 		// delete
@@ -296,12 +417,12 @@ func NewContainerMetadataEnricher(
 	return enricher
 }
 
-func getResourceMetadataWatchers(config *kubernetesConfig, resource kubernetes.Resource, nodeScope bool) (kubernetes.Watcher, kubernetes.Watcher, kubernetes.Watcher) {
-	client, err := kubernetes.GetKubernetesClient(config.KubeConfig, config.KubeClientOptions)
-	if err != nil {
-		logp.Err("Error creating Kubernetes client: %s", err)
-		return nil, nil, nil
-	}
+func getResourceMetadataWatchers(
+	config *kubernetesConfig,
+	resource kubernetes.Resource,
+	client k8sclient.Interface, nodeScope bool) (kubernetes.Watcher, kubernetes.Watcher, kubernetes.Watcher) {
+
+	var err error
 
 	options := kubernetes.WatchOptions{
 		SyncTimeout: config.SyncPeriod,
@@ -409,16 +530,20 @@ func buildMetadataEnricher(
 	watcher kubernetes.Watcher,
 	nodeWatcher kubernetes.Watcher,
 	namespaceWatcher kubernetes.Watcher,
+	replicasetWatcher kubernetes.Watcher,
+	jobWatcher kubernetes.Watcher,
 	update func(map[string]mapstr.M, kubernetes.Resource),
 	delete func(map[string]mapstr.M, kubernetes.Resource),
 	index func(e mapstr.M) string) *enricher {
 
 	enricher := enricher{
-		metadata:         map[string]mapstr.M{},
-		index:            index,
-		watcher:          watcher,
-		nodeWatcher:      nodeWatcher,
-		namespaceWatcher: namespaceWatcher,
+		metadata:          map[string]mapstr.M{},
+		index:             index,
+		watcher:           watcher,
+		nodeWatcher:       nodeWatcher,
+		namespaceWatcher:  namespaceWatcher,
+		replicasetWatcher: replicasetWatcher,
+		jobWatcher:        jobWatcher,
 	}
 
 	watcher.AddEventHandler(kubernetes.ResourceEventHandlerFuncs{
@@ -458,6 +583,18 @@ func (m *enricher) Start() {
 			}
 		}
 
+		if m.replicasetWatcher != nil {
+			if err := m.replicasetWatcher.Start(); err != nil {
+				logp.Warn("Error starting replicaset watcher: %s", err)
+			}
+		}
+
+		if m.jobWatcher != nil {
+			if err := m.jobWatcher.Start(); err != nil {
+				logp.Warn("Error starting job watcher: %s", err)
+			}
+		}
+
 		err := m.watcher.Start()
 		if err != nil {
 			logp.Warn("Error starting Kubernetes watcher: %s", err)
@@ -478,6 +615,14 @@ func (m *enricher) Stop() {
 
 		if m.nodeWatcher != nil {
 			m.nodeWatcher.Stop()
+		}
+
+		if m.replicasetWatcher != nil {
+			m.replicasetWatcher.Stop()
+		}
+
+		if m.jobWatcher != nil {
+			m.jobWatcher.Stop()
 		}
 
 		m.watchersStarted = false
@@ -582,18 +727,18 @@ func AddClusterECSMeta(base mb.BaseMetricSet) mapstr.M {
 	config, err := GetValidatedConfig(base)
 	if err != nil {
 		logp.Info("could not retrieve validated config")
-		return nil
+		return mapstr.M{}
 	}
 	client, err := kubernetes.GetKubernetesClient(config.KubeConfig, config.KubeClientOptions)
 	if err != nil {
 		logp.Err("fail to get kubernetes client: %s", err)
-		return nil
+		return mapstr.M{}
 	}
 	cfg, _ := conf.NewConfigFrom(&config)
 	ecsClusterMeta, err := GetClusterECSMeta(cfg, client, base.Logger())
 	if err != nil {
 		logp.Info("could not retrieve cluster metadata: %s", err)
-		return nil
+		return mapstr.M{}
 	}
 	return ecsClusterMeta
 }

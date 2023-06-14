@@ -44,8 +44,9 @@ import (
 
 // Metricbeat implements the Beater interface for metricbeat.
 type Metricbeat struct {
-	done         chan struct{}   // Channel used to initiate shutdown.
-	runners      []module.Runner // Active list of module runners.
+	done         chan struct{}    // Channel used to initiate shutdown.
+	stopOnce     sync.Once        // wraps the Stop() method
+	runners      []cfgfile.Runner // Active list of module runners.
 	config       Config
 	autodiscover *autodiscover.Autodiscover
 
@@ -87,11 +88,11 @@ func Creator(options ...Option) beat.Creator {
 //
 // This is equivalent to calling
 //
-//     beater.Creator(
-//         beater.WithModuleOptions(
-//             module.WithMetricSetInfo(),
-//         ),
-//     )
+//	beater.Creator(
+//	    beater.WithModuleOptions(
+//	        module.WithMetricSetInfo(),
+//	    ),
+//	)
 func DefaultCreator() beat.Creator {
 	return Creator(
 		WithLightModules(),
@@ -109,13 +110,13 @@ func DefaultCreator() beat.Creator {
 //
 // This is equivalent to calling
 //
-//  beater.Creator(
-//		beater.WithLightModules(),
-//		beater.WithModuleOptions(
-//			module.WithMetricSetInfo(),
-//			module.WithMaxStartDelay(0),
-//		),
-//	)
+//	 beater.Creator(
+//			beater.WithLightModules(),
+//			beater.WithModuleOptions(
+//				module.WithMetricSetInfo(),
+//				module.WithMaxStartDelay(0),
+//			),
+//		)
 func DefaultTestModulesCreator() beat.Creator {
 	return Creator(
 		WithLightModules(),
@@ -272,7 +273,8 @@ func (bt *Metricbeat) Run(b *beat.Beat) error {
 // Stop should only be called a single time. Calling it more than once may
 // result in undefined behavior.
 func (bt *Metricbeat) Stop() {
-	close(bt.done)
+	bt.stopOnce.Do(func() { close(bt.done) })
+
 }
 
 // Modules return a list of all configured modules.

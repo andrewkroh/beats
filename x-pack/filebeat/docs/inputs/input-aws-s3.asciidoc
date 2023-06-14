@@ -120,8 +120,8 @@ characters. This only applies to non-JSON logs. See <<_encoding_3>>.
 ==== `expand_event_list_from_field`
 
 If the fileset using this input expects to receive multiple messages bundled
-under a specific field then the config option `expand_event_list_from_field`
-value can be assigned the name of the field. This setting will be able to split
+under a specific field or an array of objects then the config option `expand_event_list_from_field`
+value can be assigned the name of the field or `.[]`. This setting will be able to split
 the messages under the group value into separate events. For example, CloudTrail
 logs are in JSON format and events are found under the JSON object "Records".
 
@@ -143,6 +143,23 @@ logs are in JSON format and events are found under the JSON object "Records".
         }
     ]
 }
+----
+
+Or when `expand_event_list_from_field` is set to `.[]`, an array of objects will be split
+into separate events.
+
+["source","json"]
+----
+[
+   {
+      "id":"1234",
+      "message":"success"
+   },
+   {
+      "id":"5678",
+      "message":"failure"
+   }
+]
 ----
 
 Note: When `expand_event_list_from_field` parameter is given in the config,
@@ -256,6 +273,12 @@ configuring multiline options.
 ==== `queue_url`
 
 URL of the AWS SQS queue that messages will be received from. (Required when `bucket_arn` and `non_aws_bucket_name` are not set).
+
+[float]
+==== `region`
+
+The name of the AWS region of the end point. If this option is given it
+takes precedence over the region name obtained from the `queue_url` value.
 
 [float]
 ==== `visibility_timeout`
@@ -438,6 +461,34 @@ In order to make AWS API calls, `aws-s3` input requires AWS credentials. Please
 see <<aws-credentials-config,AWS credentials options>> for more details.
 
 [float]
+==== `backup_to_bucket_arn`
+
+The bucket ARN to backup processed files to. This will copy the processed file after it was fully read.
+When using the `non_aws_bucket_name`, please use `non_aws_backup_to_bucket_name` accordingly.
+
+Naming of the backed up files can be controlled with `backup_to_bucket_prefix`.
+
+[float]
+==== `backup_to_bucket_prefix`
+
+This prefix will be prepended to the object key when backing it up to another (or the same) bucket.
+
+[float]
+==== `non_aws_backup_to_bucket_name`
+
+The bucket name to backup processed files to. Use this parameter when not using AWS buckets. This will copy the processed file after it was fully read.
+When using the `bucket_arn`, please use `backup_to_bucket_arn` accordingly.
+
+Naming of the backed up files can be controlled with `backup_to_bucket_prefix`.
+
+[float]
+==== `delete_after_backup`
+
+Controls whether fully processed files will be deleted from the bucket.
+
+Can only be used together with the backup functionality.
+
+[float]
 === AWS Permissions
 
 Specific AWS permissions are required for IAM user to access SQS and S3
@@ -457,6 +508,21 @@ when using the polling list of S3 bucket objects:
 s3:GetObject
 s3:ListBucket
 s3:GetBucketLocation
+----
+
+In case `backup_to_bucket_arn` or `non_aws_backup_to_bucket_name` are set the following permission is required as well:
+----
+s3:PutObject
+----
+
+In case `delete_after_backup` is set the following permission is required as well:
+----
+s3:DeleteObject
+----
+
+In case optional SQS metric `sqs_messages_waiting_gauge` is desired, the following permission is required:
+----
+sqs:GetQueueAttributes
 ----
 
 [float]
@@ -683,7 +749,7 @@ Will produce the following output:
 === Metrics
 
 This input exposes metrics under the <<http-endpoint, HTTP monitoring endpoint>>.
-These metrics are exposed under the `/dataset` path. They can be used to
+These metrics are exposed under the `/inputs` path. They can be used to
 observe the activity of the input.
 
 [options="header"]
@@ -694,7 +760,10 @@ observe the activity of the input.
 | `sqs_messages_inflight_gauge`             | Number of SQS messages inflight (gauge).
 | `sqs_messages_returned_total`             | Number of SQS message returned to queue (happens on errors implicitly after visibility timeout passes).
 | `sqs_messages_deleted_total`              | Number of SQS messages deleted.
+| `sqs_messages_waiting_gauge`              | Number of SQS messages waiting in the SQS queue (gauge). The value is refreshed every minute via data from GetQueueAttributes.
+| `sqs_worker_utilization`                  | Rate of SQS worker utilization over previous 5 seconds. 0 indicates idle, 1 indicates all workers utilized.
 | `sqs_message_processing_time`             | Histogram of the elapsed SQS processing times in nanoseconds (time of receipt to time of delete/return).
+| `sqs_lag_time`                            | Histogram of the difference between the SQS SentTimestamp attribute and the time when the SQS message was received expressed in nanoseconds.
 | `s3_objects_requested_total`              | Number of S3 objects downloaded.
 | `s3_objects_listed_total`                 | Number of S3 objects returned by list operations.
 | `s3_objects_processed_total`              | Number of S3 objects that matched file_selectors rules.

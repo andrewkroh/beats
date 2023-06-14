@@ -12,6 +12,7 @@ import (
 	"github.com/elastic/beats/v7/libbeat/common/cli"
 	"github.com/elastic/beats/v7/libbeat/common/reload"
 	"github.com/elastic/beats/v7/libbeat/ecs"
+	"github.com/elastic/beats/v7/libbeat/processors"
 	"github.com/elastic/beats/v7/libbeat/publisher/processing"
 	"github.com/elastic/beats/v7/x-pack/libbeat/management"
 	"github.com/elastic/elastic-agent-client/v7/pkg/client"
@@ -23,6 +24,7 @@ import (
 
 	_ "github.com/elastic/beats/v7/x-pack/libbeat/include"
 	"github.com/elastic/beats/v7/x-pack/osquerybeat/beater"
+	"github.com/elastic/beats/v7/x-pack/osquerybeat/internal/config"
 	"github.com/elastic/beats/v7/x-pack/osquerybeat/internal/install"
 )
 
@@ -42,9 +44,13 @@ var RootCmd = Osquerybeat()
 
 func Osquerybeat() *cmd.BeatsRootCmd {
 	management.ConfigTransform.SetTransform(osquerybeatCfg)
+	globalProcs, err := processors.NewPluginConfigFromList(defaultProcessors())
+	if err != nil { // these are hard-coded, shouldn't fail
+		panic(fmt.Errorf("error creating global processors: %w", err))
+	}
 	settings := instance.Settings{
 		Name:            Name,
-		Processing:      processing.MakeDefaultSupport(true, withECSVersion, processing.WithHost, processing.WithAgentMeta()),
+		Processing:      processing.MakeDefaultSupport(true, globalProcs, withECSVersion, processing.WithHost, processing.WithAgentMeta()),
 		ElasticLicensed: true,
 	}
 	command := cmd.GenRootCmdWithSettings(beater.New, settings)
@@ -74,11 +80,26 @@ func genVerifyCmd(_ instance.Settings) *cobra.Command {
 func osquerybeatCfg(rawIn *proto.UnitExpectedConfig, agentInfo *client.AgentInfo) ([]*reload.ConfigWithMeta, error) {
 	// Convert to streams, osquerybeat doesn't use streams
 	streams := make([]*proto.Stream, 1)
+
+	// Enforce the datastream dataset and type because the libbeat call to CreateInputsFromStreams
+	// provides it's own defaults that are breaking the osquery with logstash
+	// The target datastream for the publisher is expected to be logs-osquery_manager.result-<namespace>
+	// while the libebeat management.CreateInputsFromStreams defaults to osquery-generic-default
+	var datastream *proto.DataStream
+	if rawIn.GetDataStream() != nil {
+		// Copy by value and modify dataset and type
+		ds := *rawIn.GetDataStream()
+		ds.Dataset = config.DefaultDataset
+		ds.Type = config.DefaultType
+		datastream = &ds
+	}
+
 	streams[0] = &proto.Stream{
 		Source:     rawIn.GetSource(),
 		Id:         rawIn.GetId(),
-		DataStream: rawIn.GetDataStream(),
+		DataStream: datastream,
 	}
+
 	rawIn.Streams = streams
 
 	modules, err := management.CreateInputsFromStreams(rawIn, "osquery", agentInfo)
@@ -95,4 +116,14 @@ func osquerybeatCfg(rawIn *proto.UnitExpectedConfig, agentInfo *client.AgentInfo
 		return nil, fmt.Errorf("error creating config for reloader: %w", err)
 	}
 	return configList, nil
+}
+
+func defaultProcessors() []mapstr.M {
+	// 	processors:
+	//   - add_host_metadata: ~
+	//   - add_cloud_metadata: ~
+	return []mapstr.M{
+		{"add_host_metadata": nil},
+		{"add_cloud_metadata": nil},
+	}
 }

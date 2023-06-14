@@ -29,6 +29,7 @@ import (
 	"github.com/elastic/beats/v7/libbeat/common"
 	"github.com/elastic/beats/v7/libbeat/outputs/codec/json"
 	"github.com/elastic/beats/v7/libbeat/processors"
+	"github.com/elastic/beats/v7/libbeat/publisher"
 	"github.com/elastic/elastic-agent-libs/logp"
 	"github.com/elastic/elastic-agent-libs/mapstr"
 )
@@ -80,7 +81,7 @@ func newGroup(title string, log *logp.Logger) *group {
 	}
 }
 
-func (p *group) add(processor processors.Processor) {
+func (p *group) add(processor beat.Processor) {
 	if processor != nil {
 		p.list = append(p.list, processor)
 	}
@@ -199,15 +200,18 @@ func debugPrintProcessor(info beat.Info, log *logp.Logger) *processorFn {
 		EscapeHTML: false,
 	})
 	return newProcessor("debugPrint", func(event *beat.Event) (*beat.Event, error) {
-		mux.Lock()
-		defer mux.Unlock()
+		if publisher.LogWithTrace() {
+			mux.Lock()
+			defer mux.Unlock()
 
-		b, err := encoder.Encode(info.Beat, event)
-		if err != nil {
-			return event, nil
+			b, err := encoder.Encode(info.Beat, event)
+			if err != nil {
+				//nolint:nilerr // encoder failure is not considered an error by this processor [why not?]
+				return event, nil
+			}
+
+			log.Debugf("Publish event: %s", b)
 		}
-
-		log.Debugf("Publish event: %s", b)
 		return event, nil
 	})
 }

@@ -22,18 +22,23 @@ var RootCmd *cmd.BeatsRootCmd
 
 // heartbeatCfg is a callback registered via SetTransform that returns a Elastic Agent client.Unit
 // configuration generated from a raw Elastic Agent config
-func heartbeatCfg(rawIn *proto.UnitExpectedConfig, agentInfo *client.AgentInfo) ([]*reload.ConfigWithMeta, error) {
-	//grab and properly format the input streams
-	inputStreams, err := management.CreateInputsFromStreams(rawIn, "metrics", agentInfo)
-	if err != nil {
-		return nil, fmt.Errorf("error generating new stream config: %w", err)
-	}
-
-	configList, err := management.CreateReloadConfigFromInputs(inputStreams)
+func heartbeatCfg(rawIn *proto.UnitExpectedConfig, _ *client.AgentInfo) ([]*reload.ConfigWithMeta, error) {
+	configList, err := management.CreateReloadConfigFromInputs(TransformRawIn(rawIn))
 	if err != nil {
 		return nil, fmt.Errorf("error creating reloader config: %w", err)
 	}
 	return configList, nil
+}
+
+// TransformRawIn removes unwanted fields to keep consistent hashing on reload()
+func TransformRawIn(rawIn *proto.UnitExpectedConfig) []map[string]interface{} {
+	rawInput := []map[string]interface{}{rawIn.GetSource().AsMap()}
+
+	for _, p := range rawInput {
+		delete(p, "policy")
+	}
+
+	return rawInput
 }
 
 func init() {

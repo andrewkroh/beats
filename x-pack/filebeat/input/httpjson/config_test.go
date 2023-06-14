@@ -7,6 +7,7 @@ package httpjson
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -15,6 +16,7 @@ import (
 	"golang.org/x/oauth2/google"
 
 	conf "github.com/elastic/elastic-agent-libs/config"
+	"github.com/elastic/elastic-agent-libs/transport/httpcommon"
 )
 
 func TestProviderCanonical(t *testing.T) {
@@ -297,11 +299,30 @@ func TestConfigOauth2Validation(t *testing.T) {
 			},
 			setup: func() {
 				// we change the default function to force a failure
-				findDefaultGoogleCredentials = func(context.Context, ...string) (*google.Credentials, error) {
+				findDefaultGoogleCredentials = func(context.Context, google.CredentialsParams) (*google.Credentials, error) {
 					return nil, errors.New("failed")
 				}
 			},
-			teardown: func() { findDefaultGoogleCredentials = google.FindDefaultCredentials },
+			teardown: func() { findDefaultGoogleCredentials = google.FindDefaultCredentialsWithParams },
+		},
+		{
+			name: "google must send scopes and delegated_account if ADC available",
+			input: map[string]interface{}{
+				"auth.oauth2": map[string]interface{}{
+					"provider":                 "google",
+					"google.delegated_account": "delegated@account.com",
+					"scopes":                   []string{"foo"},
+				},
+			},
+			setup: func() {
+				findDefaultGoogleCredentials = func(_ context.Context, p google.CredentialsParams) (*google.Credentials, error) {
+					if len(p.Scopes) != 1 || p.Scopes[0] != "foo" || p.Subject != "delegated@account.com" {
+						return nil, errors.New("failed")
+					}
+					return &google.Credentials{}, nil
+				}
+			},
+			teardown: func() { findDefaultGoogleCredentials = google.FindDefaultCredentialsWithParams },
 		},
 		{
 			name:        "google must fail if credentials file not found",
@@ -431,6 +452,16 @@ func TestConfigOauth2Validation(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "google must work with delegated_account and ADC set up",
+			input: map[string]interface{}{
+				"auth.oauth2": map[string]interface{}{
+					"provider":                 "google",
+					"google.delegated_account": "delegated@account.com",
+				},
+			},
+			setup: func() { os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "./testdata/credentials.json") },
+		},
 	}
 
 	for _, c := range cases {
@@ -484,4 +515,60 @@ func TestCursorEntryConfig(t *testing.T) {
 	assert.False(t, conf["entry2"].mustIgnoreEmptyValue())
 	assert.True(t, conf["entry3"].mustIgnoreEmptyValue())
 	assert.True(t, conf["entry4"].mustIgnoreEmptyValue())
+}
+
+var keepAliveTests = []struct {
+	name    string
+	input   map[string]interface{}
+	want    httpcommon.WithKeepaliveSettings
+	wantErr error
+}{
+	{
+		name:  "keep_alive_none", // Default to the old behaviour of true.
+		input: map[string]interface{}{},
+		want:  httpcommon.WithKeepaliveSettings{Disable: true},
+	},
+	{
+		name: "keep_alive_true",
+		input: map[string]interface{}{
+			"request.keep_alive.disable": true,
+		},
+		want: httpcommon.WithKeepaliveSettings{Disable: true},
+	},
+	{
+		name: "keep_alive_false",
+		input: map[string]interface{}{
+			"request.keep_alive.disable": false,
+		},
+		want: httpcommon.WithKeepaliveSettings{Disable: false},
+	},
+	{
+		name: "keep_alive_invalid_max",
+		input: map[string]interface{}{
+			"request.keep_alive.disable":              false,
+			"request.keep_alive.max_idle_connections": -1,
+		},
+		wantErr: errors.New("max_idle_connections must not be negative accessing 'request.keep_alive'"),
+	},
+}
+
+func TestKeepAliveSetting(t *testing.T) {
+	for _, test := range keepAliveTests {
+		t.Run(test.name, func(t *testing.T) {
+			test.input["request.url"] = "localhost"
+			cfg := conf.MustNewConfigFrom(test.input)
+			conf := defaultConfig()
+			err := cfg.Unpack(&conf)
+			if fmt.Sprint(err) != fmt.Sprint(test.wantErr) {
+				t.Errorf("unexpected error return from Unpack: got: %q want: %q", err, test.wantErr)
+			}
+			if err != nil {
+				return
+			}
+			got := conf.Request.KeepAlive.settings()
+			if got != test.want {
+				t.Errorf("unexpected setting for %s: got: %#v\nwant:%#v", test.name, got, test.want)
+			}
+		})
+	}
 }

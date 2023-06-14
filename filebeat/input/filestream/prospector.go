@@ -26,6 +26,7 @@ import (
 	loginp "github.com/elastic/beats/v7/filebeat/input/filestream/internal/input-logfile"
 	input "github.com/elastic/beats/v7/filebeat/input/v2"
 	"github.com/elastic/beats/v7/libbeat/beat"
+
 	"github.com/elastic/elastic-agent-libs/logp"
 	"github.com/elastic/go-concert/unison"
 )
@@ -124,8 +125,9 @@ func (p *fileProspector) Init(
 	return nil
 }
 
-//nolint: dupl // Different prospectors have a similar run method
 // Run starts the fileProspector which accepts FS events from a file watcher.
+//
+//nolint:dupl // Different prospectors have a similar run method
 func (p *fileProspector) Run(ctx input.Context, s loginp.StateMetadataUpdater, hg loginp.HarvesterGroup) {
 	log := ctx.Logger.With("prospector", prospectorDebugKey)
 	log.Debug("Starting prospector")
@@ -267,11 +269,12 @@ func (p *fileProspector) onRename(log *logp.Logger, ctx input.Context, fe loginp
 	} else {
 		// update file metadata as the path has changed
 		var meta fileMeta
-		err := s.FindCursorMeta(src, meta)
+		err := s.FindCursorMeta(src, &meta)
 		if err != nil {
-			log.Errorf("Error while getting cursor meta data of entry %s: %v", src.Name(), err)
-
 			meta.IdentifierName = p.identifier.Name()
+			log.Warnf("Error while getting cursor meta data of entry '%s': '%w'"+
+				", using prospector's identifier: '%s'",
+				src.Name(), err, meta.IdentifierName)
 		}
 		err = s.UpdateMetadata(src, fileMeta{Source: fe.NewPath, IdentifierName: meta.IdentifierName})
 		if err != nil {
@@ -289,7 +292,7 @@ func (p *fileProspector) onRename(log *logp.Logger, ctx input.Context, fe loginp
 }
 
 func (p *fileProspector) stopHarvesterGroup(log *logp.Logger, hg loginp.HarvesterGroup) {
-	err := hg.StopGroup()
+	err := hg.StopHarvesters()
 	if err != nil {
 		log.Errorf("Error while stopping harvester group: %v", err)
 	}

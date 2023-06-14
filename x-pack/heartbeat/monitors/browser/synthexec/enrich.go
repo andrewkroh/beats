@@ -2,7 +2,6 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 //go:build linux || darwin
-// +build linux darwin
 
 package synthexec
 
@@ -17,8 +16,8 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/elastic/beats/v7/heartbeat/eventext"
+	"github.com/elastic/beats/v7/heartbeat/monitors/logger"
 	"github.com/elastic/beats/v7/heartbeat/monitors/stdfields"
-	"github.com/elastic/beats/v7/heartbeat/monitors/wrappers"
 	"github.com/elastic/beats/v7/libbeat/beat"
 )
 
@@ -113,7 +112,6 @@ func (je *journeyEnricher) enrichSynthEvent(event *beat.Event, se *SynthEvent) e
 	var jobErr error
 	if se.Error != nil {
 		jobErr = stepError(se.Error)
-		je.errorCount++
 		if je.error == nil {
 			je.error = jobErr
 		}
@@ -172,15 +170,6 @@ func (je *journeyEnricher) enrichSynthEvent(event *beat.Event, se *SynthEvent) e
 }
 
 func (je *journeyEnricher) createSummary(event *beat.Event) error {
-	var up, down int
-	if je.errorCount > 0 {
-		up = 0
-		down = 1
-	} else {
-		up = 1
-		down = 0
-	}
-
 	// In case of syntax errors or incorrect runner options, the Synthetics
 	// runner would exit immediately with exitCode 1 and we do not set the duration
 	// to inform the journey never ran
@@ -203,13 +192,10 @@ func (je *journeyEnricher) createSummary(event *beat.Event) error {
 			"type":    "heartbeat/summary",
 			"journey": je.journey,
 		},
-		"summary": mapstr.M{
-			"up":   up,
-			"down": down,
-		},
 	})
 
-	eventext.SetMeta(event, wrappers.META_STEP_COUNT, je.stepCount)
+	// Add step count meta for log wrapper
+	eventext.SetMeta(event, logger.META_STEP_COUNT, je.stepCount)
 
 	if je.journeyComplete {
 		return je.error

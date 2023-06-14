@@ -5,7 +5,6 @@
 // See _meta/terraform/README.md for integration test usage instructions.
 
 //go:build integration && aws
-// +build integration,aws
 
 package awscloudwatch
 
@@ -36,8 +35,6 @@ import (
 	awscommon "github.com/elastic/beats/v7/x-pack/libbeat/common/aws"
 	conf "github.com/elastic/elastic-agent-libs/config"
 	"github.com/elastic/elastic-agent-libs/logp"
-	"github.com/elastic/elastic-agent-libs/mapstr"
-	"github.com/elastic/elastic-agent-libs/monitoring"
 )
 
 const (
@@ -76,11 +73,6 @@ func getTerraformOutputs(t *testing.T) terraformOutputData {
 	}
 
 	return rtn
-}
-
-func assertMetric(t *testing.T, snapshot mapstr.M, name string, value interface{}) {
-	n, _ := snapshot.GetValue(inputID + "." + name)
-	assert.EqualValues(t, value, n, name)
 }
 
 func newV2Context() (v2.Context, func()) {
@@ -189,13 +181,7 @@ func TestInputWithLogGroupNamePrefix(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	snap := mapstr.M(monitoring.CollectStructSnapshot(
-		monitoring.GetNamespace("dataset").GetRegistry(),
-		monitoring.Full,
-		false))
-	t.Log(snap.StringToPrint())
-
-	assertMetric(t, snap, "log_events_received_total", 2)
-	assertMetric(t, snap, "log_groups_total", 2)
-	assertMetric(t, snap, "cloudwatch_events_created_total", 2)
+	assert.EqualValues(t, cloudwatchInput.metrics.logEventsReceivedTotal.Get(), 2)
+	assert.EqualValues(t, cloudwatchInput.metrics.logGroupsTotal.Get(), 2)
+	assert.EqualValues(t, cloudwatchInput.metrics.cloudwatchEventsCreatedTotal.Get(), 2)
 }

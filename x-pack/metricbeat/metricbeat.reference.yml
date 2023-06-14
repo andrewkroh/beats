@@ -237,6 +237,12 @@ metricbeat.modules:
     - transitgateway
     - usage
     - vpn
+- module: aws
+  period: 1m
+  latency: 5m
+  include_linked_accounts: false
+  metricsets:
+    - s3_request
 
 #----------------------------- AWS Fargate Module -----------------------------
 - module: awsfargate
@@ -512,6 +518,7 @@ metricbeat.modules:
     #- index
     #- index_recovery
     #- index_summary
+    #- ingest_pipeline
     #- shard
     #- ml_job
   period: 10s
@@ -521,6 +528,7 @@ metricbeat.modules:
   #ssl.certificate_authorities: ["/etc/pki/root/ca.pem"]
 
   #index_recovery.active_only: true
+  #ingest_pipeline.processor_sample_rate: 0.25
   #xpack.enabled: false
   #scope: node
 
@@ -608,6 +616,15 @@ metricbeat.modules:
   dataset_id: "dataset id"
   table_pattern: "table pattern"
   cost_type: "regular"
+
+- module: gcp
+  metricsets:
+    - carbon
+  period: 24h
+  project_id: "your project id"
+  credentials_file_path: "your JSON credentials file path"
+  dataset_id: "dataset id"
+  table_pattern: "table pattern"
 
 #-------------------------------- Golang Module --------------------------------
 - module: golang
@@ -888,8 +905,7 @@ metricbeat.modules:
   # If kube_config is not set, KUBECONFIG environment variable will be checked
   # and if not present it will fall back to InCluster
   #kube_config: ~/.kube/config
-  # To configure additionally node and namespace metadata, added to pod, service and container resource types,
-  # `add_resource_metadata` can be defined.
+  # To configure additionally node and namespace metadata `add_resource_metadata` can be defined.
   # By default all labels will be included while annotations are not added by default.
   # add_resource_metadata:
   #   namespace:
@@ -935,8 +951,7 @@ metricbeat.modules:
   #kube_config: ~/.kube/config
   # Set the namespace to watch for resources
   #namespace: staging
-  # To configure additionally node and namespace metadata, added to pod, service and container resource types,
-  # `add_resource_metadata` can be defined.
+  # To configure additionally node and namespace metadata `add_resource_metadata` can be defined.
   # By default all labels will be included while annotations are not added by default.
   # add_resource_metadata:
   #   namespace:
@@ -1837,6 +1852,13 @@ output.elasticsearch:
   # Number of workers per Elasticsearch host.
   #worker: 1
 
+  # If set to true and multiple hosts are configured, the output plugin load
+  # balances published events onto all Elasticsearch hosts. If set to false,
+  # the output plugin sends all events to only one host (determined at random)
+  # and will switch to another host if the currently selected one becomes
+  # unreachable. The default value is true.
+  #loadbalance: true
+
   # Optional data stream or index name. The default is "metricbeat-%{[agent.version]}".
   # In case you modify this pattern you must update setup.template.name and setup.template.pattern accordingly.
   #index: "metricbeat-%{[agent.version]}"
@@ -1945,6 +1967,15 @@ output.elasticsearch:
   # list is empty or not defined, the matching certificate will be the
   # only one in the list. Then the normal SSL validation happens.
   #ssl.ca_trusted_fingerprint: ""
+
+
+  # Enables restarting metricbeat if any file listed by `key`,
+  # `certificate`, or `certificate_authorities` is modified.
+  # This feature IS NOT supported on Windows.
+  #ssl.restart_on_cert_change.enabled: false
+
+  # Period to scan for changes on CA certificate files
+  #ssl.restart_on_cert_change.period: 1m
 
   # Enable Kerberos support. Kerberos is automatically enabled if any Kerberos setting is set.
   #kerberos.enabled: true
@@ -2084,6 +2115,14 @@ output.elasticsearch:
   # list is empty or not defined, the matching certificate will be the
   # only one in the list. Then the normal SSL validation happens.
   #ssl.ca_trusted_fingerprint: ""
+
+  # Enables restarting metricbeat if any file listed by `key`,
+  # `certificate`, or `certificate_authorities` is modified.
+  # This feature IS NOT supported on Windows.
+  #ssl.restart_on_cert_change.enabled: false
+
+  # Period to scan for changes on CA certificate files
+  #ssl.restart_on_cert_change.period: 1m
 
   # The number of times to retry publishing an event after a publishing failure.
   # After the specified number of retries, the events are typically dropped.
@@ -2289,6 +2328,14 @@ output.elasticsearch:
   # list is empty or not defined, the matching certificate will be the
   # only one in the list. Then the normal SSL validation happens.
   #ssl.ca_trusted_fingerprint: ""
+
+  # Enables restarting metricbeat if any file listed by `key`,
+  # `certificate`, or `certificate_authorities` is modified.
+  # This feature IS NOT supported on Windows.
+  #ssl.restart_on_cert_change.enabled: false
+
+  # Period to scan for changes on CA certificate files
+  #ssl.restart_on_cert_change.period: 1m
 
   # Enable Kerberos support. Kerberos is automatically enabled if any Kerberos setting is set.
   #kerberos.enabled: true
@@ -3079,4 +3126,11 @@ logging.files:
 
 # This allows to enable 6.7 migration aliases
 #migration.6_to_7.enabled: false
+
+# =============================== Feature Flags ================================
+
+# Enable and configure feature flags.
+#features:
+#  fqdn:
+#    enabled: true
 

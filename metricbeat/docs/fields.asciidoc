@@ -28536,6 +28536,15 @@ alias to: elasticsearch.index.recovery.stop_time.ms
 
 --
 
+*`index_recovery.shards.total_time_in_millis`*::
++
+--
+type: alias
+
+alias to: elasticsearch.index.recovery.total_time.ms
+
+--
+
 
 *`stack_stats.apm.found`*::
 +
@@ -29999,6 +30008,16 @@ type: keyword
 
 --
 
+*`elasticsearch.node.roles`*::
++
+--
+Node roles.
+
+
+type: keyword
+
+--
+
 *`elasticsearch.node.master`*::
 +
 --
@@ -30325,6 +30344,13 @@ type: keyword
 +
 --
 type: keyword
+
+--
+
+*`elasticsearch.cluster.stats.state.nodes`*::
++
+--
+type: flattened
 
 --
 
@@ -31678,6 +31704,118 @@ type: long
 --
 
 [float]
+=== ingest_pipeline
+
+Runtime metrics on ingest pipeline execution
+
+
+*`elasticsearch.ingest_pipeline.name`*::
++
+--
+Name / id of the ingest pipeline
+
+type: wildcard
+
+--
+
+[float]
+=== total
+
+Metrics on the total ingest pipeline execution, including all processors.
+
+
+*`elasticsearch.ingest_pipeline.total.count`*::
++
+--
+Number of documents processed by this pipeline
+
+type: long
+
+--
+
+*`elasticsearch.ingest_pipeline.total.failed`*::
++
+--
+Number of documented failed to process by this pipeline
+
+type: long
+
+--
+
+*`elasticsearch.ingest_pipeline.total.time.total.ms`*::
++
+--
+Total time spent processing documents through this pipeline, inclusive of other pipelines called
+
+type: long
+
+--
+
+*`elasticsearch.ingest_pipeline.total.time.self.ms`*::
++
+--
+Time spent processing documents through this pipeline, exclusive of other pipelines called
+
+type: long
+
+--
+
+
+*`elasticsearch.ingest_pipeline.processor.type`*::
++
+--
+The type of ingest processor
+
+type: keyword
+
+--
+
+*`elasticsearch.ingest_pipeline.processor.type_tag`*::
++
+--
+The type and the tag for this processor in the format "<type>:<tag>"
+
+type: keyword
+
+--
+
+*`elasticsearch.ingest_pipeline.processor.order_index`*::
++
+--
+The order this processor appears in the pipeline definition
+
+type: long
+
+--
+
+*`elasticsearch.ingest_pipeline.processor.count`*::
++
+--
+Number of documents processed by this processor
+
+type: long
+
+--
+
+*`elasticsearch.ingest_pipeline.processor.failed`*::
++
+--
+Number of documented failed to process by this processor
+
+type: long
+
+--
+
+*`elasticsearch.ingest_pipeline.processor.time.total.ms`*::
++
+--
+Total time spent processing documents through this processor
+
+type: long
+
+--
+
+[float]
 === ml.job
 
 ml
@@ -32486,6 +32624,21 @@ type: long
 --
 
 *`elasticsearch.node.stats.thread_pool.bulk.rejected.count`*::
++
+--
+type: long
+
+--
+
+
+*`elasticsearch.node.stats.thread_pool.force_merge.queue.count`*::
++
+--
+type: long
+
+--
+
+*`elasticsearch.node.stats.thread_pool.force_merge.rejected.count`*::
 +
 --
 type: long
@@ -35207,6 +35360,102 @@ type: keyword
 +
 --
 Total billing amount.
+
+type: float
+
+--
+
+[float]
+=== carbon
+
+Google Cloud Carbon Footprint metrics
+
+
+*`gcp.carbon.project_id`*::
++
+--
+Project ID the carbon footprint report belongs to.
+
+type: keyword
+
+--
+
+*`gcp.carbon.project_name`*::
++
+--
+Project name the carbon footprint report belongs to.
+
+type: keyword
+
+--
+
+*`gcp.carbon.service_id`*::
++
+--
+Service ID for the carbon footprint usage.
+
+type: keyword
+
+--
+
+*`gcp.carbon.service_description`*::
++
+--
+Service description for the carbon footprint usage.
+
+type: keyword
+
+--
+
+*`gcp.carbon.region`*::
++
+--
+Region for the carbon fooprint usage.
+
+type: keyword
+
+--
+
+*`gcp.carbon.footprint.scope1`*::
++
+--
+Scope 1 carbon footprint.
+
+type: float
+
+--
+
+*`gcp.carbon.footprint.scope2.location`*::
++
+--
+Scope 2 carbon footprint using location-based methodology.
+
+type: float
+
+--
+
+*`gcp.carbon.footprint.scope2.market`*::
++
+--
+Scope 2 carbon footprint using market-based methodology.
+
+type: float
+
+--
+
+*`gcp.carbon.footprint.scope3`*::
++
+--
+Scope 3 carbon footprint.
+
+type: float
+
+--
+
+*`gcp.carbon.footprint.offsets`*::
++
+--
+Total carbon offsets.
 
 type: float
 
@@ -41951,6 +42200,33 @@ alias to: kibana.stats.process.event_loop_delay.ms
 
 --
 
+*`kibana_stats.process.event_loop_utilization.active`*::
++
+--
+type: alias
+
+alias to: kibana.stats.process.event_loop_utilization.active
+
+--
+
+*`kibana_stats.process.event_loop_utilization.idle`*::
++
+--
+type: alias
+
+alias to: kibana.stats.process.event_loop_utilization.idle
+
+--
+
+*`kibana_stats.process.event_loop_utilization.utilization`*::
++
+--
+type: alias
+
+alias to: kibana.stats.process.event_loop_utilization.utilization
+
+--
+
 *`kibana_stats.requests.total`*::
 +
 --
@@ -42462,6 +42738,43 @@ type: long
 +
 --
 Event loop delay in milliseconds
+
+
+type: scaled_float
+
+--
+
+[float]
+=== event_loop_utilization
+
+The ratio of time the event loop is not idling in the event provider to the total time the event loop is running.
+
+
+
+*`kibana.stats.process.event_loop_utilization.active`*::
++
+--
+Duration of time event loop has been active since last measurement.
+
+
+type: scaled_float
+
+--
+
+*`kibana.stats.process.event_loop_utilization.idle`*::
++
+--
+Duration of time event loop has been idle since last measurement.
+
+
+type: scaled_float
+
+--
+
+*`kibana.stats.process.event_loop_utilization.utilization`*::
++
+--
+Computed utilization value representing ratio of active to idle time since last measurement.
 
 
 type: scaled_float
@@ -43525,20 +43838,10 @@ Controller manager metrics
 
 
 
-*`kubernetes.controllermanager.url`*::
-+
---
-Request url
-
-
-type: keyword
-
---
-
 *`kubernetes.controllermanager.verb`*::
 +
 --
-Request verb
+HTTP verb
 
 
 type: keyword
@@ -43568,7 +43871,7 @@ type: keyword
 *`kubernetes.controllermanager.host`*::
 +
 --
-Request host
+HTTP host
 
 
 type: keyword
@@ -43599,7 +43902,7 @@ type: keyword
 *`kubernetes.controllermanager.process.cpu.sec`*::
 +
 --
-CPU seconds
+Total user and system CPU time spent in seconds
 
 type: double
 
@@ -43639,7 +43942,7 @@ type: long
 *`kubernetes.controllermanager.process.fds.max.count`*::
 +
 --
-Maximum number of open file descriptors
+Limit for open file descriptors
 
 type: long
 
@@ -43648,7 +43951,7 @@ type: long
 *`kubernetes.controllermanager.process.started.sec`*::
 +
 --
-Seconds since the process started
+Start time of the process since unix epoch in seconds
 
 type: double
 
@@ -43658,26 +43961,16 @@ type: double
 *`kubernetes.controllermanager.client.request.count`*::
 +
 --
-Number of requests as client
-
+Number of HTTP requests to API server, broken down by status code, method and host
 
 type: long
-
---
-
-*`kubernetes.controllermanager.client.request.duration.us.bucket.*`*::
-+
---
-Response latency distribution, histogram buckets
-
-type: object
 
 --
 
 *`kubernetes.controllermanager.client.request.duration.us.sum`*::
 +
 --
-Request duration, sum in microseconds
+Sum of requests latency in microseconds, broken down by verb and host
 
 type: long
 
@@ -43686,9 +43979,76 @@ type: long
 *`kubernetes.controllermanager.client.request.duration.us.count`*::
 +
 --
-Request duration, number of operations
+Number of request duration operations to API server, broken down by verb and host
 
 type: long
+
+--
+
+*`kubernetes.controllermanager.client.request.duration.us.bucket.*`*::
++
+--
+Requests latency distribution in histogram buckets, broken down by verb and host
+
+type: object
+
+--
+
+*`kubernetes.controllermanager.client.request.size.bytes.sum`*::
++
+--
+Requests size sum in bytes, broken down by verb and host
+
+type: long
+
+format: bytes
+
+--
+
+*`kubernetes.controllermanager.client.request.size.bytes.count`*::
++
+--
+Number of requests, broken down by verb and host
+
+type: long
+
+--
+
+*`kubernetes.controllermanager.client.request.size.bytes.bucket.*`*::
++
+--
+Requests size distribution in histogram buckets, broken down by verb and host
+
+type: object
+
+--
+
+*`kubernetes.controllermanager.client.response.size.bytes.count`*::
++
+--
+Number of responses, broken down by verb and host
+
+type: long
+
+--
+
+*`kubernetes.controllermanager.client.response.size.bytes.sum`*::
++
+--
+Responses size sum in bytes, broken down by verb and host
+
+type: long
+
+format: bytes
+
+--
+
+*`kubernetes.controllermanager.client.response.size.bytes.bucket.*`*::
++
+--
+Responses size distribution in histogram buckets, broken down by verb and host
+
+type: object
 
 --
 
@@ -43696,7 +44056,7 @@ type: long
 *`kubernetes.controllermanager.workqueue.longestrunning.sec`*::
 +
 --
-Longest running processors
+How many seconds has the longest running processor been running, broken down by workqueue name
 
 type: double
 
@@ -43705,7 +44065,7 @@ type: double
 *`kubernetes.controllermanager.workqueue.unfinished.sec`*::
 +
 --
-Unfinished processors
+How many seconds of work has done that is in progress and hasn't been considered in the longest running processor, broken down by workqueue name
 
 type: double
 
@@ -43714,7 +44074,7 @@ type: double
 *`kubernetes.controllermanager.workqueue.adds.count`*::
 +
 --
-Workqueue add count
+Workqueue add count, broken down by workqueue name
 
 type: long
 
@@ -43723,7 +44083,7 @@ type: long
 *`kubernetes.controllermanager.workqueue.depth.count`*::
 +
 --
-Workqueue depth count
+Workqueue current depth, broken down by workqueue name
 
 type: long
 
@@ -43732,7 +44092,7 @@ type: long
 *`kubernetes.controllermanager.workqueue.retries.count`*::
 +
 --
-Workqueue number of retries
+Workqueue number of retries, broken down by workqueue name
 
 type: long
 
@@ -43742,7 +44102,7 @@ type: long
 *`kubernetes.controllermanager.node.collector.eviction.count`*::
 +
 --
-Number of node evictions
+Number of node evictions, broken down by zone
 
 type: long
 
@@ -43751,7 +44111,7 @@ type: long
 *`kubernetes.controllermanager.node.collector.unhealthy.count`*::
 +
 --
-Number of unhealthy nodes
+Number of unhealthy nodes, broken down by zone
 
 type: long
 
@@ -43760,7 +44120,7 @@ type: long
 *`kubernetes.controllermanager.node.collector.count`*::
 +
 --
-Number of nodes
+Number of nodes, broken down by zone
 
 type: long
 
@@ -43769,7 +44129,7 @@ type: long
 *`kubernetes.controllermanager.node.collector.health.pct`*::
 +
 --
-Percentage of healthy nodes
+Percentage of healthy nodes, broken down by zone
 
 type: long
 
@@ -43778,7 +44138,7 @@ type: long
 *`kubernetes.controllermanager.leader.is_master`*::
 +
 --
-Whether the node is master
+Whether the controller manager instance is leader
 
 
 type: boolean
@@ -44515,16 +44875,6 @@ Kubernetes proxy server metrics
 
 
 
-*`kubernetes.proxy.handler`*::
-+
---
-Request handler
-
-
-type: keyword
-
---
-
 *`kubernetes.proxy.code`*::
 +
 --
@@ -44548,7 +44898,17 @@ type: keyword
 *`kubernetes.proxy.host`*::
 +
 --
-Request host
+HTTP host
+
+
+type: keyword
+
+--
+
+*`kubernetes.proxy.verb`*::
++
+--
+HTTP verb
 
 
 type: keyword
@@ -44559,7 +44919,7 @@ type: keyword
 *`kubernetes.proxy.process.cpu.sec`*::
 +
 --
-CPU seconds
+Total user and system CPU time spent in seconds
 
 type: double
 
@@ -44596,117 +44956,116 @@ type: long
 
 --
 
+*`kubernetes.proxy.process.fds.max.count`*::
++
+--
+Limit for open file descriptors
+
+type: long
+
+--
+
 *`kubernetes.proxy.process.started.sec`*::
 +
 --
-Seconds since the process started
+Start time of the process since unix epoch in seconds
 
 type: double
 
 --
 
-
-*`kubernetes.proxy.http.request.duration.us.percentile.*`*::
-+
---
-Request duration microseconds percentiles
-
-type: object
-
---
-
-*`kubernetes.proxy.http.request.duration.us.sum`*::
-+
---
-Request duration microseconds cumulative sum
-
-type: double
-
---
-
-*`kubernetes.proxy.http.request.duration.us.count`*::
-+
---
-Request count for duration
-
-type: long
-
---
-
-*`kubernetes.proxy.http.request.size.bytes.percentile.*`*::
-+
---
-Request size percentiles
-
-type: object
-
---
-
-*`kubernetes.proxy.http.request.size.bytes.sum`*::
-+
---
-Request size cumulative sum
-
-type: long
-
-format: bytes
-
---
-
-*`kubernetes.proxy.http.request.size.bytes.count`*::
-+
---
-Request count for size
-
-type: long
-
---
-
-*`kubernetes.proxy.http.response.size.bytes.percentile.*`*::
-+
---
-Response size percentiles
-
-type: object
-
---
-
-*`kubernetes.proxy.http.response.size.bytes.sum`*::
-+
---
-Response size cumulative sum
-
-type: long
-
-format: bytes
-
---
-
-*`kubernetes.proxy.http.response.size.bytes.count`*::
-+
---
-Response count
-
-type: long
-
---
-
-*`kubernetes.proxy.http.request.count`*::
-+
---
-Request count
-
-type: long
-
---
 
 *`kubernetes.proxy.client.request.count`*::
 +
 --
-Number of requests as client
-
+Number of HTTP requests to API server, broken down by status code, method and host
 
 type: long
+
+--
+
+*`kubernetes.proxy.client.request.duration.us.sum`*::
++
+--
+Sum of requests latency in microseconds, broken down by verb and host
+
+type: long
+
+--
+
+*`kubernetes.proxy.client.request.duration.us.count`*::
++
+--
+Number of request duration operations to API server, broken down by verb and host
+
+type: long
+
+--
+
+*`kubernetes.proxy.client.request.duration.us.bucket.*`*::
++
+--
+Requests latency distribution in histogram buckets, broken down by verb and host
+
+type: object
+
+--
+
+*`kubernetes.proxy.client.request.size.bytes.sum`*::
++
+--
+Requests size sum in bytes, broken down by verb and host
+
+type: long
+
+format: bytes
+
+--
+
+*`kubernetes.proxy.client.request.size.bytes.count`*::
++
+--
+Number of requests, broken down by verb and host
+
+type: long
+
+--
+
+*`kubernetes.proxy.client.request.size.bytes.bucket.*`*::
++
+--
+Requests size distribution in histogram buckets, broken down by verb and host
+
+type: object
+
+--
+
+*`kubernetes.proxy.client.response.size.bytes.count`*::
++
+--
+Number of responses, broken down by verb and host
+
+type: long
+
+--
+
+*`kubernetes.proxy.client.response.size.bytes.sum`*::
++
+--
+Responses size sum in bytes, broken down by verb and host
+
+type: long
+
+format: bytes
+
+--
+
+*`kubernetes.proxy.client.response.size.bytes.bucket.*`*::
++
+--
+Responses size distribution in histogram buckets, broken down by verb and host
+
+type: object
 
 --
 
@@ -44720,7 +45079,7 @@ kubeproxy proxy sync metrics
 *`kubernetes.proxy.sync.rules.duration.us.sum`*::
 +
 --
-SyncProxyRules duration, sum of durations in microseconds
+SyncProxyRules latency sum in microseconds
 
 type: long
 
@@ -44729,7 +45088,7 @@ type: long
 *`kubernetes.proxy.sync.rules.duration.us.count`*::
 +
 --
-SyncProxyRules duration, number of operations
+Number of SyncProxyRules latency operations
 
 type: long
 
@@ -44738,7 +45097,7 @@ type: long
 *`kubernetes.proxy.sync.rules.duration.us.bucket.*`*::
 +
 --
-SyncProxyRules duration, histogram buckets
+SyncProxyRules latency distribution in histogram buckets
 
 type: object
 
@@ -44747,7 +45106,7 @@ type: object
 *`kubernetes.proxy.sync.networkprogramming.duration.us.sum`*::
 +
 --
-Network programming duration, sum in microseconds
+Sum of network programming latency in microseconds
 
 type: long
 
@@ -44756,7 +45115,7 @@ type: long
 *`kubernetes.proxy.sync.networkprogramming.duration.us.count`*::
 +
 --
-Network programming duration, number of operations
+Number of network programming latency operations
 
 type: long
 
@@ -44765,7 +45124,7 @@ type: long
 *`kubernetes.proxy.sync.networkprogramming.duration.us.bucket.*`*::
 +
 --
-Network programming duration, histogram buckets
+Network programming latency distribution in histogram buckets
 
 type: object
 
@@ -44778,10 +45137,20 @@ Kubernetes scheduler metrics
 
 
 
-*`kubernetes.scheduler.handler`*::
+*`kubernetes.scheduler.verb`*::
 +
 --
-Request handler
+HTTP verb
+
+
+type: keyword
+
+--
+
+*`kubernetes.scheduler.host`*::
++
+--
+HTTP host
 
 
 type: keyword
@@ -44808,10 +45177,40 @@ type: keyword
 
 --
 
-*`kubernetes.scheduler.host`*::
+*`kubernetes.scheduler.queue`*::
 +
 --
-Request host
+Scheduling queue
+
+
+type: keyword
+
+--
+
+*`kubernetes.scheduler.event`*::
++
+--
+Scheduling event
+
+
+type: keyword
+
+--
+
+*`kubernetes.scheduler.profile`*::
++
+--
+Scheduling profile
+
+
+type: keyword
+
+--
+
+*`kubernetes.scheduler.result`*::
++
+--
+Attempt result to schedule pod
 
 
 type: keyword
@@ -44828,23 +45227,13 @@ type: keyword
 
 --
 
-*`kubernetes.scheduler.result`*::
+*`kubernetes.scheduler.leader.is_master`*::
 +
 --
-Schedule attempt result
+Whether the scheduler instance is leader
 
 
-type: keyword
-
---
-
-*`kubernetes.scheduler.operation`*::
-+
---
-Scheduling operation
-
-
-type: keyword
+type: boolean
 
 --
 
@@ -44852,7 +45241,7 @@ type: keyword
 *`kubernetes.scheduler.process.cpu.sec`*::
 +
 --
-CPU seconds
+Total user and system CPU time spent in seconds
 
 type: double
 
@@ -44889,216 +45278,233 @@ type: long
 
 --
 
+*`kubernetes.scheduler.process.fds.max.count`*::
++
+--
+Limit for open file descriptors
+
+type: long
+
+--
+
 *`kubernetes.scheduler.process.started.sec`*::
 +
 --
-Seconds since the process started
+Start time of the process since unix epoch in seconds
 
 type: double
 
 --
 
-
-*`kubernetes.scheduler.http.request.duration.us.percentile.*`*::
-+
---
-Request duration microseconds percentiles
-
-type: object
-
---
-
-*`kubernetes.scheduler.http.request.duration.us.sum`*::
-+
---
-Request duration microseconds cumulative sum
-
-type: double
-
---
-
-*`kubernetes.scheduler.http.request.duration.us.count`*::
-+
---
-Request count for duration
-
-type: long
-
---
-
-*`kubernetes.scheduler.http.request.size.bytes.percentile.*`*::
-+
---
-Request size percentiles
-
-type: object
-
---
-
-*`kubernetes.scheduler.http.request.size.bytes.sum`*::
-+
---
-Request size cumulative sum
-
-type: long
-
-format: bytes
-
---
-
-*`kubernetes.scheduler.http.request.size.bytes.count`*::
-+
---
-Request count for size
-
-type: long
-
---
-
-*`kubernetes.scheduler.http.response.size.bytes.percentile.*`*::
-+
---
-Response size percentiles
-
-type: object
-
---
-
-*`kubernetes.scheduler.http.response.size.bytes.sum`*::
-+
---
-Response size cumulative sum
-
-type: long
-
-format: bytes
-
---
-
-*`kubernetes.scheduler.http.response.size.bytes.count`*::
-+
---
-Response count
-
-type: long
-
---
-
-*`kubernetes.scheduler.http.request.count`*::
-+
---
-Request count
-
-type: long
-
---
 
 *`kubernetes.scheduler.client.request.count`*::
 +
 --
-Number of requests as client
-
+Number of HTTP requests to API server, broken down by status code, method and host
 
 type: long
 
 --
 
-*`kubernetes.scheduler.leader.is_master`*::
+*`kubernetes.scheduler.client.request.duration.us.sum`*::
 +
 --
-Whether the node is master
+Sum of requests latency in microseconds, broken down by verb and host
 
-
-type: boolean
+type: long
 
 --
 
-
-*`kubernetes.scheduler.scheduling.e2e.duration.us.bucket.*`*::
+*`kubernetes.scheduler.client.request.duration.us.count`*::
 +
 --
-End to end scheduling duration microseconds
+Number of request duration operations to API server, broken down by verb and host
+
+type: long
+
+--
+
+*`kubernetes.scheduler.client.request.duration.us.bucket.*`*::
++
+--
+Requests latency distribution in histogram buckets, broken down by verb and host
 
 type: object
 
 --
 
-*`kubernetes.scheduler.scheduling.e2e.duration.us.sum`*::
+*`kubernetes.scheduler.client.request.size.bytes.sum`*::
 +
 --
-End to end scheduling duration microseconds sum
+Requests size sum in bytes, broken down by verb and host
+
+type: long
+
+format: bytes
+
+--
+
+*`kubernetes.scheduler.client.request.size.bytes.count`*::
++
+--
+Number of requests, broken down by verb and host
 
 type: long
 
 --
 
-*`kubernetes.scheduler.scheduling.e2e.duration.us.count`*::
+*`kubernetes.scheduler.client.request.size.bytes.bucket.*`*::
 +
 --
-End to end scheduling count
-
-type: long
-
---
-
-*`kubernetes.scheduler.scheduling.pod.preemption.victims.bucket.*`*::
-+
---
-Pod preemption victims
-
-type: long
-
---
-
-*`kubernetes.scheduler.scheduling.pod.preemption.victims.sum`*::
-+
---
-Pod preemption victims sum
-
-type: long
-
---
-
-*`kubernetes.scheduler.scheduling.pod.preemption.victims.count`*::
-+
---
-Pod preemption victims count
-
-type: long
-
---
-
-*`kubernetes.scheduler.scheduling.pod.attempts.count`*::
-+
---
-Pod attempts count
-
-type: long
-
---
-
-*`kubernetes.scheduler.scheduling.duration.seconds.percentile.*`*::
-+
---
-Scheduling duration percentiles
+Requests size distribution in histogram buckets, broken down by verb and host
 
 type: object
 
 --
 
-*`kubernetes.scheduler.scheduling.duration.seconds.sum`*::
+*`kubernetes.scheduler.client.response.size.bytes.count`*::
 +
 --
-Scheduling duration cumulative sum
+Number of responses, broken down by verb and host
+
+type: long
+
+--
+
+*`kubernetes.scheduler.client.response.size.bytes.sum`*::
++
+--
+Responses size sum in bytes, broken down by verb and host
+
+type: long
+
+format: bytes
+
+--
+
+*`kubernetes.scheduler.client.response.size.bytes.bucket.*`*::
++
+--
+Responses size distribution in histogram buckets, broken down by verb and host
+
+type: object
+
+--
+
+
+*`kubernetes.scheduler.workqueue.longestrunning.sec`*::
++
+--
+How many seconds has the longest running processor been running, broken down by workqueue name
 
 type: double
 
 --
 
-*`kubernetes.scheduler.scheduling.duration.seconds.count`*::
+*`kubernetes.scheduler.workqueue.unfinished.sec`*::
 +
 --
-Scheduling count
+How many seconds of work has done that is in progress and hasn't been considered in the longest running processor, broken down by workqueue name
+
+type: double
+
+--
+
+*`kubernetes.scheduler.workqueue.adds.count`*::
++
+--
+Workqueue add count, broken down by workqueue name
+
+type: long
+
+--
+
+*`kubernetes.scheduler.workqueue.depth.count`*::
++
+--
+Workqueue current depth, broken down by workqueue name
+
+type: long
+
+--
+
+*`kubernetes.scheduler.workqueue.retries.count`*::
++
+--
+Workqueue number of retries, broken down by workqueue name
+
+type: long
+
+--
+
+
+*`kubernetes.scheduler.scheduling.pending.pods.count`*::
++
+--
+Number of current pending pods, broken down by the queue type
+
+type: long
+
+--
+
+*`kubernetes.scheduler.scheduling.preemption.victims.bucket.*`*::
++
+--
+Number of preemption victims distribution in histogram buckets
+
+type: object
+
+--
+
+*`kubernetes.scheduler.scheduling.preemption.victims.sum`*::
++
+--
+Preemption victims sum
+
+type: long
+
+--
+
+*`kubernetes.scheduler.scheduling.preemption.victims.count`*::
++
+--
+Number of preemption victims
+
+type: long
+
+--
+
+*`kubernetes.scheduler.scheduling.preemption.attempts.count`*::
++
+--
+Total preemption attempts in the cluster so far
+
+type: long
+
+--
+
+*`kubernetes.scheduler.scheduling.attempts.duration.us.bucket.*`*::
++
+--
+Scheduling attempt latency distribution in histogram buckets, broken down by profile and result
+
+type: object
+
+--
+
+*`kubernetes.scheduler.scheduling.attempts.duration.us.sum`*::
++
+--
+Sum of scheduling attempt latency in microseconds, broken down by profile and result
+
+type: long
+
+--
+
+*`kubernetes.scheduler.scheduling.attempts.duration.us.count`*::
++
+--
+Number of scheduling attempts, broken down by profile and result
 
 type: long
 
@@ -45671,6 +46077,16 @@ type: keyword
 +
 --
 Node PIDPressure status (true, false or unknown)
+
+
+type: keyword
+
+--
+
+*`kubernetes.node.status.network_unavailable`*::
++
+--
+Node NetworkUnavailable status (true, false or unknown)
 
 
 type: keyword
@@ -47878,6 +48294,13 @@ node_stats metrics.
 
 
 
+*`logstash.node.id`*::
++
+--
+type: keyword
+
+--
+
 
 *`logstash.node.state.pipeline.id`*::
 +
@@ -47890,6 +48313,64 @@ type: keyword
 +
 --
 type: keyword
+
+--
+
+*`logstash.node.state.pipeline.ephemeral_id`*::
++
+--
+type: keyword
+
+--
+
+*`logstash.node.state.pipeline.batch_size`*::
++
+--
+type: long
+
+--
+
+*`logstash.node.state.pipeline.workers`*::
++
+--
+type: long
+
+--
+
+
+*`logstash.node.state.pipeline.representation.hash`*::
++
+--
+type: keyword
+
+--
+
+*`logstash.node.state.pipeline.representation.type`*::
++
+--
+type: keyword
+
+--
+
+*`logstash.node.state.pipeline.representation.version`*::
++
+--
+type: keyword
+
+--
+
+
+*`logstash.node.state.pipeline.representation.graph.edges`*::
++
+--
+type: object
+
+--
+
+*`logstash.node.state.pipeline.representation.graph.vertices`*::
++
+--
+type: object
 
 --
 
@@ -47946,6 +48427,13 @@ alias to: process.pid
 
 --
 
+
+*`logstash.node.stats.timestamp`*::
++
+--
+type: date
+
+--
 
 
 *`logstash.node.stats.jvm.uptime_in_millis`*::

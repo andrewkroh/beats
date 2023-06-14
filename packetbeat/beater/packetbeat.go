@@ -19,11 +19,14 @@ package beater
 
 import (
 	"flag"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/elastic/beats/v7/libbeat/beat"
 	"github.com/elastic/beats/v7/libbeat/common/reload"
 	"github.com/elastic/beats/v7/libbeat/management"
+	"github.com/elastic/beats/v7/libbeat/monitoring/inputmon"
 	conf "github.com/elastic/elastic-agent-libs/config"
 	"github.com/elastic/elastic-agent-libs/logp"
 	"github.com/elastic/elastic-agent-libs/service"
@@ -77,9 +80,10 @@ func initialConfig() config.Config {
 
 // Beater object. Contains all objects needed to run the beat
 type packetbeat struct {
-	config  *conf.C
-	factory *processorFactory
-	done    chan struct{}
+	config   *conf.C
+	factory  *processorFactory
+	done     chan struct{}
+	stopOnce sync.Once
 }
 
 // New returns a new Packetbeat beat.Beater.
@@ -122,6 +126,13 @@ func (pb *packetbeat) Run(b *beat.Beat) error {
 		}
 	}()
 
+	if b.API != nil {
+		err := inputmon.AttachHandler(b.API.Router())
+		if err != nil {
+			return fmt.Errorf("failed attach inputs api to monitoring endpoint server: %w", err)
+		}
+	}
+
 	if !b.Manager.Enabled() {
 		return pb.runStatic(b, pb.factory)
 	}
@@ -143,7 +154,7 @@ func (pb *packetbeat) runStatic(b *beat.Beat, factory *processorFactory) error {
 	select {
 	case <-pb.done:
 	case err := <-factory.err:
-		close(pb.done)
+		pb.stopOnce.Do(func() { close(pb.done) })
 		return err
 	}
 	return nil
@@ -176,7 +187,7 @@ func (pb *packetbeat) runManaged(b *beat.Beat, factory *processorFactory) error 
 			// to stop if the sniffer(s) exited without an error
 			// this would happen during a configuration reload
 			if err != nil {
-				close(pb.done)
+				pb.stopOnce.Do(func() { close(pb.done) })
 				return err
 			}
 		}
@@ -186,5 +197,5 @@ func (pb *packetbeat) runManaged(b *beat.Beat, factory *processorFactory) error 
 // Called by the Beat stop function
 func (pb *packetbeat) Stop() {
 	logp.Info("Packetbeat send stop signal")
-	close(pb.done)
+	pb.stopOnce.Do(func() { close(pb.done) })
 }
