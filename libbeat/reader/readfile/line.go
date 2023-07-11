@@ -43,8 +43,8 @@ type LineReader struct {
 	nl           []byte
 	decodedNl    []byte
 	collectOnEOF bool
-	inBuffer     *streambuf.Buffer
-	outBuffer    *streambuf.Buffer
+	inBuffer     *bytes.Buffer
+	outBuffer    *bytes.Buffer
 	inOffset     int // input buffer read offset
 	byteCount    int // number of bytes decoded from input buffer into output buffer
 	decoder      transform.Transformer
@@ -74,8 +74,8 @@ func NewLineReader(input io.ReadCloser, config Config) (*LineReader, error) {
 		nl:           nl,
 		decodedNl:    terminator,
 		collectOnEOF: config.CollectOnEOF,
-		inBuffer:     streambuf.New(nil),
-		outBuffer:    streambuf.New(nil),
+		inBuffer:     new(bytes.Buffer),
+		outBuffer:    new(bytes.Buffer),
 		tempBuffer:   make([]byte, config.BufferSize),
 		logger:       logp.NewLogger("reader_line"),
 	}, nil
@@ -111,17 +111,13 @@ func (r *LineReader) Next() (b []byte, n int, err error) {
 				}
 
 				// Consume transformed bytes from input buffer
-				_ = r.inBuffer.Advance(sz)
 				r.inBuffer.Reset()
 
-				// output buffer contains untile EOF. Extract
+				// output buffer contains until EOF. Extract
 				// byte slice from buffer and reset output buffer.
-				bytes, err := r.outBuffer.Collect(r.outBuffer.Len())
+				bytes := make([]byte, r.outBuffer.Len())
+				r.outBuffer.Read(bytes)
 				r.outBuffer.Reset()
-				if err != nil {
-					// This should never happen as otherwise we have a broken state
-					panic(err)
-				}
 
 				// return and reset consumed bytes count
 				sz = r.byteCount
@@ -154,12 +150,9 @@ func (r *LineReader) Next() (b []byte, n int, err error) {
 
 	// output buffer contains complete line ending with newline. Extract
 	// byte slice from buffer and reset output buffer.
-	bytes, err := r.outBuffer.Collect(r.outBuffer.Len())
+	bytes := make([]byte, r.outBuffer.Len())
+	r.outBuffer.Read(bytes)
 	r.outBuffer.Reset()
-	if err != nil {
-		// This should never happen as otherwise we have a broken state
-		panic(err)
-	}
 
 	// return and reset consumed bytes count
 	sz := r.byteCount
@@ -171,7 +164,7 @@ func (r *LineReader) Next() (b []byte, n int, err error) {
 // Returns an error otherwise
 func (r *LineReader) advance() error {
 	// Initial check if buffer has already a newLine character
-	idx := r.inBuffer.IndexFrom(r.inOffset, r.nl)
+	idx := bytes.Index(r.inBuffer.Bytes(), r.nl)
 
 	// Fill inBuffer until newline sequence has been found in input buffer
 	for idx == -1 {
@@ -202,18 +195,17 @@ func (r *LineReader) advance() error {
 		}
 
 		// Check if buffer has newLine character
-		idx = r.inBuffer.IndexFrom(r.inOffset, r.nl)
+		idx = bytes.Index(r.inBuffer.Bytes(), r.nl)
 
 		// If max bytes limit per line is set, then drop the lines that are longer
 		if r.maxBytes != 0 {
 			// If newLine is found, drop the lines longer than maxBytes
 			for idx != -1 && idx > r.maxBytes {
 				r.logger.Warnf("Exceeded %d max bytes in line limit, skipped %d bytes line", r.maxBytes, idx)
-				_ = r.inBuffer.Advance(idx + len(r.nl))
 				r.byteCount += idx + len(r.nl)
-				r.inBuffer.Reset()
+				r.inBuffer.Next(idx + len(r.nl))
 				r.inOffset = 0
-				idx = r.inBuffer.IndexFrom(r.inOffset, r.nl)
+				idx = bytes.Index(r.inBuffer.Bytes(), r.nl)
 			}
 
 			// If newLine is not found and the incoming data buffer exceeded max bytes limit, then skip until the next newLine
@@ -225,7 +217,7 @@ func (r *LineReader) advance() error {
 				}
 				r.logger.Warnf("Exceeded %d max bytes in line limit, skipped %d bytes line", r.maxBytes, skipped)
 				r.byteCount += skipped
-				idx = r.inBuffer.IndexFrom(r.inOffset, r.nl)
+				idx = bytes.Index(r.inBuffer.Bytes(), r.nl)
 			}
 		}
 	}
@@ -240,8 +232,7 @@ func (r *LineReader) advance() error {
 	}
 
 	// Consume transformed bytes from input buffer
-	err = r.inBuffer.Advance(sz)
-	r.inBuffer.Reset()
+	r.inBuffer.Next(sz)
 
 	// Continue scanning input buffer from last position + 1
 	r.inOffset = idx + 1 - sz
@@ -258,15 +249,10 @@ func (r *LineReader) skipUntilNewLine() (int, error) {
 	skipped := r.inBuffer.Len()
 
 	// Clean up the buffer
-	err := r.inBuffer.Advance(skipped)
 	r.inBuffer.Reset()
 
 	// Reset inOffset
 	r.inOffset = 0
-
-	if err != nil {
-		return 0, err
-	}
 
 	// Read until the new line is found
 	for idx := -1; idx == -1; {
