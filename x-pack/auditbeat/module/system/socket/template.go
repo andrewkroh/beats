@@ -2,11 +2,12 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-//go:build (linux && 386) || (linux && amd64)
+//go:build (linux && 386) || (linux && amd64) || (linux && arm64)
 
 package socket
 
 import (
+	"runtime"
 	"strings"
 	"unsafe"
 
@@ -45,11 +46,17 @@ var functionAlternatives = map[string][]string{
 }
 
 func syscallAlternatives(syscall string) []string {
-	return []string{
+	alts := []string{
 		"SyS_" + syscall,
 		"sys_" + syscall,
-		"__x64_sys_" + syscall,
 	}
+	switch runtime.GOARCH {
+	case "amd64":
+		alts = append(alts, "__x64_sys_"+syscall)
+	case "arm64":
+		alts = append(alts, "__arm64_sys_"+syscall)
+	}
+	return alts
 }
 
 func LoadTracingFunctions(tfs *tracing.TraceFS) (common.StringSet, error) {

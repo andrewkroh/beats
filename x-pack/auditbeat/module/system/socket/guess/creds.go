@@ -2,8 +2,7 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-//go:build (linux && 386) || (linux && amd64)
-// +build linux,386 linux,amd64
+//go:build (linux && 386) || (linux && amd64) || (linux && arm64)
 
 package guess
 
@@ -138,13 +137,13 @@ func (g *guessStructCreds) Extract(ev interface{}) (mapstr.M, bool) {
 	}, true
 }
 
-// Trigger invokes the SYS_ACCESS syscall:
+// Trigger invokes the SYS_FACCESSAT syscall:
 //
-//	int access(const char *pathname, int mode);
+//	int faccessat(int dfd, const char *pathname, int mode);
 //
 // The function call will return an error due to path being NULL, but it will
 // have invoked prepare_creds before argument validation.
 func (g *guessStructCreds) Trigger() error {
-	syscall.Syscall(unix.SYS_ACCESS, 0, 0, 0)
+	syscall.Syscall(unix.SYS_FACCESSAT, 0, 0, 0)
 	return nil
 }
