@@ -154,7 +154,7 @@ func compile(ctx *compileCtx, in string) (StringFormatter, error) {
 	// try to create constant formatter for constant string
 	if len(evalers) == 1 {
 		if se, ok := evalers[0].(StringElement); ok {
-			return constStringFormatter{se.s}, nil
+			return constStringFormatter(se), nil
 		}
 	}
 
@@ -359,7 +359,7 @@ func makeLexer(in string) lexer {
 
 		varcount := 0
 		for len(content) > 0 {
-			idx := -1
+			var idx int
 			if varcount == 0 {
 				idx = strings.IndexAny(content[off:], `%\`)
 			} else {
