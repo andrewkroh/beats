@@ -375,7 +375,9 @@ func makeLexer(in string) lexer {
 
 			switch content[idx] {
 			case '\\': // escape next character
-				content = content[:idx] + content[off:]
+				if escapeRequired(content[idx:]) {
+					content = content[:idx] + content[off:]
+				}
 				continue
 
 			case ':':
@@ -426,5 +428,18 @@ func (l lexer) Tokens() <-chan token {
 
 func (l lexer) Finish() {
 	for range l.Tokens() {
+	}
+}
+
+// escapeRequired returns true if the next character, s[1], must be escaped.
+func escapeRequired(s string) bool {
+	if len(s) < 2 || s[0] != '\\' {
+		return false
+	}
+	switch s[1] {
+	case '%', ':', '}':
+		return true
+	default:
+		return false
 	}
 }

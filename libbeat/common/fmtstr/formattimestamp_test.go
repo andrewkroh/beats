@@ -83,26 +83,41 @@ func TestTimestampFormatString(t *testing.T) {
 			time.Date(2015, 5, 1, 20, 12, 34, 0, time.UTC),
 			"2015-05-01T20:12:34.000Z: 2015.05.01",
 		},
+		{
+			"test windows path with no format",
+			`C:\Users\jenkins\workspace\run\\test_airflow.Test.test_server507/output\`,
+			nil,
+			time.Time{},
+			`C:\Users\jenkins\workspace\run\\test_airflow.Test.test_server507/output\`,
+		},
+		{
+			"test posix path",
+			"/var/log/%{[agent][id]}-%{+YYYY_MM_dd-HH_mm_ss}",
+			mapstr.M{"agent": mapstr.M{"id": "08072bc2-2abd-4bab-896d-814ae9ac5518"}},
+			time.Date(2015, 5, 1, 20, 12, 34, 0, time.UTC),
+			"/var/log/08072bc2-2abd-4bab-896d-814ae9ac5518-2015_05_01-20_12_34",
+		},
 	}
 
-	for i, test := range tests {
-		t.Logf("test(%v): %v", i, test.title)
+	for _, test := range tests {
+		test := test
+		t.Run(test.title, func(t *testing.T) {
+			efs, err := CompileEvent(test.format)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-		efs, err := CompileEvent(test.format)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			fs, err := NewTimestampFormatString(efs, test.staticFields)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-		fs, err := NewTimestampFormatString(efs, test.staticFields)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			actual, err := fs.Run(test.timestamp)
 
-		actual, err := fs.Run(test.timestamp)
-
-		assert.NoError(t, err)
-		assert.Equal(t, test.expected, actual)
+			assert.NoError(t, err)
+			assert.Equal(t, test.expected, actual)
+		})
 	}
 }
