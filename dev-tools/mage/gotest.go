@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -107,6 +106,25 @@ func DefaultGoTestUnitArgs() GoTestArgs { return makeGoTestArgs("Unit") }
 func DefaultGoTestIntegrationArgs() GoTestArgs {
 	args := makeGoTestArgs("Integration")
 	args.Tags = append(args.Tags, "integration")
+
+	synth := exec.Command("npx", "@elastic/synthetics", "-h")
+	if synth.Run() == nil {
+		// Run an empty journey to ensure playwright can be loaded
+		// catches situations like missing playwright deps
+		cmd := exec.Command("sh", "-c", "echo 'step(\"t\", () => { })' | elastic-synthetics --inline")
+		var out strings.Builder
+		cmd.Stdout = &out
+		cmd.Stderr = &out
+		err := cmd.Run()
+		if err != nil || cmd.ProcessState.ExitCode() != 0 {
+			fmt.Printf("synthetics is available, but not invokable, command exited with bad code: %s\n", out.String())
+		}
+
+		fmt.Println("npx @elastic/synthetics found, will run with synthetics tags")
+		os.Setenv("ELASTIC_SYNTHETICS_CAPABLE", "true")
+		args.Tags = append(args.Tags, "synthetics")
+	}
+
 	// Use the non-cachable -count=1 flag to disable test caching when running integration tests.
 	// There are reasons to re-run tests even if the code is unchanged (e.g. Dockerfile changes).
 	args.ExtraFlags = append(args.ExtraFlags, "-count=1")
@@ -125,6 +143,7 @@ func DefaultGoTestIntegrationFromHostArgs() GoTestArgs {
 // module integration tests. We tag integration test files with 'integration'.
 func GoTestIntegrationArgsForModule(module string) GoTestArgs {
 	args := makeGoTestArgsForModule("Integration", module)
+
 	args.Tags = append(args.Tags, "integration")
 	return args
 }
@@ -138,7 +157,7 @@ func DefaultTestBinaryArgs() TestBinaryArgs {
 }
 
 // GoTestIntegrationForModule executes the Go integration tests sequentially.
-// Currently all test cases must be present under "./module" directory.
+// Currently, all test cases must be present under "./module" directory.
 //
 // Motivation: previous implementation executed all integration tests at once,
 // causing high CPU load, high memory usage and resulted in timeouts.
@@ -149,15 +168,16 @@ func DefaultTestBinaryArgs() TestBinaryArgs {
 // Use MODULE=module to run only tests for `module`.
 func GoTestIntegrationForModule(ctx context.Context) error {
 	module := EnvOr("MODULE", "")
-	modulesFileInfo, err := ioutil.ReadDir("./module")
+	modulesFileInfo, err := os.ReadDir("./module")
 	if err != nil {
 		return err
 	}
 
 	foundModule := false
-	failedModules := []string{}
+	failedModules := make([]string, 0, len(modulesFileInfo))
 	for _, fi := range modulesFileInfo {
-		if !fi.IsDir() {
+		// skip the ones that are not directories or with suffix @tmp, which are created by Jenkins build job
+		if !fi.IsDir() || strings.HasSuffix(fi.Name(), "@tmp") {
 			continue
 		}
 		if module != "" && module != fi.Name() {
@@ -269,7 +289,7 @@ func GoTest(ctx context.Context, params GoTestArgs) error {
 	}
 
 	if params.OutputFile != "" {
-		fileOutput, err := os.Create(createDir(params.OutputFile))
+		fileOutput, err := os.Create(CreateDir(params.OutputFile))
 		if err != nil {
 			return fmt.Errorf("failed to create go test output file: %w", err)
 		}
@@ -307,12 +327,15 @@ func GoTest(ctx context.Context, params GoTestArgs) error {
 	// Generate a HTML code coverage report.
 	var htmlCoverReport string
 	if params.CoverageProfileFile != "" {
+
 		htmlCoverReport = strings.TrimSuffix(params.CoverageProfileFile,
 			filepath.Ext(params.CoverageProfileFile)) + ".html"
+
 		coverToHTML := sh.RunCmd("go", "tool", "cover",
 			"-html="+params.CoverageProfileFile,
 			"-o", htmlCoverReport)
-		if err = coverToHTML(); err != nil {
+
+		if err := coverToHTML(); err != nil {
 			return fmt.Errorf("failed to write HTML code coverage report: %w", err)
 		}
 	}
@@ -333,7 +356,7 @@ func makeCommand(ctx context.Context, env map[string]string, cmd string, args ..
 	for k, v := range env {
 		c.Env = append(c.Env, k+"="+v)
 	}
-	c.Stdout = ioutil.Discard
+	c.Stdout = io.Discard
 	if mg.Verbose() {
 		c.Stdout = os.Stdout
 	}
@@ -357,6 +380,12 @@ func BuildSystemTestGoBinary(binArgs TestBinaryArgs) error {
 		"test", "-c",
 		"-o", binArgs.Name + ".test",
 	}
+
+	if DevBuild {
+		// Disable optimizations (-N) and inlining (-l) for debugging.
+		args = append(args, `-gcflags=all=-N -l`)
+	}
+
 	if TestCoverage {
 		args = append(args, "-coverpkg", "./...")
 	}

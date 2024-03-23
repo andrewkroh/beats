@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 
@@ -39,10 +40,18 @@ type ConfigAWS struct {
 	SharedCredentialFile string            `config:"shared_credential_file"`
 	Endpoint             string            `config:"endpoint"`
 	RoleArn              string            `config:"role_arn"`
+	ExternalID           string            `config:"external_id"`
 	ProxyUrl             string            `config:"proxy_url"`
 	FIPSEnabled          bool              `config:"fips_enabled"`
 	TLS                  *tlscommon.Config `config:"ssl" yaml:"ssl,omitempty" json:"ssl,omitempty"`
 	DefaultRegion        string            `config:"default_region"`
+
+	// The duration of the role session. Defaults to 15m when not set.
+	AssumeRoleDuration time.Duration `config:"assume_role.duration"`
+
+	// AssumeRoleExpiryWindow will allow the credentials to trigger refreshing prior to the credentials
+	// actually expiring. If expiry_window is less than or equal to zero, the setting is ignored.
+	AssumeRoleExpiryWindow time.Duration `config:"assume_role.expiry_window"`
 }
 
 // InitializeAWSConfig function creates the awssdk.Config object from the provided config
@@ -149,8 +158,19 @@ func addAssumeRoleProviderToAwsConfig(config ConfigAWS, awsConfig *awssdk.Config
 	logger := logp.NewLogger("addAssumeRoleProviderToAwsConfig")
 	logger.Debug("Switching credentials provider to AssumeRoleProvider")
 	stsSvc := sts.NewFromConfig(*awsConfig)
-	stsCredProvider := stscreds.NewAssumeRoleProvider(stsSvc, config.RoleArn)
-	awsConfig.Credentials = stsCredProvider
+	stsCredProvider := stscreds.NewAssumeRoleProvider(stsSvc, config.RoleArn, func(aro *stscreds.AssumeRoleOptions) {
+		if config.ExternalID != "" {
+			aro.ExternalID = awssdk.String(config.ExternalID)
+		}
+		if config.AssumeRoleDuration > 0 {
+			aro.Duration = config.AssumeRoleDuration
+		}
+	})
+	awsConfig.Credentials = awssdk.NewCredentialsCache(stsCredProvider, func(options *awssdk.CredentialsCacheOptions) {
+		if config.AssumeRoleExpiryWindow > 0 {
+			options.ExpiryWindow = config.AssumeRoleExpiryWindow
+		}
+	})
 }
 
 // addStaticCredentialsProviderToAwsConfig adds a static credentials provider to the current AWS config by using the keys stored in Beats config

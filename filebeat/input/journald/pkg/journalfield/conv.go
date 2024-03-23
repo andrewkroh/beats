@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/elastic/beats/v7/libbeat/common/capabilities"
 	"github.com/elastic/elastic-agent-libs/logp"
 	"github.com/elastic/elastic-agent-libs/mapstr"
 )
@@ -116,6 +117,7 @@ func withECSEnrichment(fields mapstr.M) mapstr.M {
 	setGidUidFields("journald.object", fields)
 	setProcessFields("journald", fields)
 	setProcessFields("journald.object", fields)
+	expandCapabilities(fields)
 	return fields
 }
 
@@ -171,6 +173,28 @@ func setProcessFields(prefix string, fields mapstr.M) {
 		_, _ = fields.Put("process.args", args)
 		_, _ = fields.Put("process.args_count", len(args))
 	}
+}
+
+// expandCapabilites expands the hex string of capabilities bits in the
+// journald.process.capabilities field in-place into an array of conventional
+// capabilities names in process.thread.capabilities.effective. If a
+// capability is unknown it is rendered as the numeric value of the cap.
+// The original capabilities string is not altered. If any error is
+// encountered no modification is made to the fields.
+func expandCapabilities(fields mapstr.M) {
+	cs, err := fields.GetValue("journald.process.capabilities")
+	if err != nil {
+		return
+	}
+	c, ok := cs.(string)
+	if !ok {
+		return
+	}
+	caps, err := capabilities.FromString(c, 16)
+	if err != nil || len(caps) == 0 {
+		return
+	}
+	fields.Put("process.thread.capabilities.effective", caps)
 }
 
 func getStringFromFields(key string, fields mapstr.M) string {

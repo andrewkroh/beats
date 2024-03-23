@@ -100,10 +100,10 @@ func (c *config) Validate() error {
 	}
 
 	if c.AWSConfig.FIPSEnabled && c.NonAWSBucketName != "" {
-		return errors.New("fips_enabled cannot be used with a non-AWS S3 bucket.")
+		return errors.New("fips_enabled cannot be used with a non-AWS S3 bucket")
 	}
-	if c.PathStyle && c.NonAWSBucketName == "" {
-		return errors.New("path_style can only be used when polling non-AWS S3 services")
+	if c.PathStyle && c.NonAWSBucketName == "" && c.QueueURL == "" {
+		return errors.New("path_style can only be used when polling non-AWS S3 services or SQS/SNS QueueURL")
 	}
 	if c.ProviderOverride != "" && c.NonAWSBucketName == "" {
 		return errors.New("provider can only be overridden when polling non-AWS S3 services")
@@ -163,6 +163,7 @@ type readerConfig struct {
 	LineTerminator           readfile.LineTerminator `config:"line_terminator"`
 	MaxBytes                 cfgtype.ByteSize        `config:"max_bytes"`
 	Parsers                  parser.Config           `config:",inline"`
+	Decoding                 decoderConfig           `config:"decoding"`
 }
 
 func (rc *readerConfig) Validate() error {

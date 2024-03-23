@@ -94,6 +94,17 @@ var testCases = []struct {
 		expected: []string{`{"hello":[{"world":"moon"},{"space":[{"cake":"pumpkin"}]}]}`},
 	},
 	{
+		name:        "POST_request_with_empty_object_body",
+		setupServer: newTestServer(httptest.NewServer),
+		baseConfig: map[string]interface{}{
+			"interval":       1,
+			"request.method": http.MethodPost,
+			"request.body":   map[string]interface{}{},
+		},
+		handler:  defaultHandler(http.MethodPost, `{}`, ""),
+		expected: []string{`{"hello":[{"world":"moon"},{"space":[{"cake":"pumpkin"}]}]}`},
+	},
+	{
 		name:        "repeated_POST_requests",
 		setupServer: newTestServer(httptest.NewServer),
 		baseConfig: map[string]interface{}{
@@ -259,8 +270,6 @@ var testCases = []struct {
 	{
 		name: "date_cursor",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerRequestTransforms()
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			// mock timeNow func to return a fixed value
 			timeNow = func() time.Time {
 				t, _ := time.Parse(time.RFC3339, "2002-10-02T15:00:00Z")
@@ -300,8 +309,6 @@ var testCases = []struct {
 	{
 		name: "tracer_filename_sanitization",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerRequestTransforms()
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			// mock timeNow func to return a fixed value
 			timeNow = func() time.Time {
 				t, _ := time.Parse(time.RFC3339, "2002-10-02T15:00:00Z")
@@ -343,9 +350,6 @@ var testCases = []struct {
 	{
 		name: "pagination",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerPaginationTransforms()
-			registerResponseTransforms()
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			server := httptest.NewServer(h)
 			config["request.url"] = server.URL
 			t.Cleanup(server.Close)
@@ -381,13 +385,8 @@ var testCases = []struct {
 		},
 	},
 	{
-		skipReason: "flakey test - see https://github.com/elastic/beats/issues/34929",
-
 		name: "first_event",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerPaginationTransforms()
-			registerResponseTransforms()
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			server := httptest.NewServer(h)
 			config["request.url"] = server.URL
 			t.Cleanup(server.Close)
@@ -428,8 +427,6 @@ var testCases = []struct {
 	{
 		name: "pagination_with_array_response",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerPaginationTransforms()
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			server := httptest.NewServer(h)
 			config["request.url"] = server.URL
 			t.Cleanup(server.Close)
@@ -473,8 +470,6 @@ var testCases = []struct {
 	{
 		name: "request_transforms_can_access_state_from_previous_transforms",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerRequestTransforms()
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			server := httptest.NewServer(h)
 			config["request.url"] = server.URL + "/test-path"
 			t.Cleanup(server.Close)
@@ -509,9 +504,6 @@ var testCases = []struct {
 	{
 		name: "response_transforms_can't_access_request_state_from_previous_transforms",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerRequestTransforms()
-			registerResponseTransforms()
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			server := httptest.NewServer(h)
 			config["request.url"] = server.URL
 			t.Cleanup(server.Close)
@@ -550,6 +542,25 @@ var testCases = []struct {
 					"step": map[string]interface{}{
 						"request.method": http.MethodGet,
 						"replace":        "$.records[:].id",
+					},
+				},
+			},
+		},
+		handler:  defaultHandler(http.MethodGet, "", ""),
+		expected: []string{`{"hello":[{"world":"moon"},{"space":[{"cake":"pumpkin"}]}]}`},
+	},
+	{
+		name:        "simple_naked_Chain_GET_request",
+		setupServer: newNakedChainTestServer(httptest.NewServer),
+		baseConfig: map[string]interface{}{
+			"interval":       10,
+			"request.method": http.MethodGet,
+			"chain": []interface{}{
+				map[string]interface{}{
+					"step": map[string]interface{}{
+						"request.url":    "placeholder:$.records[:]",
+						"request.method": http.MethodGet,
+						"replace":        "$.records[:]",
 					},
 				},
 			},
@@ -600,8 +611,6 @@ var testCases = []struct {
 	{
 		name: "date_cursor_while_using_chain",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerRequestTransforms()
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			// mock timeNow func to return a fixed value
 			timeNow = func() time.Time {
 				t, _ := time.Parse(time.RFC3339, "2002-10-02T15:00:00Z")
@@ -954,8 +963,6 @@ var testCases = []struct {
 		name: "global_transform_context_separation_with_parent_last_response_object",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
 			var serverURL string
-			registerPaginationTransforms()
-			registerRequestTransforms()
 			r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch r.URL.Path {
 				case "/":
@@ -973,7 +980,6 @@ var testCases = []struct {
 				}
 			})
 			server := httptest.NewServer(r)
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			config["request.url"] = server.URL
 			serverURL = server.URL
 			config["chain.0.step.request.url"] = server.URL + "/$.exportId/$.files[:].id"
@@ -1021,8 +1027,6 @@ var testCases = []struct {
 		name: "cursor_value_is_updated_for_root_response_with_chaining_&_pagination",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
 			var serverURL string
-			registerPaginationTransforms()
-			registerRequestTransforms()
 			r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch r.URL.Path {
 				case "/":
@@ -1041,7 +1045,6 @@ var testCases = []struct {
 				}
 			})
 			server := httptest.NewServer(r)
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			config["request.url"] = server.URL
 			serverURL = server.URL
 			config["chain.0.step.request.url"] = server.URL + "/$.exportId/$.files[:].id"
@@ -1100,8 +1103,6 @@ var testCases = []struct {
 		name: "cursor_value_is_updated_for_root_response_with_chaining_&_pagination_along_with_split_operator",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
 			var serverURL string
-			registerPaginationTransforms()
-			registerRequestTransforms()
 			r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch r.URL.Path {
 				case "/":
@@ -1120,7 +1121,6 @@ var testCases = []struct {
 				}
 			})
 			server := httptest.NewServer(r)
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			config["request.url"] = server.URL
 			serverURL = server.URL
 			config["chain.0.step.request.url"] = server.URL + "/$.exportId/$.files[:].id"
@@ -1183,8 +1183,6 @@ var testCases = []struct {
 	{
 		name: "Test simple XML decode",
 		setupServer: func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-			registerDecoders()
-			registerRequestTransforms()
 			r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				const text = `<?xml version="1.0" encoding="UTF-8"?>
 <order orderid="56733" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="sales.xsd">
@@ -1210,7 +1208,6 @@ var testCases = []struct {
 				w.Write([]byte(text))
 			})
 			server := httptest.NewServer(r)
-			t.Cleanup(func() { registeredTransforms = newRegistry() })
 			config["request.url"] = server.URL
 			t.Cleanup(server.Close)
 		},
@@ -1281,6 +1278,8 @@ var testCases = []struct {
 }
 
 func TestInput(t *testing.T) {
+	logp.TestingSetup()
+
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			if test.skipReason != "" {
@@ -1450,11 +1449,29 @@ func newChainTestServer(
 	}
 }
 
+func newNakedChainTestServer(
+	newServer func(http.Handler) *httptest.Server,
+) func(testing.TB, http.HandlerFunc, map[string]interface{}) {
+	return func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
+		var server *httptest.Server
+		r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/":
+				fmt.Fprintln(w, `{"records":["`+server.URL+`/1"]}`)
+			case "/1":
+				fmt.Fprintln(w, `{"hello":[{"world":"moon"},{"space":[{"cake":"pumpkin"}]}]}`)
+			}
+		})
+		server = httptest.NewServer(r)
+		config["request.url"] = server.URL
+		t.Cleanup(server.Close)
+	}
+}
+
 func newChainPaginationTestServer(
 	newServer func(http.Handler) *httptest.Server,
 ) func(testing.TB, http.HandlerFunc, map[string]interface{}) {
 	return func(t testing.TB, h http.HandlerFunc, config map[string]interface{}) {
-		registerPaginationTransforms()
 		var serverURL string
 		r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
@@ -1474,7 +1491,6 @@ func newChainPaginationTestServer(
 		config["request.url"] = server.URL
 		serverURL = server.URL
 		config["chain.0.step.request.url"] = server.URL + "/$.records[:].id"
-		t.Cleanup(func() { registeredTransforms = newRegistry() })
 	}
 }
 
@@ -1511,7 +1527,7 @@ func defaultHandler(expectedMethod, expectedBody, msg string) http.HandlerFunc {
 			r.Body.Close()
 			if expectedBody != string(body) {
 				w.WriteHeader(http.StatusBadRequest)
-				msg = fmt.Sprintf(`{"error":"expected body was %q"}`, expectedBody)
+				msg = fmt.Sprintf(`{"error":"expected body was %q, but got %q"}`, expectedBody, body)
 			}
 		}
 

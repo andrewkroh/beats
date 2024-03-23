@@ -6,11 +6,10 @@ package v9
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/elastic/beats/v7/x-pack/filebeat/input/netflow/decoder/config"
 	"github.com/elastic/beats/v7/x-pack/filebeat/input/netflow/decoder/protocol"
@@ -35,7 +34,7 @@ type NetflowV9Protocol struct {
 }
 
 func init() {
-	protocol.Registry.Register(ProtocolName, New)
+	_ = protocol.Registry.Register(ProtocolName, New)
 }
 
 func New(config config.Config) protocol.Protocol {
@@ -46,7 +45,7 @@ func New(config config.Config) protocol.Protocol {
 func NewProtocolWithDecoder(decoder Decoder, config config.Config, logger *log.Logger) *NetflowV9Protocol {
 	return &NetflowV9Protocol{
 		decoder:     decoder,
-		Session:     NewSessionMap(logger),
+		Session:     NewSessionMap(logger, config.ActiveSessionsMetric()),
 		logger:      logger,
 		timeout:     config.ExpirationTimeout(),
 		detectReset: config.SequenceResetEnabled(),
@@ -76,7 +75,7 @@ func (p *NetflowV9Protocol) OnPacket(buf *bytes.Buffer, source net.Addr) (flows 
 	header, payload, numFlowSets, err := p.decoder.ReadPacketHeader(buf)
 	if err != nil {
 		p.logger.Printf("Unable to read V9 header: %v", err)
-		return nil, errors.Wrapf(err, "error reading header")
+		return nil, fmt.Errorf("error reading header: %w", err)
 	}
 	buf = payload
 
@@ -105,7 +104,7 @@ func (p *NetflowV9Protocol) OnPacket(buf *bytes.Buffer, source net.Addr) (flows 
 		f, err := p.parseSet(set.SetID, session, body)
 		if err != nil {
 			p.logger.Printf("Error parsing set %d: %v", set.SetID, err)
-			return nil, errors.Wrapf(err, "error parsing set")
+			return nil, fmt.Errorf("error parsing set: %w", err)
 		}
 		flows = append(flows, f...)
 	}
