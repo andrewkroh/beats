@@ -1212,6 +1212,7 @@ This input exposes metrics under the [HTTP monitoring endpoint](/reference/fileb
 | --- | --- |
 | `resource` | URL or path of the input resource. |
 | `cel_executions` | Number times the CEL program has been executed. |
+| `cel_success_executions` | Number times the CEL program completed without error. |
 | `batches_received_total` | Number of event arrays received. |
 | `events_received_total` | Number of events received. |
 | `batches_published_total` | Number of event arrays published. |

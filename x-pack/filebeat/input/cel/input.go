@@ -616,6 +616,10 @@ func (i input) run(env v2.Context, src *source, cursor map[string]interface{}, p
 			// publications. This is needed to transition to the next set of events.
 			if !hadPublicationError {
 				goodCursor = cursor
+			}
+			// Only count as success if there were no publication errors and no
+			// evaluation errors (isDegraded tracks CEL evaluation failures).
+			if !hadPublicationError && !isDegraded {
 				metricsRecorder.AddProgramSuccessExecution(ctx)
 			}
 

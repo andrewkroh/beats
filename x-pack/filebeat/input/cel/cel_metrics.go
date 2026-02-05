@@ -31,6 +31,7 @@ import (
 type inputMetrics struct {
 	resource            *monitoring.String // URL-ish of input resource
 	executions          *monitoring.Uint   // times the CEL program has been executed
+	successExecutions   *monitoring.Uint   // times the CEL program completed without error
 	batchesReceived     *monitoring.Uint   // number of event arrays received
 	eventsReceived      *monitoring.Uint   // number of events received
 	batchesPublished    *monitoring.Uint   // number of event arrays published
@@ -43,6 +44,7 @@ func newInputMetrics(reg *monitoring.Registry, logger *logp.Logger) (*inputMetri
 	out := &inputMetrics{
 		resource:            monitoring.NewString(reg, "resource"),
 		executions:          monitoring.NewUint(reg, "cel_executions"),
+		successExecutions:   monitoring.NewUint(reg, "cel_success_executions"),
 		batchesReceived:     monitoring.NewUint(reg, "batches_received_total"),
 		eventsReceived:      monitoring.NewUint(reg, "events_received_total"),
 		batchesPublished:    monitoring.NewUint(reg, "batches_published_total"),
@@ -431,6 +433,7 @@ func (o *metricsRecorder) AddProgramExecution(ctx context.Context) {
 }
 
 func (o *metricsRecorder) AddProgramSuccessExecution(ctx context.Context) {
+	o.inputMetrics.successExecutions.Add(1)
 	o.otelMetrics.AddProgramExecutionSuccess(ctx, 1)
 }
 
